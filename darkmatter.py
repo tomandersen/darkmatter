@@ -15,7 +15,7 @@ import gizmo_analysis as gizmo
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
 SNAPSHOT_NUM = 600
-DENSITY_THRESHOLD = 5.0001  # cm^-3 (filtering for diffuse gas)
+DENSITY_THRESHOLD = 138.0001  # cm^-3 (filtering for diffuse gas)
 DISTANCE_LIMIT = 100.0    # kpc
 
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
