@@ -122,51 +122,78 @@ all_m_pred = np.concatenate([mass_stars, mass_gas, dm_mass_msun_pred])
 r_tot_pred, v_tot_pred = get_component_velocity(all_r_pred, all_m_pred)
 
 # ==========================================
-# 6. PLOTTING THE RESULTS (OPTIMIZED FOR SPEED)
+# 6. PLOTTING AND SAVING THE RESULTS
 # ==========================================
-print("Generating graphs...")
-fig, axes = plt.subplots(3, 1, figsize=(10, 18))
+print("Generating and saving graphs...")
 
 # STEP: Plot every 1,000th point to save memory. 
-# (The curve will look identical, but render instantly)
 S = 1000 
 
+# ------------------------------------------
 # Graph 1: Total Rotation Curve
-axes[0].plot(r_tot_true[::S], v_tot_true[::S], label='True FIRE Simulation', color='black', lw=2)
-axes[0].plot(r_tot_pred[::S], v_tot_pred[::S], label='Your Model (Baryons + Pred DM)', color='crimson', ls='--', lw=2)
-axes[0].set_title('Total Rotation Curve Comparison', fontsize=14)
-axes[0].set_ylabel('Velocity (km/s)', fontsize=12)
-axes[0].legend(loc='upper right') # HARDCODED TO FIX HANG
+# ------------------------------------------
+plt.figure(figsize=(10, 6))
+plt.plot(r_tot_true[::S], v_tot_true[::S], label='True FIRE Simulation', color='black', lw=2)
+plt.plot(r_tot_pred[::S], v_tot_pred[::S], label='Your Model (Baryons + Pred DM)', color='crimson', ls='--', lw=2)
 
+plt.title('Total Rotation Curve Comparison', fontsize=14)
+plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
+plt.ylabel('Velocity (km/s)', fontsize=12)
+plt.xlim(0, 100)
+plt.ylim(0, 350)
+plt.grid(True, alpha=0.3)
+plt.legend(loc='upper right')
+
+plt.tight_layout()
+plt.savefig('plot_1_total_rotation_curve.png', dpi=300)
+plt.close() # Closes the figure to free up your memory!
+print("Saved plot_1_total_rotation_curve.png")
+
+# ------------------------------------------
 # Graph 2: Component Decomposition
-axes[1].plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
-axes[1].plot(r_dm_p[::S], v_dm_pred[::S], label=f'Predicted DM Halo (α={alpha_std})', color='crimson', ls='--', lw=2)
-axes[1].plot(np.sort(r_stars)[::S], v_stars[::S], label='Stars', color='goldenrod', ls='-.')
-axes[1].plot(np.sort(r_gas)[::S], v_gas[::S], label='Gas', color='teal', ls='-.')
-axes[1].set_title('Velocity Contributions by Component', fontsize=14)
-axes[1].set_ylabel('Velocity Contribution (km/s)', fontsize=12)
-axes[1].legend(loc='upper right') # HARDCODED TO FIX HANG
+# ------------------------------------------
+plt.figure(figsize=(10, 6))
+plt.plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
+plt.plot(r_dm_p[::S], v_dm_pred[::S], label=f'Predicted DM Halo (α={alpha_std})', color='crimson', ls='--', lw=2)
+plt.plot(np.sort(r_stars)[::S], v_stars[::S], label='Stars', color='goldenrod', ls='-.')
+plt.plot(np.sort(r_gas)[::S], v_gas[::S], label='Gas', color='teal', ls='-.')
 
+plt.title('Velocity Contributions by Component', fontsize=14)
+plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
+plt.ylabel('Velocity Contribution (km/s)', fontsize=12)
+plt.xlim(0, 100)
+plt.ylim(0, 350)
+plt.grid(True, alpha=0.3)
+plt.legend(loc='upper right')
+
+plt.tight_layout()
+plt.savefig('plot_2_component_decomposition.png', dpi=300)
+plt.close()
+print("Saved plot_2_component_decomposition.png")
+
+# ------------------------------------------
 # Graph 3: Tuning the Power-Law (Alpha)
-axes[2].plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
+# ------------------------------------------
+plt.figure(figsize=(10, 6))
+plt.plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
 alpha_test_values = [1.0, 1.5, 2.0, 2.5]
+
 for a in alpha_test_values:
     sf = np.sum(V_i / (c**3 * d_avg**a))
     P_a = target_dm_mass_kg / sf
     dm_m = (P_a * (V_i / (c**3 * d_avg**a))) / MSUN_TO_KG
     r_a, v_a = get_component_velocity(r_gas, dm_m)
-    axes[2].plot(r_a[::S], v_a[::S], label=f'Model (α={a})', ls='--')
+    plt.plot(r_a[::S], v_a[::S], label=f'Model (α={a})', ls='--')
 
-axes[2].set_title('Tuning the Distance Exponent (α)', fontsize=14)
-axes[2].set_xlabel('Galactocentric Radius (kpc)', fontsize=12)
-axes[2].set_ylabel('DM Velocity Contribution (km/s)', fontsize=12)
-axes[2].legend(loc='upper right') # HARDCODED TO FIX HANG
-
-# Standardize formatting across all subplots
-for ax in axes:
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 350)
-    ax.grid(True, alpha=0.3)
+plt.title('Tuning the Distance Exponent (α)', fontsize=14)
+plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
+plt.ylabel('DM Velocity Contribution (km/s)', fontsize=12)
+plt.xlim(0, 100)
+plt.ylim(0, 350)
+plt.grid(True, alpha=0.3)
+plt.legend(loc='upper right')
 
 plt.tight_layout()
-plt.show()
+plt.savefig('plot_3_tuning_alpha.png', dpi=300)
+plt.close()
+print("Saved plot_3_tuning_alpha.png")
