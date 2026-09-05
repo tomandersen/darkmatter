@@ -36,14 +36,21 @@ def get_component_velocity(radii, masses):
 # 2. LOAD DATA & EXTRACT PROPERTIES
 # ==========================================
 print("Loading snapshot data...")
+
 part = gizmo.io.Read.read_snapshots(
-    ['star', 'gas', 'dark'], 'snapshot', SNAPSHOT_NUM, assign_hosts=True, simulation_directory='./m12i_res7100/output/snapdir_600/'
+    ['star', 'gas', 'dark'], 
+    'index', 
+    SNAPSHOT_NUM, 
+    assign_hosts=True,
+    simulation_directory='./m12i_res7100'
 )
 
 # Extract Radii
-r_stars = part['star'].prop('host.distance.principal.spherical')[:, 0]
-r_gas_all = part['gas'].prop('host.distance.principal.spherical')[:, 0]
-r_dm_all = part['dark'].prop('host.distance.principal.spherical')[:, 0]
+# Changed from 'host.distance.principal.spherical' to 'host.distance.spherical'
+r_stars = part['star'].prop('host.distance.spherical')[:, 0]
+r_gas_all = part['gas'].prop('host.distance.spherical')[:, 0]
+r_dm_all = part['dark'].prop('host.distance.spherical')[:, 0]
+
 
 # Extract Masses
 mass_stars = part['star']['mass']
