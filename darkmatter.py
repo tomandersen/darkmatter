@@ -20,7 +20,7 @@ DISTANCE_LIMIT = 100.0    # kpc
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
 c = 299792458.0           # Speed of light: m/s
 MSUN_TO_KG = 1.989e30     # Solar masses to kilograms
-MSUN_KPC3_TO_KG_M3 = 6.77e-20 # Mass density conversion
+MSUN_KPC3_TO_KG_M3 = 6.77e-29 # Mass density conversion
 
 def get_component_velocity(radii, masses):
     """Sorts particles by radius and calculates circular velocity."""
@@ -74,17 +74,21 @@ gas_rho_msun_kpc3 = part['gas'].prop('density')[low_density_mask]
 dm_mask = r_dm_all < DISTANCE_LIMIT
 r_dm_true = r_dm_all[dm_mask]
 mass_dm_true = mass_dm_all[dm_mask]
-target_dm_mass_kg = np.sum(mass_dm_true) * MSUN_TO_KG
+
+# FIX: Force np.sum to use 64-bit precision before multiplying by 10^30
+target_dm_mass_kg = np.sum(mass_dm_true, dtype=np.float64) * MSUN_TO_KG
 
 # ==========================================
 # 4. RUN YOUR DARK MATTER MODEL
 # ==========================================
 print("Running DM model and calculating P...")
-n_m3 = n_cm3 * 1e6
-gas_mass_kg = mass_gas * MSUN_TO_KG
-gas_rho_kg_m3 = gas_rho_msun_kpc3 * MSUN_KPC3_TO_KG_M3
+n_m3 = n_cm3.astype(np.float64) * 1e6
 
-# Volumes and Distances
+# FIX: Upgrade the 32-bit arrays to 64-bit before converting to kg
+gas_mass_kg = mass_gas.astype(np.float64) * MSUN_TO_KG
+gas_rho_kg_m3 = gas_rho_msun_kpc3.astype(np.float64) * MSUN_KPC3_TO_KG_M3
+
+# Volumes and Distances (Now safely operating in 64-bit space)
 V_i = gas_mass_kg / gas_rho_kg_m3
 d_avg = np.cbrt(1.0 / n_m3)
 
@@ -118,42 +122,45 @@ all_m_pred = np.concatenate([mass_stars, mass_gas, dm_mass_msun_pred])
 r_tot_pred, v_tot_pred = get_component_velocity(all_r_pred, all_m_pred)
 
 # ==========================================
-# 6. PLOTTING THE RESULTS
+# 6. PLOTTING THE RESULTS (OPTIMIZED FOR SPEED)
 # ==========================================
 print("Generating graphs...")
 fig, axes = plt.subplots(3, 1, figsize=(10, 18))
 
+# STEP: Plot every 1,000th point to save memory. 
+# (The curve will look identical, but render instantly)
+S = 1000 
+
 # Graph 1: Total Rotation Curve
-axes[0].plot(r_tot_true, v_tot_true, label='True FIRE Simulation', color='black', lw=2)
-axes[0].plot(r_tot_pred, v_tot_pred, label='Your Model (Baryons + Pred DM)', color='crimson', ls='--', lw=2)
+axes[0].plot(r_tot_true[::S], v_tot_true[::S], label='True FIRE Simulation', color='black', lw=2)
+axes[0].plot(r_tot_pred[::S], v_tot_pred[::S], label='Your Model (Baryons + Pred DM)', color='crimson', ls='--', lw=2)
 axes[0].set_title('Total Rotation Curve Comparison', fontsize=14)
 axes[0].set_ylabel('Velocity (km/s)', fontsize=12)
-axes[0].legend()
+axes[0].legend(loc='upper right') # HARDCODED TO FIX HANG
 
 # Graph 2: Component Decomposition
-axes[1].plot(r_dm_t, v_dm_true, label='True DM Halo', color='black', lw=2)
-axes[1].plot(r_dm_p, v_dm_pred, label=f'Predicted DM Halo (α={alpha_std})', color='crimson', ls='--', lw=2)
-axes[1].plot(np.sort(r_stars), v_stars, label='Stars', color='goldenrod', ls='-.')
-axes[1].plot(np.sort(r_gas), v_gas, label='Gas', color='teal', ls='-.')
+axes[1].plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
+axes[1].plot(r_dm_p[::S], v_dm_pred[::S], label=f'Predicted DM Halo (α={alpha_std})', color='crimson', ls='--', lw=2)
+axes[1].plot(np.sort(r_stars)[::S], v_stars[::S], label='Stars', color='goldenrod', ls='-.')
+axes[1].plot(np.sort(r_gas)[::S], v_gas[::S], label='Gas', color='teal', ls='-.')
 axes[1].set_title('Velocity Contributions by Component', fontsize=14)
 axes[1].set_ylabel('Velocity Contribution (km/s)', fontsize=12)
-axes[1].legend()
+axes[1].legend(loc='upper right') # HARDCODED TO FIX HANG
 
 # Graph 3: Tuning the Power-Law (Alpha)
-axes[2].plot(r_dm_t, v_dm_true, label='True DM Halo', color='black', lw=2)
+axes[2].plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
 alpha_test_values = [1.0, 1.5, 2.0, 2.5]
 for a in alpha_test_values:
-    # Re-calculate P and masses for this alpha
     sf = np.sum(V_i / (c**3 * d_avg**a))
     P_a = target_dm_mass_kg / sf
     dm_m = (P_a * (V_i / (c**3 * d_avg**a))) / MSUN_TO_KG
     r_a, v_a = get_component_velocity(r_gas, dm_m)
-    axes[2].plot(r_a, v_a, label=f'Model ($\alpha={a}$)', ls='--')
+    axes[2].plot(r_a[::S], v_a[::S], label=f'Model (α={a})', ls='--')
 
 axes[2].set_title('Tuning the Distance Exponent (α)', fontsize=14)
 axes[2].set_xlabel('Galactocentric Radius (kpc)', fontsize=12)
 axes[2].set_ylabel('DM Velocity Contribution (km/s)', fontsize=12)
-axes[2].legend()
+axes[2].legend(loc='upper right') # HARDCODED TO FIX HANG
 
 # Standardize formatting across all subplots
 for ax in axes:
