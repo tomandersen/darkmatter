@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial import cKDTree
 
 # Following the gemini app discussion "Milky Way Mock Catalogs"
 # download (not included in git repo the m12i simulation)
@@ -14,7 +15,7 @@ import gizmo_analysis as gizmo
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
 SNAPSHOT_NUM = 600
-DENSITY_THRESHOLD = 0.01  # cm^-3 (filtering for diffuse gas)
+DENSITY_THRESHOLD = 0.05  # cm^-3 (filtering for diffuse gas)
 DISTANCE_LIMIT = 100.0    # kpc
 
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
@@ -51,6 +52,8 @@ r_stars = part['star'].prop('host.distance.spherical')[:, 0]
 r_gas_all = part['gas'].prop('host.distance.spherical')[:, 0]
 r_dm_all = part['dark'].prop('host.distance.spherical')[:, 0]
 
+# star positions
+pos_stars_all = part['star'].prop('host.distance') # 3D Cartesian coords
 
 # Extract Masses
 mass_stars = part['star']['mass']
@@ -70,6 +73,12 @@ mass_gas = mass_gas_all[low_density_mask]
 n_cm3 = gas_density_cm3[low_density_mask]
 gas_rho_msun_kpc3 = part['gas'].prop('density')[low_density_mask]
 
+# Star filter mask (to save RAM)
+star_mask = r_stars < DISTANCE_LIMIT
+r_stars_f = r_stars[star_mask]
+mass_stars_f = mass_stars[star_mask]
+pos_stars_f = pos_stars_all[star_mask]
+
 # True DM filter mask (to calculate target total DM mass)
 dm_mask = r_dm_all < DISTANCE_LIMIT
 r_dm_true = r_dm_all[dm_mask]
@@ -79,28 +88,49 @@ mass_dm_true = mass_dm_all[dm_mask]
 target_dm_mass_kg = np.sum(mass_dm_true, dtype=np.float64) * MSUN_TO_KG
 
 # ==========================================
-# 4. RUN YOUR DARK MATTER MODEL
+# 4. RUN YOUR DARK MATTER MODEL (GAS + STARS)
 # ==========================================
-print("Running DM model and calculating P...")
-n_m3 = n_cm3.astype(np.float64) * 1e6
-
-# FIX: Upgrade the 32-bit arrays to 64-bit before converting to kg
+print("Running DM model for Gas...")
+n_m3_gas = n_cm3.astype(np.float64) * 1e6
 gas_mass_kg = mass_gas.astype(np.float64) * MSUN_TO_KG
 gas_rho_kg_m3 = gas_rho_msun_kpc3.astype(np.float64) * MSUN_KPC3_TO_KG_M3
 
-# Volumes and Distances (Now safely operating in 64-bit space)
-V_i = gas_mass_kg / gas_rho_kg_m3
-d_avg = np.cbrt(1.0 / n_m3)
+V_i_gas = gas_mass_kg / gas_rho_kg_m3
+d_avg_gas = np.cbrt(1.0 / n_m3_gas)
 
-# Solve for P using alpha = 2 (Standard Model)
+print("Calculating local density for Stars using KD-Tree...")
+# 1. Build a spatial tree and find the 16th nearest neighbor for every star
+tree = cKDTree(pos_stars_f)
+# k=17 because the 1st neighbor is the particle itself
+distances, _ = tree.query(pos_stars_f, k=17, workers=-1) 
+r_16 = distances[:, 16].astype(np.float64) # Distance in kpc
+
+# 2. Calculate Stellar Volume and Density
+V_sphere_kpc3 = (4.0 / 3.0) * np.pi * (r_16**3)
+# Local mass density in kg/m^3
+star_rho_kg_m3 = ((16.0 * mass_stars_f.mean() * MSUN_TO_KG) / V_sphere_kpc3) * MSUN_KPC3_TO_KG_M3
+V_i_star = (mass_stars_f.astype(np.float64) * MSUN_TO_KG) / star_rho_kg_m3
+
+# 3. Convert stellar mass density to baryon number density
+# Average mass of a baryon (proton/neutron) is ~1.67e-27 kg
+mass_baryon_kg = 1.67e-27 
+n_m3_star = star_rho_kg_m3 / mass_baryon_kg
+d_avg_star = np.cbrt(1.0 / n_m3_star)
+
+print("Calculating global Power P...")
 alpha_std = 2.0
-sum_factor = np.sum(V_i / (c**3 * d_avg**alpha_std))
-P = target_dm_mass_kg / sum_factor
-print(f"Calculated Power P: {P:.2e} Watts")
 
-# Calculate predicted DM mass per gas particle
-dm_mass_kg_pred = P * (V_i / (c**3 * d_avg**alpha_std))
-dm_mass_msun_pred = dm_mass_kg_pred / MSUN_TO_KG
+# Sum the contributions from both Gas and Stars
+sum_factor_gas = np.sum(V_i_gas / (c**3 * d_avg_gas**alpha_std))
+sum_factor_star = np.sum(V_i_star / (c**3 * d_avg_star**alpha_std))
+sum_factor_total = sum_factor_gas + sum_factor_star
+
+# Calculate P and distribute the predicted Dark Matter
+P = target_dm_mass_kg / sum_factor_total
+print(f"Calculated Shared Power P: {P:.2e} Watts")
+
+dm_mass_msun_pred_gas = (P * (V_i_gas / (c**3 * d_avg_gas**alpha_std))) / MSUN_TO_KG
+dm_mass_msun_pred_star = (P * (V_i_star / (c**3 * d_avg_star**alpha_std))) / MSUN_TO_KG
 
 # ==========================================
 # 5. CALCULATE ROTATION CURVES
@@ -110,17 +140,17 @@ print("Calculating velocity curves...")
 _, v_stars = get_component_velocity(r_stars, mass_stars)
 _, v_gas = get_component_velocity(r_gas, mass_gas)
 r_dm_t, v_dm_true = get_component_velocity(r_dm_true, mass_dm_true)
-r_dm_p, v_dm_pred = get_component_velocity(r_gas, dm_mass_msun_pred)
+r_dm_p, v_dm_pred = get_component_velocity(r_gas, dm_mass_msun_pred_gas)
 
 # Total curves (combining components)
 all_r_true = np.concatenate([r_stars, r_gas, r_dm_true])
 all_m_true = np.concatenate([mass_stars, mass_gas, mass_dm_true])
 r_tot_true, v_tot_true = get_component_velocity(all_r_true, all_m_true)
 
-all_r_pred = np.concatenate([r_stars, r_gas, r_gas]) # r_gas used twice (gas + pred DM)
-all_m_pred = np.concatenate([mass_stars, mass_gas, dm_mass_msun_pred])
+# We use r_gas and r_stars_f twice because both are now generating DM
+all_r_pred = np.concatenate([r_stars_f, r_gas, r_stars_f, r_gas]) 
+all_m_pred = np.concatenate([mass_stars_f, mass_gas, dm_mass_msun_pred_star, dm_mass_msun_pred_gas])
 r_tot_pred, v_tot_pred = get_component_velocity(all_r_pred, all_m_pred)
-
 # ==========================================
 # 6. PLOTTING AND SAVING THE RESULTS
 # ==========================================
@@ -179,10 +209,24 @@ plt.plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
 alpha_test_values = [1.0, 1.5, 2.0, 2.5]
 
 for a in alpha_test_values:
-    sf = np.sum(V_i / (c**3 * d_avg**a))
-    P_a = target_dm_mass_kg / sf
-    dm_m = (P_a * (V_i / (c**3 * d_avg**a))) / MSUN_TO_KG
-    r_a, v_a = get_component_velocity(r_gas, dm_m)
+    # 1. Sum factors for both components
+    sf_gas = np.sum(V_i_gas / (c**3 * d_avg_gas**a))
+    sf_star = np.sum(V_i_star / (c**3 * d_avg_star**a))
+    sf_total = sf_gas + sf_star
+    
+    # 2. Recalculate P for this alpha
+    P_a = target_dm_mass_kg / sf_total
+    
+    # 3. Calculate DM mass for both components
+    dm_m_gas = (P_a * (V_i_gas / (c**3 * d_avg_gas**a))) / MSUN_TO_KG
+    dm_m_star = (P_a * (V_i_star / (c**3 * d_avg_star**a))) / MSUN_TO_KG
+    
+    # 4. Combine and calculate velocity
+    r_comb = np.concatenate([r_gas, r_stars_f])
+    m_comb = np.concatenate([dm_m_gas, dm_m_star])
+    r_a, v_a = get_component_velocity(r_comb, m_comb)
+    
+    # 5. Plot the result
     plt.plot(r_a[::S], v_a[::S], label=f'Model (α={a})', ls='--')
 
 plt.title('Tuning the Distance Exponent (α)', fontsize=14)
