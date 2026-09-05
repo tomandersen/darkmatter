@@ -15,8 +15,8 @@ import gizmo_analysis as gizmo
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
 SNAPSHOT_NUM = 600
-DENSITY_THRESHOLD = 0.0001  # cm^-3 (filtering for diffuse gas)
-DISTANCE_LIMIT = 30.0    # kpc
+DENSITY_THRESHOLD = 5.0001  # cm^-3 (filtering for diffuse gas)
+DISTANCE_LIMIT = 100.0    # kpc
 
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
 c = 299792458.0           # Speed of light: m/s
@@ -43,7 +43,8 @@ part = gizmo.io.Read.read_snapshots(
     'index', 
     SNAPSHOT_NUM, 
     assign_hosts=True,
-    simulation_directory='./m10q_res30'
+    #simulation_directory='./m10q_res30'
+    simulation_directory='./m12i_res7100'
 )
 
 # Extract Radii
