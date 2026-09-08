@@ -161,7 +161,7 @@ plt.figure(figsize=(10, 6))
 plt.plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
 plt.plot(r_dm_p[::S], v_dm_pred[::S], label=f'Predicted DM Halo (α={alpha_std})', color='crimson', ls='--', lw=2)
 plt.plot(np.sort(r_stars)[::S], v_stars[::S], label='Stars', color='goldenrod', ls='-.')
-plt.plot(np.sort(r_gas)[::S], v_gas[::S], label='Gas', color='teal', ls='-.')
+plt.plot(np.sort(r_gas_all)[::S], v_gas[::S], label='Gas', color='teal', ls='-.')
 
 plt.title('Velocity Contributions by Component', fontsize=14)
 plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
