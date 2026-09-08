@@ -2,7 +2,7 @@
 
 # tom stuff
 *.hdf5
-
+.DS_Store
 
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 

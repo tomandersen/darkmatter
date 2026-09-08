@@ -15,7 +15,7 @@ import gizmo_analysis as gizmo
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
 SNAPSHOT_NUM = 600
-DENSITY_THRESHOLD = 0.1  # cm^-3 (filtering for diffuse gas)
+DENSITY_THRESHOLD = 0.003  # cm^-3 (filtering for diffuse gas)
 DISTANCE_LIMIT = 100.0    # kpc
 
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
@@ -129,6 +129,11 @@ sum_factor_total = sum_factor_gas + sum_factor_star
 # Calculate P and distribute the predicted Dark Matter
 P = target_dm_mass_kg / sum_factor_total
 print(f"Calculated Shared Power P: {P:.2e} Watts")
+
+P = 25.0
+print(f"Using forced Shared Power P: {P:.2e} Watts")
+
+
 
 dm_mass_msun_pred_gas = (P * (V_i_gas / (c**3 * d_avg_gas**alpha_std))) / MSUN_TO_KG
 dm_mass_msun_pred_star = (P * (V_i_star / (c**3 * d_avg_star**alpha_std))) / MSUN_TO_KG
