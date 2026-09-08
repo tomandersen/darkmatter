@@ -134,8 +134,47 @@ r_tot_pred, v_tot_pred = get_component_velocity(all_r_pred, all_m_pred)
 print("Generating and saving graphs...")
 S = 100 
 
-# (Graph 1 & 2 Plotting Code Remains Identical)
-# ... [Keeping brevity for plots 1 and 2, use original plotting lines here] ...
+# ------------------------------------------
+# Graph 1: Total Rotation Curve
+# ------------------------------------------
+plt.figure(figsize=(10, 6))
+plt.plot(r_tot_true[::S], v_tot_true[::S], label='True FIRE Simulation', color='black', lw=2)
+plt.plot(r_tot_pred[::S], v_tot_pred[::S], label='Your Model (Baryons + Pred DM)', color='crimson', ls='--', lw=2)
+
+plt.title('Total Rotation Curve Comparison', fontsize=14)
+plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
+plt.ylabel('Velocity (km/s)', fontsize=12)
+plt.xlim(0, 100)
+plt.ylim(0, 300)
+plt.grid(True, alpha=0.3)
+plt.legend(loc='upper right')
+
+plt.tight_layout()
+plt.savefig('plot_1_total_rotation_curve.png', dpi=300)
+plt.close() # Closes the figure to free up your memory!
+print("Saved plot_1_total_rotation_curve.png")
+
+# ------------------------------------------
+# Graph 2: Component Decomposition
+# ------------------------------------------
+plt.figure(figsize=(10, 6))
+plt.plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
+plt.plot(r_dm_p[::S], v_dm_pred[::S], label=f'Predicted DM Halo (α={alpha_std})', color='crimson', ls='--', lw=2)
+plt.plot(np.sort(r_stars)[::S], v_stars[::S], label='Stars', color='goldenrod', ls='-.')
+plt.plot(np.sort(r_gas)[::S], v_gas[::S], label='Gas', color='teal', ls='-.')
+
+plt.title('Velocity Contributions by Component', fontsize=14)
+plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
+plt.ylabel('Velocity Contribution (km/s)', fontsize=12)
+plt.xlim(0, 100)
+plt.ylim(0, 350)
+plt.grid(True, alpha=0.3)
+plt.legend(loc='upper right')
+
+plt.tight_layout()
+plt.savefig('plot_2_component_decomposition.png', dpi=300)
+plt.close()
+print("Saved plot_2_component_decomposition.png")
 
 # ------------------------------------------
 # Graph 3: Tuning the Power-Law (Alpha)
