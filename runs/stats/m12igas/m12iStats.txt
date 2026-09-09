@@ -1,0 +1,93 @@
+# in utilities.simulation.Snapshot():
+* reading:  m12i_res7100/snapshot_times.txt
+
+  using snapshot index = 600, redshift = 0.000
+
+
+# in gizmo_analysis.gizmo_io.Read():
+* reading header from:  m12i_res7100/output/snapdir_600/snapshot_600.0.hdf5
+  snapshot contains the following number of particles:
+    dark      (id = 1): 70514272 particles
+    dark2     (id = 2): 5513331 particles
+    gas       (id = 0): 57060074 particles
+    star      (id = 4): 13976485 particles
+    blackhole (id = 5): 0 particles
+
+* reading the following
+  species: ['dark', 'dark2', 'gas', 'star']
+
+* reading particles from:
+    snapshot_600.0.hdf5
+    snapshot_600.1.hdf5
+    snapshot_600.2.hdf5
+    snapshot_600.3.hdf5
+
+! cannot find MUSIC config file:  m12i_res7100/*/*.conf
+! missing cosmological parameters, assuming cosmology from AGORA
+  assuming omega_baryon = 0.0455
+  assuming sigma_8 = 0.807
+  assuming n_s = 0.961
+
+* checking sanity of particle properties
+
+! cannot read file containing hosts coordinates
+  instead will assign hosts via iterative zoom on particle mass
+
+# in utilities.particle.get_center_positions():
+* assigning position for 1 center/host, via iterative zoom-in on star particle mass
+  host1 position = (41792.15, 44131.23, 46267.68) [kpc comoving]
+
+# in utilities.particle.get_center_velocities_or_accelerations():
+* assigning velocity for 1 center/host, weighting star particles by mass
+  host1 velocity = (-53.2, 73.4, 95.2) [km/s]
+
+About to dump file contents keys and content descriptions
+Species: dark
+  -> position: (70514272, 3)
+  -> mass: (70514272,)
+  -> id.child: (70514272,)
+  -> id.generation: (70514272,)
+  -> id: (70514272,)
+  -> potential: (70514272,)
+  -> velocity: (70514272, 3)
+Species: dark2
+  -> position: (5513331, 3)
+  -> mass: (5513331,)
+  -> id.child: (5513331,)
+  -> id.generation: (5513331,)
+  -> id: (5513331,)
+  -> potential: (5513331,)
+  -> velocity: (5513331, 3)
+Species: gas
+  -> position: (57060074, 3)
+  -> density: (57060074,)
+  -> electron.fraction: (57060074,)
+  -> temperature: (57060074,)
+  -> mass: (57060074,)
+  -> massfraction: (57060074, 11)
+  -> hydrogen.neutral.fraction: (57060074,)
+  -> id.child: (57060074,)
+  -> id.generation: (57060074,)
+  -> id: (57060074,)
+  -> potential: (57060074,)
+  -> size: (57060074,)
+  -> sfr: (57060074,)
+  -> velocity: (57060074, 3)
+Species: star
+  -> position: (13976485, 3)
+  -> mass: (13976485,)
+  -> massfraction: (13976485, 11)
+  -> id.child: (13976485,)
+  -> id.generation: (13976485,)
+  -> id: (13976485,)
+  -> potential: (13976485,)
+  -> form.scalefactor: (13976485,)
+  -> velocity: (13976485, 3)
+Dumped contents keys and content descriptions
+Extracting and filtering gas properties...
+Found 40,421,125 dense gas particles out of 57,060,074
+  -> Minimum Density: 0.00000030 cm^-3
+  -> Maximum Density: 10718.63964844 cm^-3
+  -> Mean Density:    0.71229440 cm^-3
+  -> Max Distance:    4432.61084787 kpc
+  -> Min Distance:    0.05871572 kpc

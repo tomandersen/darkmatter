@@ -1,0 +1,104 @@
+# in utilities.simulation.Snapshot():
+* reading:  m10q_res30/snapshot_times.txt
+
+  using snapshot index = 600, redshift = 0.000
+
+
+# in gizmo_analysis.gizmo_io.Read():
+* reading header from:  m10q_res30/output/snapdir_600/snapshot_600.0.hdf5
+  snapshot contains the following number of particles:
+    dark      (id = 1): 124215200 particles
+    dark2     (id = 2): 6410380 particles
+    gas       (id = 0): 123955434 particles
+    star      (id = 4): 213444 particles
+    blackhole (id = 5): 0 particles
+
+* reading the following
+  species: ['dark', 'dark2', 'gas', 'star']
+  star properties: ['form.scalefactor', 'id', 'id.child', 'id.generation', 'mass', 'massfraction', 'position', 'velocity']
+
+* reading particles from:
+    snapshot_600.0.hdf5
+    snapshot_600.1.hdf5
+    snapshot_600.2.hdf5
+    snapshot_600.3.hdf5
+    snapshot_600.4.hdf5
+    snapshot_600.5.hdf5
+    snapshot_600.6.hdf5
+    snapshot_600.7.hdf5
+    snapshot_600.8.hdf5
+    snapshot_600.9.hdf5
+    snapshot_600.10.hdf5
+    snapshot_600.11.hdf5
+    snapshot_600.12.hdf5
+    snapshot_600.13.hdf5
+    snapshot_600.14.hdf5
+    snapshot_600.15.hdf5
+
+! cannot find MUSIC config file:  m10q_res30/*/*.conf
+! missing cosmological parameters, assuming cosmology from AGORA
+  assuming omega_baryon = 0.0455
+  assuming sigma_8 = 0.807
+  assuming n_s = 0.961
+
+* checking sanity of particle properties
+! warning: gas mass [min, med, max] = [32.719, 32.719, 204.629]
+! warning: star mass [min, max] = [0.145, 65.734]
+
+! cannot read file containing hosts coordinates
+  instead will assign hosts via iterative zoom on particle mass
+
+# in utilities.particle.get_center_positions():
+* assigning position for 1 center/host, via iterative zoom-in on star particle mass
+  host1 position = (3348.67, 2926.53, 3317.39) [kpc comoving]
+
+# in utilities.particle.get_center_velocities_or_accelerations():
+* assigning velocity for 1 center/host, weighting star particles by mass
+  host1 velocity = (-9.1, -9.5, -2.0) [km/s]
+
+About to dump file contents keys and content descriptions
+Species: dark
+  -> position: (124215200, 3)
+  -> mass: (124215200,)
+  -> id.child: (124215200,)
+  -> id.generation: (124215200,)
+  -> id: (124215200,)
+  -> velocity: (124215200, 3)
+Species: dark2
+  -> position: (6410380, 3)
+  -> mass: (6410380,)
+  -> id.child: (6410380,)
+  -> id.generation: (6410380,)
+  -> id: (6410380,)
+  -> velocity: (6410380, 3)
+Species: gas
+  -> position: (123955434, 3)
+  -> density: (123955434,)
+  -> electron.fraction: (123955434,)
+  -> temperature: (123955434,)
+  -> mass: (123955434,)
+  -> massfraction: (123955434, 15)
+  -> hydrogen.neutral.fraction: (123955434,)
+  -> id.child: (123955434,)
+  -> id.generation: (123955434,)
+  -> id: (123955434,)
+  -> size: (123955434,)
+  -> sfr: (123955434,)
+  -> velocity: (123955434, 3)
+Species: star
+  -> position: (213444, 3)
+  -> mass: (213444,)
+  -> massfraction: (213444, 15)
+  -> id.child: (213444,)
+  -> id.generation: (213444,)
+  -> id: (213444,)
+  -> form.scalefactor: (213444,)
+  -> velocity: (213444, 3)
+Dumped contents keys and content descriptions
+Extracting and filtering gas properties...
+Found 14,613,130 dense gas particles out of 123,955,434
+  -> Minimum Density: 0.00000030 cm^-3
+  -> Maximum Density: 0.14896843 cm^-3
+  -> Mean Density:    0.00003539 cm^-3
+  -> Max Distance:    1682.42269218 kpc
+  -> Min Distance:    2.48585878 kpc

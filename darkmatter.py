@@ -8,7 +8,7 @@ import gizmo_analysis as gizmo
 # ==========================================
 SNAPSHOT_NUM = 600
 DENSITY_THRESHOLD = 0.001  # cm^-3 (filtering for dense gas)
-DISTANCE_LIMIT = 100.0    # kpc
+PLOT_X_LIMIT = 100.0      # kpc
 USE_STARS = False         # Toggle stellar contribution to predicted DM
   
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
@@ -53,22 +53,20 @@ print("Filtering gas and isolating 100 kpc volume...")
 gas_density_cm3 = part['gas'].prop('number.density') 
 
 # Gas filter mask
-low_density_mask = (gas_density_cm3 > DENSITY_THRESHOLD) & (r_gas_all < DISTANCE_LIMIT)
+low_density_mask = (gas_density_cm3 > DENSITY_THRESHOLD)
 r_gas_f = r_gas_all[low_density_mask]
 mass_gas_f = mass_gas_all[low_density_mask]
 n_cm3 = gas_density_cm3[low_density_mask]
 gas_rho_msun_kpc3 = part['gas'].prop('density')[low_density_mask]
 
 # Star filter mask
-star_mask = r_stars < DISTANCE_LIMIT
-r_stars_f = r_stars[star_mask]
-mass_stars_f = mass_stars[star_mask]
-pos_stars_f = pos_stars_all[star_mask]
+r_stars_f = r_stars
+mass_stars_f = mass_stars
+pos_stars_f = pos_stars_all
 
 # True DM filter mask
-dm_mask = r_dm_all < DISTANCE_LIMIT
-r_dm_true = r_dm_all[dm_mask]
-mass_dm_true = mass_dm_all[dm_mask]
+r_dm_true = r_dm_all
+mass_dm_true = mass_dm_all
 target_dm_mass_kg = np.sum(mass_dm_true, dtype=np.float64) * MSUN_TO_KG
 
 # ==========================================
@@ -148,7 +146,7 @@ plt.plot(r_tot_pred[::S], v_tot_pred[::S], label='Your Model (Baryons + Pred DM)
 plt.title('Total Rotation Curve Comparison', fontsize=14)
 plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
 plt.ylabel('Velocity (km/s)', fontsize=12)
-plt.xlim(0, 100)
+plt.xlim(0, PLOT_X_LIMIT)
 plt.ylim(0, 300)
 plt.grid(True, alpha=0.3)
 plt.legend(loc='upper right')
@@ -170,7 +168,7 @@ plt.plot(np.sort(r_gas_all)[::S], v_gas[::S], label='Gas', color='teal', ls='-.'
 plt.title('Velocity Contributions by Component', fontsize=14)
 plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
 plt.ylabel('Velocity Contribution (km/s)', fontsize=12)
-plt.xlim(0, 100)
+plt.xlim(0, PLOT_X_LIMIT)
 plt.ylim(0, 350)
 plt.grid(True, alpha=0.3)
 plt.legend(loc='upper right')
@@ -209,7 +207,7 @@ for a in alpha_test_values:
 plt.title('Tuning the Distance Exponent (α)', fontsize=14)
 plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
 plt.ylabel('DM Velocity Contribution (km/s)', fontsize=12)
-plt.xlim(0, 100)
+plt.xlim(0, PLOT_X_LIMIT)
 plt.ylim(0, 350)
 plt.grid(True, alpha=0.3)
 plt.legend(loc='upper right')
