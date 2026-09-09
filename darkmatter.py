@@ -7,7 +7,7 @@ import gizmo_analysis as gizmo
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
 SNAPSHOT_NUM = 600
-DENSITY_THRESHOLD = 0.001  # cm^-3 (filtering for dense gas)
+DENSITY_THRESHOLD = 0.0002  # cm^-3 (filtering for dense gas)
 PLOT_X_LIMIT = 100.0      # kpc
 USE_STARS = False         # Toggle stellar contribution to predicted DM
   
@@ -15,6 +15,8 @@ G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
 c = 299792458.0           # Speed of light: m/s
 MSUN_TO_KG = 1.989e30     # Solar masses to kilograms
 MSUN_KPC3_TO_KG_M3 = 6.77e-29 # Mass density conversion
+SIM_FOLDER = "m12i_res7100"
+print(f"{SIM_FOLDER} Rotation Curves gas generated DM. rho > {DENSITY_THRESHOLD:.1e}/cm^-3")
 
 def get_component_velocity(radii, masses):
     """Sorts particles by radius and calculates circular velocity."""
@@ -35,7 +37,7 @@ part = gizmo.io.Read.read_snapshots(
     'index', 
     SNAPSHOT_NUM, 
     assign_hosts=True, 
-    simulation_directory='./m12i_res7100'
+    simulation_directory=f'./{SIM_FOLDER}'
 )
 
 r_stars = part['star'].prop('host.distance.spherical')[:, 0]
@@ -140,12 +142,12 @@ S = 100
 # Graph 1: Total Rotation Curve
 # ------------------------------------------
 plt.figure(figsize=(10, 6))
-plt.plot(r_tot_true[::S], v_tot_true[::S], label='True FIRE Simulation', color='black', lw=2)
-plt.plot(r_tot_pred[::S], v_tot_pred[::S], label='Your Model (Baryons + Pred DM)', color='crimson', ls='--', lw=2)
-
-plt.title('Total Rotation Curve Comparison', fontsize=14)
+plt.plot(r_tot_true[::S], v_tot_true[::S], label='Full FIRE Simulation', color='black', lw=2)
+plt.plot(r_tot_pred[::S], v_tot_pred[::S], label=f"Baryons + DM Prediction P = {P:.1f} Watts", color='crimson', ls='--', lw=2)
+ 
+plt.title(f"{SIM_FOLDER} Rotation Curves gas generated DM. rho > {DENSITY_THRESHOLD:.1e}/cm^-3", fontsize=14)
 plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
-plt.ylabel('Velocity (km/s)', fontsize=12)
+plt.ylabel('Velocity (km/s)', fontsize=12) 
 plt.xlim(0, PLOT_X_LIMIT)
 plt.ylim(0, 300)
 plt.grid(True, alpha=0.3)
@@ -160,8 +162,8 @@ print("Saved plot_1_total_rotation_curve.png")
 # Graph 2: Component Decomposition
 # ------------------------------------------
 plt.figure(figsize=(10, 6))
-plt.plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
-plt.plot(r_dm_p[::S], v_dm_pred[::S], label=f'Predicted DM Halo (α={alpha_std})', color='crimson', ls='--', lw=2)
+plt.plot(r_dm_t[::S], v_dm_true[::S], label='FIRE DM Halo', color='black', lw=2)
+plt.plot(r_dm_p[::S], v_dm_pred[::S], label=f"Predicted DM Halo P = {P:.1f} Watts", color='crimson', ls='--', lw=2)
 plt.plot(np.sort(r_stars)[::S], v_stars[::S], label='Stars', color='goldenrod', ls='-.')
 plt.plot(np.sort(r_gas_all)[::S], v_gas[::S], label='Gas', color='teal', ls='-.')
 
@@ -178,41 +180,3 @@ plt.savefig('plot_2_component_decomposition.png', dpi=300)
 plt.close()
 print("Saved plot_2_component_decomposition.png")
 
-# ------------------------------------------
-# Graph 3: Tuning the Power-Law (Alpha)
-# ------------------------------------------
-plt.figure(figsize=(10, 6))
-plt.plot(r_dm_t[::S], v_dm_true[::S], label='True DM Halo', color='black', lw=2)
-alpha_test_values = [1.0, 1.5, 2.0, 2.5]
-
-for a in alpha_test_values:
-    sf_gas = np.sum(V_i_gas / (c**3 * d_avg_gas**a))
-    sf_star = np.sum(V_i_star / (c**3 * d_avg_star**a)) if USE_STARS else 0.0
-    sf_total = sf_gas + sf_star
-    
-    P_a = target_dm_mass_kg / sf_total
-    dm_m_gas = (P_a * (V_i_gas / (c**3 * d_avg_gas**a))) / MSUN_TO_KG
-    
-    if USE_STARS:
-        dm_m_star = (P_a * (V_i_star / (c**3 * d_avg_star**a))) / MSUN_TO_KG
-        r_comb = np.concatenate([r_gas_f, r_stars_f])
-        m_comb = np.concatenate([dm_m_gas, dm_m_star])
-    else:
-        r_comb = r_gas_f
-        m_comb = dm_m_gas
-        
-    r_a, v_a = get_component_velocity(r_comb, m_comb)
-    plt.plot(r_a[::S], v_a[::S], label=f'Model (α={a})', ls='--')
-
-plt.title('Tuning the Distance Exponent (α)', fontsize=14)
-plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
-plt.ylabel('DM Velocity Contribution (km/s)', fontsize=12)
-plt.xlim(0, PLOT_X_LIMIT)
-plt.ylim(0, 350)
-plt.grid(True, alpha=0.3)
-plt.legend(loc='upper right')
-
-plt.tight_layout()
-plt.savefig('plot_3_tuning_alpha.png', dpi=300)
-plt.close()
-print("Saved plot_3_tuning_alpha.png")
