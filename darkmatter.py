@@ -2,6 +2,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 import gizmo_analysis as gizmo
+from datetime import datetime
 
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
@@ -143,7 +144,7 @@ S = 100
 # ------------------------------------------
 plt.figure(figsize=(10, 6))
 plt.plot(r_tot_true[::S], v_tot_true[::S], label='Full FIRE Simulation', color='black', lw=2)
-plt.plot(r_tot_pred[::S], v_tot_pred[::S], label=f"Baryons + DM Prediction P = {P:.1f} Watts", color='crimson', ls='--', lw=2)
+plt.plot(r_tot_pred[::S], v_tot_pred[::S], label=f"Baryons + DM Prediction (P = {P:.1f} Watts)", color='crimson', ls='--', lw=2)
  
 plt.title(f"{SIM_FOLDER} Rotation Curves gas generated DM. rho > {DENSITY_THRESHOLD:.1e}/cm^-3", fontsize=14)
 plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
@@ -154,6 +155,8 @@ plt.grid(True, alpha=0.3)
 plt.legend(loc='upper right')
 
 plt.tight_layout()
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+plt.figtext(0.99, 0.01, f"Generated: {current_time}", ha="right", va="bottom", fontsize=9, color="gray", alpha=0.7)
 plt.savefig('plot_1_total_rotation_curve.png', dpi=300)
 plt.close() # Closes the figure to free up your memory!
 print("Saved plot_1_total_rotation_curve.png")
@@ -163,7 +166,7 @@ print("Saved plot_1_total_rotation_curve.png")
 # ------------------------------------------
 plt.figure(figsize=(10, 6))
 plt.plot(r_dm_t[::S], v_dm_true[::S], label='FIRE DM Halo', color='black', lw=2)
-plt.plot(r_dm_p[::S], v_dm_pred[::S], label=f"Predicted DM Halo P = {P:.1f} Watts", color='crimson', ls='--', lw=2)
+plt.plot(r_dm_p[::S], v_dm_pred[::S], label=f"Predicted DM Halo (P = {P:.1f} Watts)", color='crimson', ls='--', lw=2)
 plt.plot(np.sort(r_stars)[::S], v_stars[::S], label='Stars', color='goldenrod', ls='-.')
 plt.plot(np.sort(r_gas_all)[::S], v_gas[::S], label='Gas', color='teal', ls='-.')
 
@@ -176,6 +179,8 @@ plt.grid(True, alpha=0.3)
 plt.legend(loc='upper right')
 
 plt.tight_layout()
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+plt.figtext(0.99, 0.01, f"Generated: {current_time}", ha="right", va="bottom", fontsize=9, color="gray", alpha=0.7)
 plt.savefig('plot_2_component_decomposition.png', dpi=300)
 plt.close()
 print("Saved plot_2_component_decomposition.png")

@@ -13,6 +13,8 @@ import gizmo_analysis as gizmo
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
+SIM_FOLDER = "m12i_res7100" # or m10q_res30
+
 SNAPSHOT_NUM = 600
 DENSITY_THRESHOLD = 0.0000003  # cm^-3 (filtering for diffuse gas)
 #DISTANCE_LIMIT = 100.0    # kpc
@@ -43,8 +45,7 @@ part = gizmo.io.Read.read_snapshots(
     'index', 
     SNAPSHOT_NUM, 
     assign_hosts=True,
-    simulation_directory='./m10q_res30'
-    #simulation_directory='./m12i_res7100'
+    simulation_directory=f'./{SIM_FOLDER}'
 )
 print(f"About to dump file contents keys and content descriptions")
  
