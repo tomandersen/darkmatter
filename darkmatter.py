@@ -7,6 +7,9 @@ from datetime import datetime
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
+SIM_FOLDER = "m11h_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100 , m11h_res7100
+
+
 SNAPSHOT_NUM = 600
 DENSITY_THRESHOLD = 0.0002  # cm^-3 (filtering for dense gas)
 PLOT_X_LIMIT = 100.0      # kpc
@@ -16,7 +19,6 @@ G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
 c = 299792458.0           # Speed of light: m/s
 MSUN_TO_KG = 1.989e30     # Solar masses to kilograms
 MSUN_KPC3_TO_KG_M3 = 6.77e-29 # Mass density conversion
-SIM_FOLDER = "m12i_res7100"
 print(f"{SIM_FOLDER} Rotation Curves gas generated DM. rho > {DENSITY_THRESHOLD:.1e}/cm^-3")
 
 def get_component_velocity(radii, masses):
