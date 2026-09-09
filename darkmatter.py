@@ -7,7 +7,7 @@ import gizmo_analysis as gizmo
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
 SNAPSHOT_NUM = 600
-DENSITY_THRESHOLD = 0.005  # cm^-3 (filtering for dense gas)
+DENSITY_THRESHOLD = 0.001  # cm^-3 (filtering for dense gas)
 DISTANCE_LIMIT = 100.0    # kpc
 USE_STARS = False         # Toggle stellar contribution to predicted DM
   
@@ -31,7 +31,11 @@ def get_component_velocity(radii, masses):
 # ==========================================
 print("Loading snapshot data...")
 part = gizmo.io.Read.read_snapshots(
-    ['star', 'gas', 'dark'], 'index', SNAPSHOT_NUM, assign_hosts=True, simulation_directory='./m12i_res7100'
+    ['star', 'gas', 'dark'], 
+    'index', 
+    SNAPSHOT_NUM, 
+    assign_hosts=True, 
+    simulation_directory='./m12i_res7100'
 )
 
 r_stars = part['star'].prop('host.distance.spherical')[:, 0]
