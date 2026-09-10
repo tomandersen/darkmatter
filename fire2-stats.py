@@ -13,10 +13,10 @@ import gizmo_analysis as gizmo
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
-SIM_FOLDER = "m11i_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100
+SIM_FOLDER = "m09_res30" #m12i_res7100" # or m10q_res30 m11i_res7100
  
 SNAPSHOT_NUM = 600
-DENSITY_THRESHOLD = 0.0000003  # cm^-3 (filtering for diffuse gas)
+DENSITY_THRESHOLD = 0.000000003  # cm^-3 (filtering for diffuse gas)
 #DISTANCE_LIMIT = 100.0    # kpc
   
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun

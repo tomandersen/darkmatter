@@ -7,18 +7,20 @@ from datetime import datetime
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
-SIM_FOLDER = "m12m_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100 , m11h_res7100, m11e_res7100, m12m_res7100
-
-
+SIM_FOLDER = "m11e_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100 , m11h_res7100, m11e_res7100, m12m_res7100, m09_res30, m12r_res7100, m12c_res7100, m11b_res2100
+ 
+ 
 SNAPSHOT_NUM = 600
 DENSITY_THRESHOLD = 0.0002  # cm^-3 (filtering for dense gas)
 PLOT_X_LIMIT = 100.0      # kpc
 USE_STARS = False         # Toggle stellar contribution to predicted DM
-  
+
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
 c = 299792458.0           # Speed of light: m/s
 MSUN_TO_KG = 1.989e30     # Solar masses to kilograms
 MSUN_KPC3_TO_KG_M3 = 6.77e-29 # Mass density conversion
+alpha_std = 2.0
+
 print(f"{SIM_FOLDER} Rotation Curves gas generated DM. rho > {DENSITY_THRESHOLD:.1e}/cm^-3")
 
 def get_component_velocity(radii, masses):
@@ -84,24 +86,26 @@ gas_rho_kg_m3 = gas_rho_msun_kpc3.astype(np.float64) * MSUN_KPC3_TO_KG_M3
 
 V_i_gas = gas_mass_kg / gas_rho_kg_m3
 d_avg_gas = np.cbrt(1.0 / n_m3_gas)
+sum_factor_star = 0.0
 
-print("Calculating local density for Stars using KD-Tree...")
-tree = cKDTree(pos_stars_f)
-distances, _ = tree.query(pos_stars_f, k=17, workers=-1) 
-r_16 = distances[:, 16].astype(np.float64) 
+if USE_STARS:
+    print("Calculating local density for Stars using KD-Tree...")
+    tree = cKDTree(pos_stars_f)
+    distances, _ = tree.query(pos_stars_f, k=17, workers=-1) 
+    r_16 = distances[:, 16].astype(np.float64) 
 
-V_sphere_kpc3 = (4.0 / 3.0) * np.pi * (r_16**3)
-star_rho_kg_m3 = ((16.0 * mass_stars_f.mean() * MSUN_TO_KG) / V_sphere_kpc3) * MSUN_KPC3_TO_KG_M3
-V_i_star = (mass_stars_f.astype(np.float64) * MSUN_TO_KG) / star_rho_kg_m3
-mass_baryon_kg = 1.67e-27 
-n_m3_star = star_rho_kg_m3 / mass_baryon_kg
-d_avg_star = np.cbrt(1.0 / n_m3_star)
+    V_sphere_kpc3 = (4.0 / 3.0) * np.pi * (r_16**3)
+    star_rho_kg_m3 = ((16.0 * mass_stars_f.mean() * MSUN_TO_KG) / V_sphere_kpc3) * MSUN_KPC3_TO_KG_M3
+    V_i_star = (mass_stars_f.astype(np.float64) * MSUN_TO_KG) / star_rho_kg_m3
+    mass_baryon_kg = 1.67e-27 
+    n_m3_star = star_rho_kg_m3 / mass_baryon_kg
+    d_avg_star = np.cbrt(1.0 / n_m3_star)
+    sum_factor_star = np.sum(V_i_star / (c**3 * d_avg_star**alpha_std)) if USE_STARS else 0.0
+
 
 print("Calculating global Power P...")
-alpha_std = 2.0
 
 sum_factor_gas = np.sum(V_i_gas / (c**3 * d_avg_gas**alpha_std))
-sum_factor_star = np.sum(V_i_star / (c**3 * d_avg_star**alpha_std)) if USE_STARS else 0.0
 sum_factor_total = sum_factor_gas + sum_factor_star
 
 P = target_dm_mass_kg / sum_factor_total
