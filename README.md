@@ -37,3 +37,5 @@ python darkmatter.py
 The script will output progress to the console and generate the following PNG files:
 - `plot_1_total_rotation_curve.png`: A comparison of the total rotation curve between the standard FIRE simulation and the custom predicted DM model.
 - `plot_2_component_decomposition.png`: A breakdown of the velocity contributions by individual components (stars, gas, true DM halo, and predicted DM halo).
+
+![m12i initial fit]nice_results/initial_params/m12i-2e-4percc-30Watts-CURVE.png
