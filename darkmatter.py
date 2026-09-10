@@ -7,7 +7,7 @@ from datetime import datetime
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
-SIM_FOLDER = "m11e_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100 , m11h_res7100, m11e_res7100
+SIM_FOLDER = "m12m_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100 , m11h_res7100, m11e_res7100, m12m_res7100
 
 
 SNAPSHOT_NUM = 600
