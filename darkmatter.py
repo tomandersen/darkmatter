@@ -7,8 +7,8 @@ from datetime import datetime
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
-SIM_FOLDER = "m11e_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100 , m11h_res7100, m11e_res7100, m12m_res7100, m09_res30, m12r_res7100, m12c_res7100, m11b_res2100
- 
+SIM_FOLDER = "m12w_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100 , m11h_res7100, m11e_res7100, m12m_res7100, m09_res30, m12r_res7100, m12c_res7100, m11b_res2100, m11q_res880, m12w_res7100
+  
  
 SNAPSHOT_NUM = 600
 DENSITY_THRESHOLD = 0.0002  # cm^-3 (filtering for dense gas)

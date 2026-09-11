@@ -13,12 +13,12 @@ import gizmo_analysis as gizmo
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
-SIM_FOLDER = "m09_res30" #m12i_res7100" # or m10q_res30 m11i_res7100
+SIM_FOLDER = "m12w_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100
  
 SNAPSHOT_NUM = 600
-DENSITY_THRESHOLD = 0.000000003  # cm^-3 (filtering for diffuse gas)
+DENSITY_THRESHOLD = 0.0002  # cm^-3 (filtering for diffuse gas)
 #DISTANCE_LIMIT = 100.0    # kpc
-  
+   
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
 c = 299792458.0           # Speed of light: m/s
 MSUN_TO_KG = 1.989e30     # Solar masses to kilograms
@@ -40,8 +40,8 @@ def get_component_velocity(radii, masses):
 print("Loading snapshot data...")
 
 part = gizmo.io.Read.read_snapshots(
-    'all',
-    #['star', 'gas', 'dark'], 
+    #'all',
+    ['star', 'gas', 'dark'], 
     'index', 
     SNAPSHOT_NUM, 
     assign_hosts=True,
@@ -111,7 +111,7 @@ if num_blobs > 0:
     hb = plt.hexbin(
         x_blobs, 
         y_blobs, 
-        gridsize=200,      
+        gridsize=2000,      
         cmap='magma',      
         bins='log',        
         mincnt=1           
@@ -124,7 +124,7 @@ if num_blobs > 0:
     
     plt.gca().set_aspect('equal', adjustable='box')
      
-    plot_zoom = 1500.0 
+    plot_zoom = 300.0 
     plt.xlim(-plot_zoom, plot_zoom)
     plt.ylim(-plot_zoom, plot_zoom)
     
