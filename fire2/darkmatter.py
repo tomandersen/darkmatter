@@ -3,11 +3,18 @@ from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 import gizmo_analysis as gizmo
 from datetime import datetime
+import os
+from pathlib import Path
+
+# Get the current working directory
+cwd = Path.cwd()
+print("CWD is", cwd)
+
 
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
 # ==========================================
-SIM_FOLDER = "m12w_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100 , m11h_res7100, m11e_res7100, m12m_res7100, m09_res30, m12r_res7100, m12c_res7100, m11b_res2100, m11q_res880, m12w_res7100
+SIM_FOLDER = "m11i_res7100" #m12i_res7100" # or m10q_res30 m11i_res7100 , m11h_res7100, m11e_res7100, m12m_res7100, m09_res30, m12r_res7100, m12c_res7100, m11b_res2100, m11q_res880, m12w_res7100
   
  
 SNAPSHOT_NUM = 600
@@ -42,9 +49,9 @@ part = gizmo.io.Read.read_snapshots(
     'index', 
     SNAPSHOT_NUM, 
     assign_hosts=True, 
-    simulation_directory=f'./{SIM_FOLDER}'
-)
-
+    simulation_directory=f"./fire2/galaxies/{SIM_FOLDER}"
+) 
+ 
 r_stars = part['star'].prop('host.distance.spherical')[:, 0]
 r_gas_all = part['gas'].prop('host.distance.spherical')[:, 0]
 r_dm_all = part['dark'].prop('host.distance.spherical')[:, 0]
@@ -145,6 +152,15 @@ r_tot_pred, v_tot_pred = get_component_velocity(all_r_pred, all_m_pred)
 print("Generating and saving graphs...")
 S = 100 
 
+settings_string = f"gas-{DENSITY_THRESHOLD:.1e}_P-{P:.1e}W"
+component_filename = f"{SIM_FOLDER}-{settings_string}-components.png"
+component_path = f"./fire2/components/{settings_string}/{component_filename}"
+os.makedirs(os.path.dirname(component_path), exist_ok=True)
+
+curve_filename = f"{SIM_FOLDER}-{settings_string}-curve.png"
+curve_path = f"./fire2/curves/{settings_string}/{curve_filename}"
+os.makedirs(os.path.dirname(curve_path), exist_ok=True)
+
 # ------------------------------------------
 # Graph 1: Total Rotation Curve
 # ------------------------------------------
@@ -163,9 +179,9 @@ plt.legend(loc='upper right')
 plt.tight_layout()
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 plt.figtext(0.99, 0.01, f"Generated: {current_time}", ha="right", va="bottom", fontsize=9, color="gray", alpha=0.7)
-plt.savefig('plot_1_total_rotation_curve.png', dpi=300)
+plt.savefig(curve_path, dpi=300)
 plt.close() # Closes the figure to free up your memory!
-print("Saved plot_1_total_rotation_curve.png")
+print(f"Saved {curve_path}")
 
 # ------------------------------------------
 # Graph 2: Component Decomposition
@@ -176,7 +192,7 @@ plt.plot(r_dm_p[::S], v_dm_pred[::S], label=f"Predicted DM Halo (P = {P:.1f} Wat
 plt.plot(np.sort(r_stars)[::S], v_stars[::S], label='Stars', color='goldenrod', ls='-.')
 plt.plot(np.sort(r_gas_all)[::S], v_gas[::S], label='Gas', color='teal', ls='-.')
 
-plt.title('Velocity Contributions by Component', fontsize=14)
+plt.title(f"{SIM_FOLDER} Component Curves, rho > {DENSITY_THRESHOLD:.1e}/cm^-3", fontsize=14)
 plt.xlabel('Galactocentric Radius (kpc)', fontsize=12)
 plt.ylabel('Velocity Contribution (km/s)', fontsize=12)
 plt.xlim(0, PLOT_X_LIMIT)
@@ -187,7 +203,8 @@ plt.legend(loc='upper right')
 plt.tight_layout()
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 plt.figtext(0.99, 0.01, f"Generated: {current_time}", ha="right", va="bottom", fontsize=9, color="gray", alpha=0.7)
-plt.savefig('plot_2_component_decomposition.png', dpi=300)
+plt.savefig(component_path, dpi=300)
 plt.close()
-print("Saved plot_2_component_decomposition.png")
-
+print(f"Saved {component_path}")
+ 
+ 
