@@ -4,11 +4,6 @@ import matplotlib.pyplot as plt
 import gizmo_analysis as gizmo
 from datetime import datetime
 import os
-from pathlib import Path
-
-# Get the current working directory
-cwd = Path.cwd()
-print("CWD is", cwd)
 
 
 # ==========================================
