@@ -114,6 +114,16 @@ def dm_model(rs, Vgas, R_d):
     r_prev = 0
     v_prev = 0
     Vdm = []
+    # I need the density of the gas in particles per cm^3 for each radius.
+    # To do this, work out the enclosed mass of gas at each R, then divide by the volume
+    # of a cylinder of radius R and height 2*z_d. 
+    # The mass could turn out to be negative, in which case I take a low number for density.
+    
+    # I wonder if I should get the enclosed gas masses, as an array, then clean it up   
+    # (take out negative values, and also smooth it.  smooth with a boxcar of width 3).?.
+    
+    
+
     for r, Vg in zip(rs, Vgas):
         z_d = get_sparc_galaxy_thickness((r_prev+r)/2, R_d)
         Vdm.append(np.sqrt(v_prev*v_prev + Vg*Vg))
