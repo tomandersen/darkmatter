@@ -126,7 +126,7 @@ def dm_model(rs, Vgas, R_d, name):
     
     # I wonder if I should get the enclosed gas masses, as an array, then clean it up   
     # (take out negative values, and also smooth it.  smooth with a boxcar of width 3).?.
-    mass_encl_prev = 0
+    mass_encl_prev_kg = 0
     r_m_prev = 0
     for r, Vg in zip(rs, Vgas):
         v_m_per_sec = Vg * 1000.0
@@ -135,8 +135,6 @@ def dm_model(rs, Vgas, R_d, name):
         thickness_m = 2 * z_d * METRE_PER_KPC
         mass_encl_kg = v_m_per_sec**2 * r_m / G_SI
         
-        net_mass_shell_kg = mass_encl_kg - mass_encl_prev
-        num_baryons_shell = net_mass_shell_kg / PROTON_MASS_KG
         
         z_extent_kpc = get_sparc_galaxy_scale_height(r, R_d)
         thickness_m = 2 * z_extent_kpc * METRE_PER_KPC
@@ -144,27 +142,54 @@ def dm_model(rs, Vgas, R_d, name):
         shell_volume_m3 = thickness_m*(np.pi*r_m**2 - np.pi*r_m_prev**2)
         shell_volume_cm3 = shell_volume_m3 * 1e6
         
+        net_mass_shell_kg = mass_encl_kg - mass_encl_prev_kg
+        num_baryons_shell = net_mass_shell_kg / PROTON_MASS_KG
         baryon_density_n_cm3 = num_baryons_shell / shell_volume_cm3
-        if baryon_density_n_cm3 < 0.0: 
-            print(f"{name}: Negative Baryon density {baryon_density_n_cm3} cm^-3 at r {r} kpc, R_d {R_d} kpc, setting to 0.01")
-            baryon_density_n_cm3 = 0.00
+        if baryon_density_n_cm3 < DENSITY_THRESHOLD: 
+            print(f"{name}: Low or negative Baryon density {baryon_density_n_cm3} cm^-3 at r {r} kpc, R_d {R_d} kpc, setting to {DENSITY_THRESHOLD}")
+            baryon_density_n_cm3 = DENSITY_THRESHOLD
         num_baryons_shell = shell_volume_cm3 * baryon_density_n_cm3 #recalc incase of underflow
-        
-        if baryon_density_n_cm3 > DENSITY_THRESHOLD:
+        net_mass_shell_kg = num_baryons_shell*PROTON_MASS_KG # redo in case we need it
+
+        if baryon_density_n_cm3 >= DENSITY_THRESHOLD:
             #average distance between gas particles
             d_avg_gas_m = np.cbrt(1.0 / baryon_density_n_cm3)/100 # cm to m
             dm_per_particle = (P*d_avg_gas_m/c)*(1/c**2) #Power in watts times dist/c is energy, then 1/c^2 is mass in kg
             dm_inShell_kg = num_baryons_shell*dm_per_particle
 
-            # use outer edge? r_av = (r_m + r_m_prev)/2
-            V_dm_km_per_sec = np.sqrt(G_SI*dm_inShell_kg / (r_m + 1e-10))/1000 # divide by 1000 to get km/sec
+            r_av = (r_m + r_m_prev)/2
+            V_dm_km_per_sec = np.sqrt(G_SI*dm_inShell_kg / (r_av + 1e-10))/1000 # divide by 1000 to get km/sec
             
             #only (my weirdo) dark matter contribution here.
             Vdm.append(V_dm_km_per_sec)
         else:
             Vdm.append(0.0)
         
+        mass_encl_prev = mass_encl_kg
+        r_m_prev = r_m
+
     return Vdm
+
+def mond_model(rs, Vgas, Vdisk, Vbul, name):
+    G_kpc = 4.302e-6 # Gravitational constant: kpc (km/s)^2 / Msun
+    a0 = 3700 # MOND acceleration parameter: (km/s)^2 / kpc
+    VMOND = []
+    root2 = np.sqrt(2.0)
+    for r, Vg, Vd, Vb in zip(rs, Vgas, Vdisk, Vbul):
+        V_N_sq = Vg**2 + Vd**2 + Vb**2
+        root_factor = np.sqrt(1.0 + (2.0*a0*r/V_N_sq)**2)
+        V_mond = np.sqrt(V_N_sq/root2 * np.sqrt((1 + root_factor)))
+        VMOND.append(V_mond)
+
+        # # sum up all the accelerations
+        # a_tot_sq = G_kpc * (Vg**2/r + Vd**2/r + Vb**2/r)
+        # a_tot = np.sqrt(a_tot_sq)
+        # mu = a_tot/a0
+        # a_MOND = a0 * mu / np.sqrt(1 + mu**2)
+        # V_mond = np.sqrt(a_MOND*r)
+        # VMOND.append(V_mond)
+
+    return VMOND
 
 def main():
     out_dir = 'sparc/curves/initial'
@@ -228,6 +253,9 @@ def main():
         Vtot_all     = [np.sqrt(g**2 + d**2 + b**2 + dm**2) for g, d, b, dm in zip(Vgas, Vdisk, Vbul, V_dm)]
         plt.plot(R, Vtot_all, color='cyan', linestyle='-', label='Total (gas+disk+bulge+dm)', linewidth=1.5)
 
+        # plot MOND
+        V_MOND = mond_model(R, Vgas, Vdisk, Vbul, name)
+        plt.plot(R, V_MOND, color='grey', linestyle='-', label='MOND', linewidth=1.5)
 
         plt.title(f"{name} Rotation Curve")
         plt.xlabel('Radius (kpc)')
