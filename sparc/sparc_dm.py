@@ -115,7 +115,7 @@ def get_sparc_galaxy_scale_height(radius_kpc, R_d):
 
 # model of dark matter - depends on gas density and galaxy thickness at r.
 # takes in arrays of R, vGas, disk scale factor, returns 
-def dm_model(rs, Vgas, R_d, name, densities, densities_r):
+def dm_model(rs, Vgas, R_d, name, densities, dm_densities, densities_r):
     r_prev = 0
     v_prev = 0
     Vdm = []
@@ -153,12 +153,15 @@ def dm_model(rs, Vgas, R_d, name, densities, densities_r):
 
         densities.append(baryon_density_n_cm3)
         densities_r.append(r)
+        dm_density_baryonspercc = 0.0 # initialize
 
         if baryon_density_n_cm3 >= DENSITY_THRESHOLD:
             #average distance between gas particles
             d_avg_gas_m = np.cbrt(1.0 / baryon_density_n_cm3)/100 # cm to m
             dm_per_particle = (P*d_avg_gas_m/c)*(1/c**2) #Power in watts times dist/c is energy, then 1/c^2 is mass in kg
             dm_inShell_kg = num_baryons_shell*dm_per_particle
+            dm_density_baryonspercc = dm_per_particle/PROTON_MASS_KG*baryon_density_n_cm3
+
 
             r_av = (r_m + r_m_prev)/2
             V_dm_km_per_sec = np.sqrt(G_SI*dm_inShell_kg / (r_av + 1e-10))/1000 # divide by 1000 to get km/sec
@@ -167,6 +170,8 @@ def dm_model(rs, Vgas, R_d, name, densities, densities_r):
             Vdm.append(V_dm_km_per_sec)
         else:
             Vdm.append(0.0)
+        
+        dm_densities.append(dm_density_baryonspercc)
         
         mass_encl_prev = mass_encl_kg
         r_m_prev = r_m
@@ -197,7 +202,9 @@ def main():
 
     # keep track of all gas densities calculated, at each R
     densities = []
+    dm_densities = []
     densities_r = []
+
  
     # A note on velocities from stars. We measure luminousity, but want mass. So we use a constant 
     # Upsilon of, say 1/2 for the mass to luminousity ratio for stars. Since velocity is a sqrt affair
@@ -226,7 +233,7 @@ def main():
 
         # Calculate sums and DM proxy
         Vtot_baryons = [g + d + b for g, d, b in zip(Vgas, Vdisk, Vbul)]
-        V_dm = dm_model(R, Vgas, R_d, name, densities, densities_r)
+        V_dm = dm_model(R, Vgas, R_d, name, densities, dm_densities, densities_r)
         
         plt.figure(figsize=(8, 6))
         
@@ -285,30 +292,32 @@ def main():
     # 1. Plot the densities histogram
     # 2. Define logarithmically spaced bins
     # This creates 50 bins between 10^0 (1) and 10^4 (10000)
-    bins = np.logspace(np.log10(min(densities)+ 1e-4), np.log10(max(densities)), 50)
+    bins = np.logspace(np.log10(min(densities) - 1e-5), np.log10(max(densities)), 50)
  
     # 3. Plot the histogram with the custom bins
-    plt.hist(densities, bins=bins, color='skyblue', edgecolor='black')
+    plt.hist([densities, dm_densities], bins=bins, color=['blue', 'red'], label=['Gas', 'Model DM'])
     plt.xscale('log')
 
     # 3. Add labels and title
-    plt.title('SPARC Gas Densities, all 175 Galaxies')
-    plt.xlabel("Gas Density, n/cm^3")
+    plt.title('SPARC Gas/DM Densities, all 175 Galaxies')
+    plt.xlabel("Density, n/cm^3")
     plt.ylabel('Frequency')
+    plt.legend()
     plt.savefig('sparc/gas_densities.png', dpi=300)
 
     # Ok now make an X-Y scatter plot of the DM velocities and radiuses 
     # plot one dot for each densities, densities_r pair, make the densities on the y scale, make the y scale logarithimic
     # make  the x scale linear 
     plt.figure(figsize=(8, 6))
-    plt.scatter(densities_r, densities, color='black', s=10, alpha=0.3)
+    plt.scatter(densities_r, densities, color='blue', s=4, alpha=0.10, label='Gas Density')
+    plt.scatter(densities_r, dm_densities, color='red', s=4, alpha=0.10, label='DM Density')
     plt.xscale('linear')
     plt.yscale('log')
-    plt.title('SPARC Gas Densities, all 175 Galaxies')
+    plt.title('SPARC Gas & DM Model Densities, all 175 Galaxies')
     plt.xlabel('Radius (kpc)')
     plt.ylabel('Density (n/cm^3)')
-    plt.savefig('sparc/gas_densities_scatter.png', dpi=300)
-
+    plt.legend()
+    plt.savefig('sparc/densities_scatter_combined.png', dpi=300)
 
 if __name__ == "__main__":
     main()
