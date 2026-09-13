@@ -1,5 +1,4 @@
 from PIL import ImagePalette
-from numpy import power
 import numpy as np
 from matplotlib import mathtext
 import os
@@ -13,7 +12,7 @@ METRE_PER_KPC = 3.086e19
 G_SI = 6.67430e-11        # Gravitational constant: m^3 kg^-1 s^-2
 PROTON_MASS_KG = 1.67e-27   # Mass of a proton in kilograms
 
-P = 30.0 #Watts per particle. You heard it here first, people!
+Power = 30.0 #Watts per particle. You heard it here first, people!
 DENSITY_THRESHOLD=0.00002
 
 
@@ -115,7 +114,7 @@ def get_sparc_galaxy_scale_height(radius_kpc, R_d):
 
 # model of dark matter - depends on gas density and galaxy thickness at r.
 # takes in arrays of R, vGas, disk scale factor, returns 
-def dm_model(rs, Vgas, R_d, name, densities, dm_densities, densities_r):
+def dm_model(pw, rs, Vgas, R_d, name, densities, dm_densities, densities_r):
     r_prev = 0
     v_prev = 0
     Vdm = []
@@ -158,7 +157,7 @@ def dm_model(rs, Vgas, R_d, name, densities, dm_densities, densities_r):
         if baryon_density_n_cm3 >= DENSITY_THRESHOLD:
             #average distance between gas particles
             d_avg_gas_m = np.cbrt(1.0 / baryon_density_n_cm3)/100 # cm to m
-            dm_per_particle = (P*d_avg_gas_m/c)*(1/c**2) #Power in watts times dist/c is energy, then 1/c^2 is mass in kg
+            dm_per_particle = (pw*d_avg_gas_m/c)*(1/c**2) #Power in watts times dist/c is energy, then 1/c^2 is mass in kg
             dm_inShell_kg = num_baryons_shell*dm_per_particle
             dm_density_baryonspercc = dm_per_particle/PROTON_MASS_KG*baryon_density_n_cm3
 
@@ -191,6 +190,36 @@ def mond_model(rs, Vgas, Vdisk, Vbul, name):
 
     return VMOND
 
+def run_model(galaxies, pw, densities, dm_densities, densities_r):
+    for name, data in galaxies.items():
+        R = data['R']
+        Vobs = data['Vobs']
+        e_Vobs = data['e_Vobs']
+        Vgas = data['Vgas']
+        Vdisk = data['Vdisk']
+        Vbul = data['Vbul']
+        R_d = data['R_d']
+
+        # Calculate sums and DM proxy
+        V_dm = dm_model(pw, R, Vgas, R_d, name, densities, dm_densities, densities_r)
+        galaxies[name]['V_dm'] = V_dm
+
+        # the formula to add velocities is sqrt(g^2 + d^2 + b^2)
+        Vtot_baryons = [np.sqrt(g**2 + d**2 + b**2) for g, d, b in zip(Vgas, Vdisk, Vbul)]
+        galaxies[name]['Vtot_baryons'] = Vtot_baryons
+
+        Vtot_all = [np.sqrt(g**2 + d**2 + b**2 + dm**2) for g, d, b, dm in zip(Vgas, Vdisk, Vbul, V_dm)]
+        galaxies[name]['Vtot_all'] = Vtot_all
+
+        V_MOND = mond_model(R, Vgas, Vdisk, Vbul, name)
+        galaxies[name]['V_MOND'] = V_MOND
+    
+    return galaxies
+
+
+
+
+
 def main():
     out_dir = 'sparc/curves/initial'
     os.makedirs(out_dir, exist_ok=True)
@@ -218,59 +247,48 @@ def main():
     # multiplying the velocity by sqrt(Upsilon).
     sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
     sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
+    for name, data in galaxies.items():
+        Vdisk = [v * sqrt_Upsilon_disk for v in data['Vdisk']]
+        Vbul = [v * sqrt_Upsilon_bulge for v in data['Vbul']]
+        galaxies[name]['Vdisk'] = Vdisk
+        galaxies[name]['Vbul'] = Vbul
+
+    galaxies = run_model(galaxies, Power, densities, dm_densities, densities_r)
 
     for name, data in galaxies.items():
-        R = data['R']
-        Vobs = data['Vobs']
-        e_Vobs = data['e_Vobs']
-        Vgas = data['Vgas']
-        Vdisk = data['Vdisk']
-        Vbul = data['Vbul']
-        R_d = data['R_d']
-        # adjust for Upsilon
-        Vdisk = [v * sqrt_Upsilon_disk for v in Vdisk]
-        Vbul = [v * sqrt_Upsilon_bulge for v in Vbul]
-
-        # Calculate sums and DM proxy
-        Vtot_baryons = [g + d + b for g, d, b in zip(Vgas, Vdisk, Vbul)]
-        V_dm = dm_model(R, Vgas, R_d, name, densities, dm_densities, densities_r)
         
         plt.figure(figsize=(8, 6))
         
         # Plot Vobs with error bars (black dots)
-        plt.errorbar(R, Vobs, yerr=e_Vobs, fmt='k.', label='Vobs', capsize=3, elinewidth=0.5)
+        plt.errorbar(data['R'], data['Vobs'], yerr=data['e_Vobs'], fmt='k.', label='Vobs', capsize=3, elinewidth=0.5)
          
         # Plot components
-        plt.plot(R, Vgas, 'g:', label='Gas', linewidth=2)
-        plt.plot(R, Vdisk, 'r--', label='Disk', linewidth=2)
-        plt.plot(R, Vbul, color='orange', linestyle='--', label='Bulge', linewidth=2)
+        plt.plot(data['R'], data['Vgas'], 'g:', label='Gas', linewidth=2)
+        plt.plot(data['R'], data['Vdisk'], 'r--', label='Disk', linewidth=2)
+        plt.plot(data['R'], data['Vbul'], color='orange', linestyle='--', label='Bulge', linewidth=2)
         
-        # the formula to add velocities is sqrt(g^2 + d^2 + b^2)
-        Vtot_baryons = [np.sqrt(g**2 + d**2 + b**2) for g, d, b in zip(Vgas, Vdisk, Vbul)]
 
         # do 
         # Plot total (blue dashed to distinguish from Vobs)
-        plt.plot(R, Vtot_baryons, color='blue', linestyle='--', label='Total (gas+disk+bulge)', linewidth=1.5)
+        plt.plot(data['R'], data['Vtot_baryons'], color='blue', linestyle='--', label='Total (gas+disk+bulge)', linewidth=1.5)
         
         # Plot dm
-        plt.plot(R, V_dm, color='purple', linestyle='-', label='DM Model', linewidth=1.5)
+        plt.plot(data['R'], data['V_dm'], color='purple', linestyle='-', label='DM Model', linewidth=1.5)
         
         # the formula to add velocities is sqrt(g^2 + d^2 + b^2)
-        Vtot_all     = [np.sqrt(g**2 + d**2 + b**2 + dm**2) for g, d, b, dm in zip(Vgas, Vdisk, Vbul, V_dm)]
-        plt.plot(R, Vtot_all, color='cyan', linestyle='-', label='Total (gas+disk+bulge+dm)', linewidth=1.5)
+        plt.plot(data['R'], data['Vtot_all'], color='cyan', linestyle='-', label='Total (gas+disk+bulge+dm)', linewidth=1.5)
 
         # plot MOND
-        V_MOND = mond_model(R, Vgas, Vdisk, Vbul, name)
-        plt.plot(R, V_MOND, color='grey', linestyle='-', label='MOND', linewidth=1.5)
+        plt.plot(data['R'], data['V_MOND'], color='grey', linestyle='-', label='MOND', linewidth=1.5)
 
         plt.title(f"{name} Rotation Curve")
         plt.xlabel('Radius (kpc)')
         plt.ylabel('Velocity (km/s)')
         
         # Set axis limits
-        max_R = max(R)
+        max_R = max(data['R'])
         # Find maximum velocity to set y-limit appropriately
-        all_v = Vobs + Vgas + Vdisk + Vbul + Vtot_baryons + V_dm + Vtot_all
+        all_v = data['Vobs'] + data['Vgas'] + data['Vdisk'] + data['Vbul'] + data['Vtot_baryons'] + data['V_dm'] + data['Vtot_all']
         max_V = max([v for v in all_v])
         
         plt.xlim(0, max_R + 5)
