@@ -115,7 +115,7 @@ def get_sparc_galaxy_scale_height(radius_kpc, R_d):
 
 # model of dark matter - depends on gas density and galaxy thickness at r.
 # takes in arrays of R, vGas, disk scale factor, returns 
-def dm_model(rs, Vgas, R_d, name):
+def dm_model(rs, Vgas, R_d, name, densities, densities_r):
     r_prev = 0
     v_prev = 0
     Vdm = []
@@ -151,6 +151,9 @@ def dm_model(rs, Vgas, R_d, name):
         num_baryons_shell = shell_volume_cm3 * baryon_density_n_cm3 #recalc incase of underflow
         net_mass_shell_kg = num_baryons_shell*PROTON_MASS_KG # redo in case we need it
 
+        densities.append(baryon_density_n_cm3)
+        densities_r.append(r)
+
         if baryon_density_n_cm3 >= DENSITY_THRESHOLD:
             #average distance between gas particles
             d_avg_gas_m = np.cbrt(1.0 / baryon_density_n_cm3)/100 # cm to m
@@ -171,23 +174,15 @@ def dm_model(rs, Vgas, R_d, name):
     return Vdm
 
 def mond_model(rs, Vgas, Vdisk, Vbul, name):
-    G_kpc = 4.302e-6 # Gravitational constant: kpc (km/s)^2 / Msun
     a0 = 3700 # MOND acceleration parameter: (km/s)^2 / kpc
     VMOND = []
     root2 = np.sqrt(2.0)
+    # see the image MOND_velocity_calc - bottom equation...
     for r, Vg, Vd, Vb in zip(rs, Vgas, Vdisk, Vbul):
         V_N_sq = Vg**2 + Vd**2 + Vb**2
         root_factor = np.sqrt(1.0 + (2.0*a0*r/V_N_sq)**2)
         V_mond = np.sqrt(V_N_sq/root2 * np.sqrt((1 + root_factor)))
         VMOND.append(V_mond)
-
-        # # sum up all the accelerations
-        # a_tot_sq = G_kpc * (Vg**2/r + Vd**2/r + Vb**2/r)
-        # a_tot = np.sqrt(a_tot_sq)
-        # mu = a_tot/a0
-        # a_MOND = a0 * mu / np.sqrt(1 + mu**2)
-        # V_mond = np.sqrt(a_MOND*r)
-        # VMOND.append(V_mond)
 
     return VMOND
 
@@ -200,6 +195,10 @@ def main():
     
     galaxies = read_galaxy_properties('./sparc/SPARC_Lelli2016c.mrt.txt', galaxies)
 
+    # keep track of all gas densities calculated, at each R
+    densities = []
+    densities_r = []
+ 
     # A note on velocities from stars. We measure luminousity, but want mass. So we use a constant 
     # Upsilon of, say 1/2 for the mass to luminousity ratio for stars. Since velocity is a sqrt affair
     # then a constant Upsilon just scales things by a factor of sqrt(1/2).
@@ -227,7 +226,7 @@ def main():
 
         # Calculate sums and DM proxy
         Vtot_baryons = [g + d + b for g, d, b in zip(Vgas, Vdisk, Vbul)]
-        V_dm = dm_model(R, Vgas, R_d, name)
+        V_dm = dm_model(R, Vgas, R_d, name, densities, densities_r)
         
         plt.figure(figsize=(8, 6))
         
@@ -280,6 +279,36 @@ def main():
         plt.close()
         
     print(f"Finished generating {len(galaxies)} plots in {out_dir}")
+
+    # now do global stat plots
+    #------------------------------
+    # 1. Plot the densities histogram
+    # 2. Define logarithmically spaced bins
+    # This creates 50 bins between 10^0 (1) and 10^4 (10000)
+    bins = np.logspace(np.log10(min(densities)+ 1e-4), np.log10(max(densities)), 50)
+ 
+    # 3. Plot the histogram with the custom bins
+    plt.hist(densities, bins=bins, color='skyblue', edgecolor='black')
+    plt.xscale('log')
+
+    # 3. Add labels and title
+    plt.title('SPARC Gas Densities, all 175 Galaxies')
+    plt.xlabel("Gas Density, n/cm^3")
+    plt.ylabel('Frequency')
+    plt.savefig('sparc/gas_densities.png', dpi=300)
+
+    # Ok now make an X-Y scatter plot of the DM velocities and radiuses 
+    # plot one dot for each densities, densities_r pair, make the densities on the y scale, make the y scale logarithimic
+    # make  the x scale linear 
+    plt.figure(figsize=(8, 6))
+    plt.scatter(densities_r, densities, color='black', s=10, alpha=0.3)
+    plt.xscale('linear')
+    plt.yscale('log')
+    plt.title('SPARC Gas Densities, all 175 Galaxies')
+    plt.xlabel('Radius (kpc)')
+    plt.ylabel('Density (n/cm^3)')
+    plt.savefig('sparc/gas_densities_scatter.png', dpi=300)
+
 
 if __name__ == "__main__":
     main()
