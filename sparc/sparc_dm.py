@@ -14,7 +14,7 @@ G_SI = 6.67430e-11        # Gravitational constant: m^3 kg^-1 s^-2
 PROTON_MASS_KG = 1.67e-27   # Mass of a proton in kilograms
 
 P = 30.0 #Watts per particle. You heard it here first, people!
-DENSITY_THRESHOLD=0.0002
+DENSITY_THRESHOLD=0.00002
 
 
 #reads the SPARC ascii data as from the web site. 
@@ -292,7 +292,7 @@ def main():
     # 1. Plot the densities histogram
     # 2. Define logarithmically spaced bins
     # This creates 50 bins between 10^0 (1) and 10^4 (10000)
-    bins = np.logspace(np.log10(min(densities) - 1e-5), np.log10(max(densities)), 50)
+    bins = np.logspace(np.log10(min(densities) - DENSITY_THRESHOLD/10), np.log10(max(densities)), 50)
  
     # 3. Plot the histogram with the custom bins
     plt.hist([densities, dm_densities], bins=bins, color=['blue', 'red'], label=['Gas', 'Model DM'])
