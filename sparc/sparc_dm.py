@@ -1,7 +1,21 @@
+from PIL import ImagePalette
+from numpy import power
 import numpy as np
 from matplotlib import mathtext
 import os
 import matplotlib.pyplot as plt
+
+G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
+c = 299792458.0           # Speed of light: m/s
+MSUN_TO_KG = 1.989e30     # Solar masses to kilograms
+MSUN_KPC3_TO_KG_M3 = 6.77e-29 # Mass density conversion
+METRE_PER_KPC = 3.086e19
+G_SI = 6.67430e-11        # Gravitational constant: m^3 kg^-1 s^-2
+PROTON_MASS_KG = 1.67e-27   # Mass of a proton in kilograms
+
+P = 30.0 #Watts per particle. You heard it here first, people!
+DENSITY_THRESHOLD=0.0002
+
 
 #reads the SPARC ascii data as from the web site. 
 def read_ascii(data_file):
@@ -74,12 +88,12 @@ def read_galaxy_properties(file_path, galaxies):
         name = parts[0]
         # Columns: see above comment, we only need Rdisk (12th column, so 11 index)
         Rdisk = float(parts[11])
-        print(name, Rdisk)
+        #print(name, Rdisk)
         galaxies[name]['R_d'] = Rdisk
             
     return galaxies
 
-def get_sparc_galaxy_thickness(radius_kpc, R_d):
+def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """
     Calculates the vertical disk scale height (thickness) of a SPARC galaxy.
     
@@ -98,19 +112,10 @@ def get_sparc_galaxy_thickness(radius_kpc, R_d):
     
     return z_d
 
-# # Example Usage:
-# # For a massive spiral galaxy with a disk scale length R_d = 3.5 kpc
-# # Evaluated at an arbitrary radius of 5.0 kpc
-# galaxy_R_d = 3.5
-# target_radius = 5.0
-
-# thickness = get_sparc_galaxy_thickness(target_radius, galaxy_R_d)
-# print(f"Galaxy scale height (thickness): {thickness:.3f} kpc")
-
 
 # model of dark matter - depends on gas density and galaxy thickness at r.
 # takes in arrays of R, vGas, disk scale factor, returns 
-def dm_model(rs, Vgas, R_d):
+def dm_model(rs, Vgas, R_d, name):
     r_prev = 0
     v_prev = 0
     Vdm = []
@@ -121,16 +126,44 @@ def dm_model(rs, Vgas, R_d):
     
     # I wonder if I should get the enclosed gas masses, as an array, then clean it up   
     # (take out negative values, and also smooth it.  smooth with a boxcar of width 3).?.
-    
-    
-
+    mass_encl_prev = 0
+    r_m_prev = 0
     for r, Vg in zip(rs, Vgas):
-        z_d = get_sparc_galaxy_thickness((r_prev+r)/2, R_d)
-        Vdm.append(np.sqrt(v_prev*v_prev + Vg*Vg))
-        # todo - real model.... P = 30Watts, etc
-        r_prev = r
-        v_prev = Vg
+        v_m_per_sec = Vg * 1000.0
+        r_m = r * METRE_PER_KPC
+        z_d = get_sparc_galaxy_scale_height(r, R_d)
+        thickness_m = 2 * z_d * METRE_PER_KPC
+        mass_encl_kg = v_m_per_sec**2 * r_m / G_SI
+        
+        net_mass_shell_kg = mass_encl_kg - mass_encl_prev
+        num_baryons_shell = net_mass_shell_kg / PROTON_MASS_KG
+        
+        z_extent_kpc = get_sparc_galaxy_scale_height(r, R_d)
+        thickness_m = 2 * z_extent_kpc * METRE_PER_KPC
 
+        shell_volume_m3 = thickness_m*(np.pi*r_m**2 - np.pi*r_m_prev**2)
+        shell_volume_cm3 = shell_volume_m3 * 1e6
+        
+        baryon_density_n_cm3 = num_baryons_shell / shell_volume_cm3
+        if baryon_density_n_cm3 < 0.0: 
+            print(f"{name}: Negative Baryon density {baryon_density_n_cm3} cm^-3 at r {r} kpc, R_d {R_d} kpc, setting to 0.01")
+            baryon_density_n_cm3 = 0.00
+        num_baryons_shell = shell_volume_cm3 * baryon_density_n_cm3 #recalc incase of underflow
+        
+        if baryon_density_n_cm3 > DENSITY_THRESHOLD:
+            #average distance between gas particles
+            d_avg_gas_m = np.cbrt(1.0 / baryon_density_n_cm3)/100 # cm to m
+            dm_per_particle = (P*d_avg_gas_m/c)*(1/c**2) #Power in watts times dist/c is energy, then 1/c^2 is mass in kg
+            dm_inShell_kg = num_baryons_shell*dm_per_particle
+
+            # use outer edge? r_av = (r_m + r_m_prev)/2
+            V_dm_km_per_sec = np.sqrt(G_SI*dm_inShell_kg / (r_m + 1e-10))/1000 # divide by 1000 to get km/sec
+            
+            #only (my weirdo) dark matter contribution here.
+            Vdm.append(V_dm_km_per_sec)
+        else:
+            Vdm.append(0.0)
+        
     return Vdm
 
 def main():
@@ -169,7 +202,7 @@ def main():
 
         # Calculate sums and DM proxy
         Vtot_baryons = [g + d + b for g, d, b in zip(Vgas, Vdisk, Vbul)]
-        dm = dm_model(R, Vgas, R_d)
+        V_dm = dm_model(R, Vgas, R_d, name)
         
         plt.figure(figsize=(8, 6))
         
@@ -189,8 +222,13 @@ def main():
         plt.plot(R, Vtot_baryons, color='blue', linestyle='--', label='Total (gas+disk+bulge)', linewidth=1.5)
         
         # Plot dm
-        plt.plot(R, dm, color='purple', linestyle='-', label='DM (Vgas * 2)', linewidth=1.5)
+        plt.plot(R, V_dm, color='purple', linestyle='-', label='DM Model', linewidth=1.5)
         
+        # the formula to add velocities is sqrt(g^2 + d^2 + b^2)
+        Vtot_all     = [np.sqrt(g**2 + d**2 + b**2 + dm**2) for g, d, b, dm in zip(Vgas, Vdisk, Vbul, V_dm)]
+        plt.plot(R, Vtot_all, color='cyan', linestyle='-', label='Total (gas+disk+bulge+dm)', linewidth=1.5)
+
+
         plt.title(f"{name} Rotation Curve")
         plt.xlabel('Radius (kpc)')
         plt.ylabel('Velocity (km/s)')
@@ -198,7 +236,7 @@ def main():
         # Set axis limits
         max_R = max(R)
         # Find maximum velocity to set y-limit appropriately
-        all_v = Vobs + Vgas + Vdisk + Vbul + Vtot_baryons + dm
+        all_v = Vobs + Vgas + Vdisk + Vbul + Vtot_baryons + V_dm + Vtot_all
         max_V = max([v for v in all_v])
         
         plt.xlim(0, max_R + 5)
