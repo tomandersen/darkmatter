@@ -145,7 +145,7 @@ def dm_model(pw, rs, Vgas, R_d, name, densities, dm_densities, densities_r):
         num_baryons_shell = net_mass_shell_kg / PROTON_MASS_KG
         baryon_density_n_cm3 = num_baryons_shell / shell_volume_cm3
         if baryon_density_n_cm3 < DENSITY_THRESHOLD: 
-            print(f"{name}: Low or negative Baryon density {baryon_density_n_cm3} cm^-3 at r {r} kpc, R_d {R_d} kpc, setting to {DENSITY_THRESHOLD}")
+            #print(f"{name}: Low or negative Baryon density {baryon_density_n_cm3} cm^-3 at r {r} kpc, R_d {R_d} kpc, setting to {DENSITY_THRESHOLD}")
             baryon_density_n_cm3 = DENSITY_THRESHOLD
         num_baryons_shell = shell_volume_cm3 * baryon_density_n_cm3 #recalc incase of underflow
         net_mass_shell_kg = num_baryons_shell*PROTON_MASS_KG # redo in case we need it
@@ -191,6 +191,9 @@ def mond_model(rs, Vgas, Vdisk, Vbul, name):
     return VMOND
 
 def run_model(galaxies, pw, densities, dm_densities, densities_r):
+    fit_params = {}
+    fit_params['total_linear_error'] = 0  
+    fit_params['total_chi_sq_error'] = 0
     for name, data in galaxies.items():
         R = data['R']
         Vobs = data['Vobs']
@@ -213,11 +216,44 @@ def run_model(galaxies, pw, densities, dm_densities, densities_r):
 
         V_MOND = mond_model(R, Vgas, Vdisk, Vbul, name)
         galaxies[name]['V_MOND'] = V_MOND
-    
-    return galaxies
+
+        #record errors - ignore the error on the V_obs?? not sure 
+        for v_tot_all, v_obs, v_err in zip(Vtot_all, Vobs, e_Vobs):
+            fit_params['total_linear_error'] += np.abs(v_tot_all - v_obs)     #/v_err)
+            fit_params['total_chi_sq_error'] += (v_tot_all - v_obs)**2      #/v_err**2)
+                
+    return galaxies, fit_params
+
+def bestFit(galaxies, initialPower):
+    densities = []
+    dm_densities = []
+    densities_r = []
 
 
+    numSteps = 1000
+    step = initialPower/numSteps*5
+    pw = step
+    print(f'bestFit starting power: {pw}')
 
+    lowest_linear_err = 1e99
+    lowest_chi_sq_err = 1e99
+    for count in range(numSteps):
+        galaxies, fit_params = run_model(galaxies, pw, densities, dm_densities, densities_r)
+        linear_err = fit_params['total_linear_error']
+        chi_sq_err = fit_params['total_chi_sq_error']
+        if linear_err < lowest_linear_err:
+            lowest_linear_err = linear_err
+            lowest_linear_err_power = pw
+        if chi_sq_err < lowest_chi_sq_err:
+            lowest_chi_sq_err = chi_sq_err
+            lowest_chi_sq_err_power = pw
+        pw += step
+        if count % 10 == 0:
+            print(f'step: {count}, power: {pw}, linear error: {linear_err}, chi_sq error: {chi_sq_err}')
+
+    print(f'Best fit Power for linear error: {lowest_linear_err_power}')
+    print(f'Best fit Power for chi_sq error: {lowest_chi_sq_err_power}')
+    return lowest_linear_err_power
 
 
 def main():
@@ -253,7 +289,10 @@ def main():
         galaxies[name]['Vdisk'] = Vdisk
         galaxies[name]['Vbul'] = Vbul
 
-    galaxies = run_model(galaxies, Power, densities, dm_densities, densities_r)
+    # determine best fits
+    best_power = bestFit(galaxies, Power)
+
+    galaxies, fit_params = run_model(galaxies, best_power, densities, dm_densities, densities_r)
 
     for name, data in galaxies.items():
         
