@@ -130,7 +130,7 @@ def dm_model(pw, rs, Vgas, R_d, name, densities, dm_densities, densities_r):
     for r, Vg in zip(rs, Vgas):
         v_m_per_sec = Vg * 1000.0
         if v_m_per_sec < 0:
-            v_m_per_sec = 0
+            v_m_per_sec = 0 # not the best strategy here. See UGC07323 for example which has neg gas contributions AFTER a few positive ones.
         r_m = r * METRE_PER_KPC
         z_d = get_sparc_galaxy_scale_height(r, R_d)
         thickness_m = 2 * z_d * METRE_PER_KPC
