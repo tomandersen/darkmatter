@@ -213,6 +213,6 @@ if __name__ == "__main__":
             sim_folder=folder, 
             plot_x_limit=100.0, 
             plot_y_limit=350, 
-            power=30.0, 
+            power=60.0, 
             density_threshold=0.0002
         )

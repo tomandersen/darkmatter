@@ -162,8 +162,8 @@ def dm_model(pw, rs, Vgas, R_d, name, densities, dm_densities, densities_r):
             dm_density_baryonspercc = dm_per_particle/PROTON_MASS_KG*baryon_density_n_cm3
 
 
-            r_av = (r_m + r_m_prev)/2
-            V_dm_km_per_sec = np.sqrt(G_SI*dm_inShell_kg / (r_av + 1e-10))/1000 # divide by 1000 to get km/sec
+            #r_av = (r_m + r_m_prev)/2
+            V_dm_km_per_sec = np.sqrt(G_SI*dm_inShell_kg / (r_m + 1e-10))/1000 # divide by 1000 to get km/sec
             
             #only (my weirdo) dark matter contribution here.
             Vdm.append(V_dm_km_per_sec)
