@@ -194,6 +194,8 @@ def run_model(galaxies, pw, densities, dm_densities, densities_r):
     fit_params = {}
     fit_params['total_linear_error'] = 0  
     fit_params['total_chi_sq_error'] = 0
+    fit_params['total_linear_error_MOND'] = 0  
+    fit_params['total_chi_sq_error_MOND'] = 0
     for name, data in galaxies.items():
         R = data['R']
         Vobs = data['Vobs']
@@ -218,9 +220,11 @@ def run_model(galaxies, pw, densities, dm_densities, densities_r):
         galaxies[name]['V_MOND'] = V_MOND
 
         #record errors - ignore the error on the V_obs?? not sure 
-        for v_tot_all, v_obs, v_err in zip(Vtot_all, Vobs, e_Vobs):
+        for v_tot_all, v_obs, v_err, v_MOND in zip(Vtot_all, Vobs, e_Vobs, V_MOND):
             fit_params['total_linear_error'] += np.abs(v_tot_all - v_obs)     #/v_err)
             fit_params['total_chi_sq_error'] += (v_tot_all - v_obs)**2      #/v_err**2)
+            fit_params['total_linear_error_MOND'] += np.abs(v_MOND - v_obs)     #/v_err)
+            fit_params['total_chi_sq_error_MOND'] += (v_MOND - v_obs)**2      #/v_err**2)
                 
     return galaxies, fit_params
 
@@ -237,22 +241,36 @@ def bestFit(galaxies, initialPower):
 
     lowest_linear_err = 1e99
     lowest_chi_sq_err = 1e99
+    lowest_linear_err_MOND = 1e99
+    lowest_chi_sq_err_MOND = 1e99
+    lowest_linear_err_power_MOND = 0
+    lowest_chi_sq_err_power_MOND = 0
     for count in range(numSteps):
         galaxies, fit_params = run_model(galaxies, pw, densities, dm_densities, densities_r)
         linear_err = fit_params['total_linear_error']
         chi_sq_err = fit_params['total_chi_sq_error']
+        linear_err_MOND = fit_params['total_linear_error_MOND']
+        chi_sq_err_MOND = fit_params['total_chi_sq_error_MOND']
         if linear_err < lowest_linear_err:
             lowest_linear_err = linear_err
             lowest_linear_err_power = pw
         if chi_sq_err < lowest_chi_sq_err:
             lowest_chi_sq_err = chi_sq_err
             lowest_chi_sq_err_power = pw
+        if linear_err_MOND < lowest_linear_err_MOND:
+            lowest_linear_err_MOND = linear_err_MOND
+            lowest_linear_err_power_MOND = pw
+        if chi_sq_err_MOND < lowest_chi_sq_err_MOND:
+            lowest_chi_sq_err_MOND = chi_sq_err_MOND
+            lowest_chi_sq_err_power_MOND = pw
         pw += step
         if count % 10 == 0:
             print(f'step: {count}, power: {pw}, linear error: {linear_err}, chi_sq error: {chi_sq_err}')
 
-    print(f'Best fit Power for linear error: {lowest_linear_err_power}')
-    print(f'Best fit Power for chi_sq error: {lowest_chi_sq_err_power}')
+    print(f'Best fit Power for linear error: {lowest_linear_err_power}, fit: {lowest_linear_err}')
+    print(f'Best fit Power for chi_sq error: {lowest_chi_sq_err_power}, fit: {lowest_chi_sq_err}')
+    print(f'Best fit chi_sq MOND: {lowest_chi_sq_err_MOND}')
+    print(f'Best fit linear MOND: {lowest_linear_err_MOND}')
     return lowest_linear_err_power
 
 
