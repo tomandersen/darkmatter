@@ -213,6 +213,6 @@ if __name__ == "__main__":
             sim_folder=folder, 
             plot_x_limit=100.0, 
             plot_y_limit=350, 
-            power=60.0, 
+            power=30.0,  # in watts. Seems about 30 fits FIRE2 well, while 60 is best for SPARC (actual reality)
             density_threshold=0.0002
         )

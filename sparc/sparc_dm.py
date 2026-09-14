@@ -129,6 +129,8 @@ def dm_model(pw, rs, Vgas, R_d, name, densities, dm_densities, densities_r):
     r_m_prev = 0
     for r, Vg in zip(rs, Vgas):
         v_m_per_sec = Vg * 1000.0
+        if v_m_per_sec < 0:
+            v_m_per_sec = 0
         r_m = r * METRE_PER_KPC
         z_d = get_sparc_galaxy_scale_height(r, R_d)
         thickness_m = 2 * z_d * METRE_PER_KPC
@@ -264,7 +266,7 @@ def bestFit(galaxies, initialPower):
             lowest_chi_sq_err_MOND = chi_sq_err_MOND
             lowest_chi_sq_err_power_MOND = pw
         pw += step
-        if count % 10 == 0:
+        if count % 40 == 0:
             print(f'step: {count}, power: {pw}, linear error: {linear_err}, chi_sq error: {chi_sq_err}')
 
     print(f'Best fit Power for linear error: {lowest_linear_err_power}, fit: {lowest_linear_err}')
@@ -317,26 +319,26 @@ def main():
         plt.figure(figsize=(8, 6))
         
         # Plot Vobs with error bars (black dots)
-        plt.errorbar(data['R'], data['Vobs'], yerr=data['e_Vobs'], fmt='k.', label='Vobs', capsize=3, elinewidth=0.5)
+        plt.errorbar(data['R'], data['Vobs'], yerr=data['e_Vobs'], fmt='k.', label='V_observed', capsize=3, elinewidth=0.5)
          
         # Plot components
-        plt.plot(data['R'], data['Vgas'], 'g:', label='Gas', linewidth=2)
-        plt.plot(data['R'], data['Vdisk'], 'r--', label='Disk', linewidth=2)
-        plt.plot(data['R'], data['Vbul'], color='orange', linestyle='--', label='Bulge', linewidth=2)
+        plt.plot(data['R'], data['Vgas'], 'g:', label='Gas', linewidth=1)
+        plt.plot(data['R'], data['Vdisk'], 'r--', label='Disk', linewidth=1)
+        plt.plot(data['R'], data['Vbul'], color='orange', linestyle='--', label='Bulge', linewidth=1)
         
 
         # do 
         # Plot total (blue dashed to distinguish from Vobs)
-        plt.plot(data['R'], data['Vtot_baryons'], color='blue', linestyle='--', label='Total (gas+disk+bulge)', linewidth=1.5)
+        plt.plot(data['R'], data['Vtot_baryons'], color='blue', linestyle='--', label='gas+disk+bulge', linewidth=1.)
         
         # Plot dm
-        plt.plot(data['R'], data['V_dm'], color='purple', linestyle='-', label='DM Model', linewidth=1.5)
+        plt.plot(data['R'], data['V_dm'], color='cyan', linestyle=':', label='DM Model', linewidth=1)
         
-        # the formula to add velocities is sqrt(g^2 + d^2 + b^2)
-        plt.plot(data['R'], data['Vtot_all'], color='cyan', linestyle='-', label='Total (gas+disk+bulge+dm)', linewidth=1.5)
+        # the formula to add velocities is sqrt(g^2 + d^2 + b^2) 
+        plt.plot(data['R'], data['Vtot_all'], color='purple', linestyle='-', label='gas+disk+bulge+dm', linewidth=2)
 
         # plot MOND
-        plt.plot(data['R'], data['V_MOND'], color='grey', linestyle='-', label='MOND', linewidth=1.5)
+        plt.plot(data['R'], data['V_MOND'], color='grey', linestyle='-', label='MOND', linewidth=2)
 
         plt.title(f"{name} Rotation Curve")
         plt.xlabel('Radius (kpc)')
@@ -351,7 +353,9 @@ def main():
         plt.xlim(0, max_R + 5)
         plt.ylim(0, max_V * 1.1)  # add 10% padding on top
         
-        plt.legend()
+        leg = plt.legend(fontsize="small")
+        # Set the border outline thickness to 0
+        leg.get_frame().set_linewidth(0.0)
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         
