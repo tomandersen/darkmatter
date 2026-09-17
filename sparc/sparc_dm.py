@@ -15,6 +15,7 @@ PROTON_MASS_KG = 1.67e-27   # Mass of a proton in kilograms
 Power = 30.0 #Watts per particle. You heard it here first, people!
 DENSITY_THRESHOLD=0.00002
 
+CONVERT_ACCELERATION =  3.2408e-14 #Given v in km/sec, R in kpc, g = CONVERT_ACCELERATION*v^2/R
 
 #reads the SPARC ascii data as from the web site. 
 def read_ascii(data_file):
@@ -314,7 +315,14 @@ def main():
 
     galaxies, fit_params = run_model(galaxies, best_power, densities, dm_densities, densities_r)
 
+    observed_vs_pred = []
+
     for name, data in galaxies.items():
+        # add to stats of V_obs vs V_tot_all 
+        for v_obs, v_err, v_tot_all, r_kpc in zip(data['Vobs'], data['e_Vobs'], data['Vtot_all'], data['R']):
+            g_obs = CONVERT_ACCELERATION*v_obs**2/r_kpc
+            g_predicted = CONVERT_ACCELERATION*v_tot_all**2/r_kpc
+            observed_vs_pred.append([g_predicted, g_obs]) 
         
         plt.figure(figsize=(8, 6))
         
@@ -392,11 +400,44 @@ def main():
     plt.scatter(densities_r, dm_densities, color='red', s=4, alpha=0.10, label='DM Density')
     plt.xscale('linear')
     plt.yscale('log')
-    plt.title('SPARC Gas & DM Model Densities, all 175 Galaxies')
+    plt.title('SPARC Gas & DM Model Densities, all 175 Galaxies')   
     plt.xlabel('Radius (kpc)')
     plt.ylabel('Density (n/cm^3)')
     plt.legend()
     plt.savefig('sparc/densities_scatter_combined.png', dpi=300)
+
+    # Ok now make a graph showing oberved vs predicted as a scatter plot, log/log scale. 
+    observed_vs_pred_np = np.array(observed_vs_pred)
+    plt.figure(figsize=(8, 6))
+    plt.scatter(observed_vs_pred_np[:, 0], observed_vs_pred_np[:, 1], color='blue', s=4, alpha=0.10, label='DM Model')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.plot([1e-12, 1e-8], [1e-12, 1e-8], color="red", linewidth=0.6, label='Newton')
+
+    #FIT LOG 
+    log_x = np.log10(observed_vs_pred_np[:, 0])
+    log_y = np.log10(observed_vs_pred_np[:, 1])
+    slope, intercept = np.polyfit(log_x, log_y, 1)
+
+    # 4. Convert the fit back to the original space to extract the power-law parameters
+    # log(y) = slope * log(x) + intercept  =>  y = (10^intercept) * x^slope
+    amplitude = 10**intercept
+    power = slope
+    print(f"Fitted Equation: y = {amplitude:.3f} * x^{power:.3f}")
+
+    # 3. Create a logarithmically spaced X-array
+    # np.logspace takes the base-10 exponents as arguments (-12 and -8)
+    x_line = np.logspace(-12, -8, 200)
+    y_line = amplitude * x_line ** power
+    # 4. Plotting with a log-scale X-axis
+    plt.plot(x_line, y_line, color="blue", label="Polyfit Line")
+
+    plt.title(f'SPARC DM Model Acceleration vs Observed, vs Newton')
+    plt.xlabel('Acceleration (m/s^2)  Observed')
+    plt.ylabel('Acceleration (m/s^2)  Predicted')
+    plt.legend()
+    plt.savefig('sparc/acceleration_scatter_combined.png', dpi=300)
+
 
 if __name__ == "__main__":
     main()
