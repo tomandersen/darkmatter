@@ -111,6 +111,34 @@ def read_galaxy_properties(file_path, galaxies):
     # print(f"Rejected {len(galaxies_rejected)}, named: {galaxies_rejected}")
     return galaxies
 
+def add_extra_galaxies(galaxies):
+    #Malin1 from the paper Exploring the stellar streams and satellites around the giant low  surface brightness galaxy Malin 1
+    malin = {}
+    malin["R"] =    [2,   5,    10,       15,    20,    30,    40,    50,   60,   70,   80,   90,       100.0]
+    malin["Vobs"] = [310, 280,   265,     250,   230,   220, 212,   209,    204,  201,  198,   194,   191.0] 
+    malin["e_Vobs"]=[5,    5,     5,       5,     5,     5,   5,     5,      5,    5,    5,     5,      5.0]     
+    malin["Vgas"] = [3,    7,     8,       9,     10,    15,   16,    19,     22,   24,   26,    28,    32.0]     
+    malin["Vdisk"] = [125,  158,   150,     142,  119,  101,   80,    74,     68,   61,   57,    55,    53.0]   
+    malin["Vbul"] = [275,  208,    150,     140,  112,  94,   75,    69,     64,   59,   55,    52,    50.0]     
+    
+
+# futz with gas
+    # new_gas = []
+    # for vg in malin["Vgas"]:
+    #     new_gas.append(2.0*vg)
+    # malin["Vgas"] = new_gas 
+
+    # no cheating.. but is there better data? malin["Vgas"] = [3,    7,     12,       20,     30,    26,   24,    23,     22,   24,   26,    28,    32.0]     
+  
+ 
+    malin['R_d'] = 20
+    malin['inclination'] = 40.0
+    malin['Quality'] = 1
+    galaxies['Malin1'] = malin
+
+    return galaxies
+
+
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """
     Calculates the vertical disk scale height (thickness) of a SPARC galaxy.
@@ -302,6 +330,7 @@ def main():
     
     galaxies = read_galaxy_properties('./sparc/SPARC_Lelli2016c.mrt.txt', galaxies)
 
+
     # keep track of all gas densities calculated, at each R
     densities = []
     dm_densities = []
@@ -325,6 +354,10 @@ def main():
         Vbul = [v * sqrt_Upsilon_bulge for v in data['Vbul']]
         galaxies[name]['Vdisk'] = Vdisk
         galaxies[name]['Vbul'] = Vbul
+
+    #extra galaxies have Upsilon already in
+    galaxies = add_extra_galaxies(galaxies)
+
 
     # determine best fits
     best_power = bestFit(galaxies, Power)
