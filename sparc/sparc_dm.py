@@ -12,11 +12,11 @@ METRE_PER_KPC = 3.086e19
 G_SI = 6.67430e-11        # Gravitational constant: m^3 kg^-1 s^-2
 PROTON_MASS_KG = 1.67e-27   # Mass of a proton in kilograms
 
-Power = 30.0 #Watts per particle. You heard it here first, people!
-DENSITY_THRESHOLD=0.00002
+Power = 30.0 #Guess Watts per particle. You heard it here first, people!
+DENSITY_THRESHOLD=.00002
 
 CONVERT_ACCELERATION =  3.2408e-14 #Given v in km/sec, R in kpc, g = CONVERT_ACCELERATION*v^2/R
-REJECT_LOW_Q_AND_LOW_INCL = False
+REJECT_LOW_Q_AND_LOW_INCL = False # does not make much of a difference
 
 #reads the SPARC ascii data as from the web site. 
 def read_ascii(data_file):
@@ -91,7 +91,7 @@ def read_galaxy_properties(file_path, galaxies):
         Rdisk = float(parts[11])
         incl = float(parts[5])
         quality = float(parts[17])
-        print(name, incl, "q = ", quality)
+        #print(name, incl, "q = ", quality)
         galaxies[name]['R_d'] = Rdisk
         galaxies[name]['inclination'] = incl
         galaxies[name]['Quality'] = quality
@@ -285,8 +285,8 @@ def bestFit(galaxies, initialPower):
             lowest_chi_sq_err_MOND = chi_sq_err_MOND
             lowest_chi_sq_err_power_MOND = pw
         pw += step
-        if count % 40 == 0:
-            print(f'step: {count}, power: {pw}, linear error: {linear_err}, chi_sq error: {chi_sq_err}')
+        # if count % 40 == 0:
+        #     print(f'step: {count}, power: {pw}, linear error: {linear_err}, chi_sq error: {chi_sq_err}')
 
     print(f'Best fit Power for linear error: {lowest_linear_err_power}, fit: {lowest_linear_err}')
     print(f'Best fit Power for chi_sq error: {lowest_chi_sq_err_power}, fit: {lowest_chi_sq_err}')
@@ -296,8 +296,6 @@ def bestFit(galaxies, initialPower):
 
 
 def main():
-    out_dir = 'sparc/curves/initial'
-    os.makedirs(out_dir, exist_ok=True)
      
     # We will read the file and skip the first 25 lines (headers)
     galaxies = read_ascii('./sparc/MassModels_Lelli2016c.mrt')
@@ -332,6 +330,10 @@ def main():
     best_power = bestFit(galaxies, Power)
 
     galaxies, fit_params = run_model(galaxies, best_power, densities, dm_densities, densities_r)
+
+    file_name_part = f"power-{int(best_power)}W-{DENSITY_THRESHOLD}-cc"
+    out_dir = f'sparc/{file_name_part}/curves/'
+    os.makedirs(out_dir, exist_ok=True)
 
     observed_vs_pred = []
 
@@ -386,7 +388,7 @@ def main():
         plt.tight_layout()
         
         # Save figure
-        out_path = os.path.join(out_dir, f"{name}.png")
+        out_path = os.path.join(out_dir, f"{name}-{file_name_part}.png")
         plt.savefig(out_path, dpi=200)
         plt.close()
         
@@ -394,6 +396,8 @@ def main():
 
     # now do global stat plots
     #------------------------------
+
+
     # 1. Plot the densities histogram
     # 2. Define logarithmically spaced bins
     # This creates 50 bins between 10^0 (1) and 10^4 (10000)
@@ -408,7 +412,7 @@ def main():
     plt.xlabel("Density, n/cm^3")
     plt.ylabel('Frequency')
     plt.legend()
-    plt.savefig('sparc/gas_densities.png', dpi=300)
+    plt.savefig(f'sparc/{file_name_part}/gas_densities-{file_name_part}.png', dpi=300)
 
     # Ok now make an X-Y scatter plot of the DM velocities and radiuses 
     # plot one dot for each densities, densities_r pair, make the densities on the y scale, make the y scale logarithimic
@@ -422,7 +426,7 @@ def main():
     plt.xlabel('Radius (kpc)')
     plt.ylabel('Density (n/cm^3)')
     plt.legend()
-    plt.savefig('sparc/densities_scatter_combined.png', dpi=300)
+    plt.savefig(f'sparc/{file_name_part}/densities_scatter_combined-{file_name_part}.png', dpi=300)
 
     # Ok now make a graph showing oberved vs predicted as a scatter plot, log/log scale.
     # Graph 4 
@@ -452,10 +456,10 @@ def main():
     plt.plot(x_line, y_line, color="blue", label="Polyfit Line")
 
     plt.title(f'SPARC DM Model Acceleration vs Observed, vs Newton')
-    plt.xlabel('Acceleration (m/s^2)  Observed')
-    plt.ylabel('Acceleration (m/s^2)  Predicted')
+    plt.xlabel('Acceleration (m/s^2)  Predicted')
+    plt.ylabel('Acceleration (m/s^2)  Observed')
     plt.legend()
-    plt.savefig('sparc/acceleration_scatter_combined.png', dpi=300)
+    plt.savefig(f'sparc/{file_name_part}/acceleration_scatter_combined-{file_name_part}.png', dpi=300)
 
 
     # Graph 5. Plot the the same Graph 4 above only with binned data  bins
@@ -474,18 +478,40 @@ def main():
     #after getting the binned data I will plot a scattergram of it, NOT a histogram. 
     bin_centers = np.sqrt(bins[:-1] * bins[1:])  # geometric mean of each bin edge pair
 
-    x_data = observed_vs_pred_np[:, 0]  # observed acceleration
-    y_data = observed_vs_pred_np[:, 1]  # predicted acceleration
+    x_data = observed_vs_pred_np[:, 0]  # predicted acceleration
+    y_data = observed_vs_pred_np[:, 1]  # observed acceleration
     bin_means = []
     bin_stds = []
     bin_valid_centers = []
     for i in range(len(bins) - 1):
         mask = (x_data >= bins[i]) & (x_data < bins[i + 1])
         y_in_bin = y_data[mask]
+        # zero_count = np.count_nonzero(y_in_bin < 1e-12)
+
+        # if zero_count > 0:
+        #     print("something is fishy here in graph 5 with bin", bins[i], "to", bins[i+1], "there are", zero_count, "zeros") 
+
         if len(y_in_bin) > 0:
-            bin_means.append(np.mean(y_in_bin))
-            bin_stds.append(np.std(y_in_bin))
+            mean_val = np.mean(np.log10(y_in_bin))  
+            std_val = np.std(y_in_bin, axis=None)
+            print(f" mean_val, {mean_val}, std_val, {std_val} Bin [{bins[i]:.2e}, {bins[i+1]:.2e}]")
+            # Trap suspiciously large std (> 10x the mean)
+            if std_val < 0.2 * mean_val:
+                print(f"[DIAG] Bin [{bins[i]:.2e}, {bins[i+1]:.2e}]: n={len(y_in_bin)}, mean={mean_val:.3e}, std={std_val:.3e}")
+                print(f"       min={np.min(y_in_bin):.3e}, max={np.max(y_in_bin):.3e}, median={np.median(y_in_bin):.3e}")
+                # Show the top outliers
+                outlier_thresh = mean_val + 5 * std_val
+                outliers = y_in_bin[y_in_bin > outlier_thresh]
+                if len(outliers) > 0:
+                    print(f"       Outliers (>{outlier_thresh:.3e}): {outliers}")
+            bin_means.append(mean_val)
+            bin_stds.append(std_val)
             bin_valid_centers.append(bin_centers[i])
+
+    #exponentiate back the bin means and stgds
+    bin_means = 10 ** np.array(bin_means)
+    #bin_stds = 10 ** np.array(bin_stds)
+
     plt.errorbar(bin_valid_centers, bin_means, yerr=bin_stds,
                  fmt='rs', markersize=5, capsize=4, elinewidth=1,
                  label='Binned mean ± std')
@@ -493,10 +519,10 @@ def main():
 
     # 3. Add labels and title
     plt.title('Binned LTGs - Vobs vs V_predicted')
-    plt.xlabel("Observed (m/s^2)")
-    plt.ylabel('Predicted (m/s^2)')
+    plt.xlabel("Predicted (m/s^2)")
+    plt.ylabel('Observed (m/s^2)')
     plt.legend()
-    plt.savefig('sparc/binnedLTGs.png', dpi=300)
+    plt.savefig(f'sparc/{file_name_part}/binnedLTGs-{file_name_part}.png', dpi=300)
 
 
 if __name__ == "__main__":
