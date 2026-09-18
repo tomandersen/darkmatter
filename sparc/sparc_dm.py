@@ -17,8 +17,9 @@ DENSITY_THRESHOLD=.00002
 
 CONVERT_ACCELERATION =  3.2408e-14 #Given v in km/sec, R in kpc, g = CONVERT_ACCELERATION*v^2/R
 REJECT_LOW_Q_AND_LOW_INCL = False # does not make much of a difference
+ADD_EXTRA_GALAXIES = False
 
-#reads the SPARC ascii data as from the web site. 
+#reads the SPARC asci i data as from the web site. 
 def read_ascii(data_file):
     galaxies = {}
 
@@ -356,12 +357,14 @@ def main():
         galaxies[name]['Vbul'] = Vbul
 
     #extra galaxies have Upsilon already in
-    galaxies = add_extra_galaxies(galaxies)
+    if ADD_EXTRA_GALAXIES:
+        galaxies = add_extra_galaxies(galaxies)
 
 
     # determine best fits
     best_power = bestFit(galaxies, Power)
-
+    best_power = float(int(best_power))
+    print(f"Best fit Power: {best_power}") 
     galaxies, fit_params = run_model(galaxies, best_power, densities, dm_densities, densities_r)
 
     file_name_part = f"power-{int(best_power)}W-{DENSITY_THRESHOLD}-cc"
