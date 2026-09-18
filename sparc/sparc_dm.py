@@ -16,6 +16,7 @@ Power = 30.0 #Watts per particle. You heard it here first, people!
 DENSITY_THRESHOLD=0.00002
 
 CONVERT_ACCELERATION =  3.2408e-14 #Given v in km/sec, R in kpc, g = CONVERT_ACCELERATION*v^2/R
+REJECT_LOW_Q_AND_LOW_INCL = False
 
 #reads the SPARC ascii data as from the web site. 
 def read_ascii(data_file):
@@ -88,9 +89,26 @@ def read_galaxy_properties(file_path, galaxies):
         name = parts[0]
         # Columns: see above comment, we only need Rdisk (12th column, so 11 index)
         Rdisk = float(parts[11])
-        #print(name, Rdisk)
+        incl = float(parts[5])
+        quality = float(parts[17])
+        print(name, incl, "q = ", quality)
         galaxies[name]['R_d'] = Rdisk
-            
+        galaxies[name]['inclination'] = incl
+        galaxies[name]['Quality'] = quality
+
+    # cut down the galaxies like the 2016 paperSPARC: MASS MODELS FOR 175 DISK GALAXIES WITH SPITZER PHOTOMETRY AND ACCURATE ROTATION CURVES.
+    # for 176 galaxies with quality flag Q >= 2 (146 LTGs and 30 ETGs).
+    # and remove spirals with inclination <= 30 degrees.
+    if REJECT_LOW_Q_AND_LOW_INCL:
+        galaxies_rejected = []    
+        for name, data in list(galaxies.items()):
+            if data['inclination'] >= 30 and data['Quality'] < 3:
+                pass #keep galaxy
+            else: 
+                galaxies_rejected.append(name)
+                del galaxies[name]   # Remove the galaxy from the original dictionary  
+    
+    # print(f"Rejected {len(galaxies_rejected)}, named: {galaxies_rejected}")
     return galaxies
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
@@ -406,7 +424,8 @@ def main():
     plt.legend()
     plt.savefig('sparc/densities_scatter_combined.png', dpi=300)
 
-    # Ok now make a graph showing oberved vs predicted as a scatter plot, log/log scale. 
+    # Ok now make a graph showing oberved vs predicted as a scatter plot, log/log scale.
+    # Graph 4 
     observed_vs_pred_np = np.array(observed_vs_pred)
     plt.figure(figsize=(8, 6))
     plt.scatter(observed_vs_pred_np[:, 0], observed_vs_pred_np[:, 1], color='blue', s=4, alpha=0.10, label='DM Model')
@@ -419,7 +438,7 @@ def main():
     log_y = np.log10(observed_vs_pred_np[:, 1])
     slope, intercept = np.polyfit(log_x, log_y, 1)
 
-    # 4. Convert the fit back to the original space to extract the power-law parameters
+    # Convert the fit back to the original space to extract the power-law parameters
     # log(y) = slope * log(x) + intercept  =>  y = (10^intercept) * x^slope
     amplitude = 10**intercept
     power = slope
@@ -437,6 +456,47 @@ def main():
     plt.ylabel('Acceleration (m/s^2)  Predicted')
     plt.legend()
     plt.savefig('sparc/acceleration_scatter_combined.png', dpi=300)
+
+
+    # Graph 5. Plot the the same Graph 4 above only with binned data  bins
+    plt.figure(figsize=(8, 6))
+    plt.xscale('log')
+    plt.yscale('log')
+    #plot the points as a background image
+    plt.scatter(observed_vs_pred_np[:, 0], observed_vs_pred_np[:, 1], color='blue', s=3, alpha=0.10, label='DM Model')
+    plt.plot([1e-12, 1e-8], [1e-12, 1e-8], color="red", linewidth=0.5, label='Newton')
+    
+    bins = np.logspace(-12, -8, 17)  # 16 bins, log-spaced, 4 per decade from 1e-12 to 1e-8
+    # my data is scattered x, y pairs, observed_vs_pred_np[:, 0], observed_vs_pred_np[:, 1]
+    # I think I need to manually create a new data series based on the bins: For each bin, look through all the data that 
+    # matches the bin, for the mean and standard deviation of that data, and then plot that.  
+    
+    #after getting the binned data I will plot a scattergram of it, NOT a histogram. 
+    bin_centers = np.sqrt(bins[:-1] * bins[1:])  # geometric mean of each bin edge pair
+
+    x_data = observed_vs_pred_np[:, 0]  # observed acceleration
+    y_data = observed_vs_pred_np[:, 1]  # predicted acceleration
+    bin_means = []
+    bin_stds = []
+    bin_valid_centers = []
+    for i in range(len(bins) - 1):
+        mask = (x_data >= bins[i]) & (x_data < bins[i + 1])
+        y_in_bin = y_data[mask]
+        if len(y_in_bin) > 0:
+            bin_means.append(np.mean(y_in_bin))
+            bin_stds.append(np.std(y_in_bin))
+            bin_valid_centers.append(bin_centers[i])
+    plt.errorbar(bin_valid_centers, bin_means, yerr=bin_stds,
+                 fmt='rs', markersize=5, capsize=4, elinewidth=1,
+                 label='Binned mean ± std')
+
+
+    # 3. Add labels and title
+    plt.title('Binned LTGs - Vobs vs V_predicted')
+    plt.xlabel("Observed (m/s^2)")
+    plt.ylabel('Predicted (m/s^2)')
+    plt.legend()
+    plt.savefig('sparc/binnedLTGs.png', dpi=300)
 
 
 if __name__ == "__main__":
