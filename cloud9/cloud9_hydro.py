@@ -7,7 +7,7 @@ k_B = 1.380649e-23     # J/K
 T = 1e4                # Gas temperature (K)
 G = 6.67430e-11        # m^3 / (kg s^2)
 m_p = 1.67262192e-27   # Proton mass (kg)
-P_power = 6.0         # Field power (W)
+P_power = 10      # Field power (W)
 c = 299792458.0        # Speed of light (m/s)
 
 # --- Conversion Factors ---
@@ -20,7 +20,7 @@ kg_m3_to_amu_cm3 = kg_to_amu / 1e6   # Convert kg/m^3 to amu/cm^3
 C_dark = P_power / (c**3)
 
 # --- Density Thresholds ---
-min_density_cm3 = 0.0002
+min_density_cm3 = 0.0000000000002
 N_min = min_density_cm3 * 1e6  # Convert to particles/m^3
 
 # --- Density Functions (with Cutoff) ---
@@ -48,7 +48,7 @@ def rho_array(N_arr):
 def hydrostatic_ode(r, y):
     N, dN_dr, M_gas, M_tot = y
     
-    if N <= 1e-10:
+    if N <= 1e-14:
         return [0, 0, 0, 0]
         
     term1 = - (2.0 / r) * dN_dr
@@ -67,7 +67,7 @@ def hydrostatic_ode(r, y):
 N0_cm3 = 0.5  
 N0 = N0_cm3 * 1e6  # particles/m^3
 
-r0 = 1e-5 * pc_to_m 
+r0 = 1e-10 * pc_to_m 
 N_double_prime_0 = - (4 * np.pi * G / (3 * k_B * T)) * (rho(N0)**2)
 
 N_initial = N0 + 0.5 * N_double_prime_0 * (r0**2)
@@ -82,7 +82,7 @@ r_max_m = 50000 * pc_to_m
 r_span = (r0, r_max_m)
 
 def cloud_edge(r, y):
-    return y[0] - 1e-5  # Stop if N drops to near absolute zero
+    return y[0] - 1e-6  # Stop if N drops to near absolute zero
 cloud_edge.terminal = True
 
 # --- Execute Solver ---
@@ -103,8 +103,8 @@ M_tot_Msun = M_tot_arr * kg_to_Msun
 rho_tot_plot = rho_array(N_arr) * kg_m3_to_amu_cm3
 rho_gas_plot = (m_p * N_arr) * kg_m3_to_amu_cm3
 
-# Auto-scaling logic (At least 10 kpc, or edge of integration)
-x_max = min(10, r_kpc[-1])
+# Auto-scaling logic (edge of integration)
+x_max = min(10, r_kpc[-1]*1.2)
 
 # --- Plotting ---
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
