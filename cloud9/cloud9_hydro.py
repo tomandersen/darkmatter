@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 
 # --- Physical Constants (SI Units) ---
 k_B = 1.380649e-23     # J/K
-T = 1e4                # Gas temperature (K)
+T = 3e5                # Gas temperature (K)
 G = 6.67430e-11        # m^3 / (kg s^2)
 m_p = 1.67262192e-27   # Proton mass (kg)
-P_power = 10      # Field power (W)
+P_power = 60      # Field power (W)
 c = 299792458.0        # Speed of light (m/s)
 
 # --- Conversion Factors ---
@@ -20,20 +20,21 @@ kg_m3_to_amu_cm3 = kg_to_amu / 1e6   # Convert kg/m^3 to amu/cm^3
 C_dark = P_power / (c**3)
 
 # --- Density Thresholds ---
-min_density_cm3 = 0.0000000000002
+min_density_cm3 = 0.0000002
 N_min = min_density_cm3 * 1e6  # Convert to particles/m^3
 
 # --- Density Functions (with Cutoff) ---
 def rho(N):
     """Total mass density (kg/m^3). DM breaks down below N_min."""
     if N < N_min:
-        return m_p * N
+        N = N_min
+        #return m_p * N
     return m_p * N + C_dark * (N**(2/3))
 
 def drho_dN(N):
     """Derivative of total mass density w.r.t N."""
     if N < N_min:
-        return m_p
+        return 0
     return m_p + (2/3) * C_dark * (N**(-1/3))
 
 # Vectorized version of rho for processing the final arrays
@@ -48,8 +49,12 @@ def rho_array(N_arr):
 def hydrostatic_ode(r, y):
     N, dN_dr, M_gas, M_tot = y
     
-    if N <= 1e-14:
-        return [0, 0, 0, 0]
+    if N <= N_min:
+        N = N_min
+        dN_dr = 0
+ 
+    # if N <= 1e-14:
+    #     return [0, 0, 0, 0]
         
     term1 = - (2.0 / r) * dN_dr
     term2 = (drho_dN(N) / rho(N)) * (dN_dr**2)
@@ -78,7 +83,7 @@ M_tot_initial = (4/3) * np.pi * (r0**3) * rho(N_initial)
 y0 = [N_initial, dN_initial, M_gas_initial, M_tot_initial]
 
 # Max integration distance set to 50 kpc
-r_max_m = 50000 * pc_to_m  
+r_max_m = 15000 * pc_to_m  
 r_span = (r0, r_max_m)
 
 def cloud_edge(r, y):
@@ -103,6 +108,11 @@ M_tot_Msun = M_tot_arr * kg_to_Msun
 rho_tot_plot = rho_array(N_arr) * kg_m3_to_amu_cm3
 rho_gas_plot = (m_p * N_arr) * kg_m3_to_amu_cm3
 
+# Print Final Masses
+print(f"Integration ended at: {r_kpc[-1]:.2f} kpc")
+print(f"Total Cloud Mass: {M_tot_Msun[-1]:.2e} M_sun")
+print(f"Total Gas Mass:   {M_gas_Msun[-1]:.2e} M_sun")
+
 # Auto-scaling logic (edge of integration)
 x_max = min(10, r_kpc[-1]*1.2)
 
@@ -118,25 +128,22 @@ ax1.set_title("Volume Mass Density Profile")
 ax1.set_xlabel("Radius (kpc)")
 ax1.set_ylabel(r"Mass Density (amu / cm$^3$)")
 ax1.set_yscale("log")
-ax1.set_xlim(0, x_max)
+ax1.set_xlim(0, 2)
 ax1.grid(True, which="both", ls="--", alpha=0.5)
 ax1.legend()
 
 # Graph 2: Enclosed Mass
-ax2.plot(r_kpc, M_tot_Msun, label='Enclosed Total Mass', color='indigo', linewidth=2)
-ax2.plot(r_kpc, M_gas_Msun, label='Enclosed Gas Mass', color='orange', linewidth=2, linestyle='--')
+ax2.plot(r_kpc[30:], M_tot_Msun[30:], label='Enclosed Total Mass', color='indigo', linewidth=2)
+ax2.plot(r_kpc[30:], M_gas_Msun[30:], label='Enclosed Gas Mass', color='orange', linewidth=2, linestyle='--')
 
 ax2.set_title("Cumulative Enclosed Mass")
 ax2.set_xlabel("Radius (kpc)")
 ax2.set_ylabel(r"Enclosed Mass ($M_\odot$)")
-ax2.set_xlim(0, x_max)
+ax2.set_yscale("log")
+ax2.set_xlim(0.1, 10)
 ax2.grid(True, ls="--", alpha=0.5)
 ax2.legend()
 
 plt.tight_layout()
 plt.show()
 
-# Print Final Masses
-print(f"Integration ended at: {r_kpc[-1]:.2f} kpc")
-print(f"Total Cloud Mass: {M_tot_Msun[-1]:.2e} M_sun")
-print(f"Total Gas Mass:   {M_gas_Msun[-1]:.2e} M_sun")
