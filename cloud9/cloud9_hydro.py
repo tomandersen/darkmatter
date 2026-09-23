@@ -83,7 +83,7 @@ M_tot_initial = (4/3) * np.pi * (r0**3) * rho(N_initial)
 y0 = [N_initial, dN_initial, M_gas_initial, M_tot_initial]
 
 # Max integration distance set to 50 kpc
-r_max_m = 15000 * pc_to_m  
+r_max_m = 10000 * pc_to_m  
 r_span = (r0, r_max_m)
 
 def cloud_edge(r, y):
@@ -124,9 +124,9 @@ ax1.plot(r_kpc, rho_tot_plot, label='Total Mass Density', color='indigo', linewi
 ax1.plot(r_kpc, rho_gas_plot, label='Gas Mass Density', color='orange', linewidth=2, linestyle='--')
 ax1.axhline(min_density_cm3 * (m_p * kg_to_amu), color='red', linestyle=':', label='DM Cutoff Threshold')
 
-ax1.set_title("Volume Mass Density Profile")
+ax1.set_title(f"Cloud 9 $T={T:.2e}$K, Power = {P_power} W, N_i = {N0_cm3} particles/cm$^3$")
 ax1.set_xlabel("Radius (kpc)")
-ax1.set_ylabel(r"Mass Density (amu / cm$^3$)")
+ax1.set_ylabel(r"Mass Density (amu / cm$^3$) (hydrostatic EQ)")
 ax1.set_yscale("log")
 ax1.set_xlim(0, 2)
 ax1.grid(True, which="both", ls="--", alpha=0.5)
@@ -140,7 +140,8 @@ ax2.set_title("Cumulative Enclosed Mass")
 ax2.set_xlabel("Radius (kpc)")
 ax2.set_ylabel(r"Enclosed Mass ($M_\odot$)")
 ax2.set_yscale("log")
-ax2.set_xlim(0.1, 10)
+ax2.set_xlim(0.01, 10)
+ax2.set_xscale("log")
 ax2.grid(True, ls="--", alpha=0.5)
 ax2.legend()
 
