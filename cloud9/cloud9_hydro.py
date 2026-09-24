@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 
 # --- Physical Constants (SI Units) ---
 k_B = 1.380649e-23     # J/K
-T = 1e6                # Gas temperature (K)
-G = 6.67430e-11        # m^3 / (kg s^2)
-m_p = 1.67262192e-27   # Proton mass (kg)
+T = 2e5                # Gas temperature (K)
+G_N = 6.67430e-11        # m^3 / (kg s^2)
+m_p = 1.67262192e-27  # Proton mass (kg)
 P_power = 60      # Field power (W)
 c = 299792458.0        # Speed of light (m/s)
 mu = 1.0 # for normal hydrogen helium mix gas - in the 20K temp regime we use
@@ -26,7 +26,7 @@ C_dark = P_power / (c**3)
 
 # --- Density Thresholds ---
 min_density_cm3 = 0.0
-max_density_cm3 = 0.01 # at densities over this, power is P_power
+max_density_cm3 = 0.000001 # at densities over this, power is P_power
  
 N_min = min_density_cm3 * 1e6  # Convert to particles/m^3
 N_max = max_density_cm3 * 1e6  
@@ -120,7 +120,7 @@ def hydrostatic_ode(r, y):
         
     term1 = - (2.0 / r) * dN_dr
     term2 = (drho_dN(N) / rho(N)) * (dN_dr**2)
-    term3 = - (4 * np.pi * G / (k_B * T)) * (rho(N)**2)
+    term3 = - (4 * np.pi * G_N / (k_B * T)) * (rho(N)**2)
     
     d2N_dr2 = term1 + term2 + term3
     
@@ -139,7 +139,7 @@ def hydrostatic_ode(r, y):
 
 
 r0 = 1e-10 * pc_to_m 
-N_double_prime_0 = - (4 * np.pi * G / (3 * k_B * T)) * (rho(N0)**2)
+N_double_prime_0 = - (4 * np.pi * G_N / (3 * k_B * T)) * (rho(N0)**2)
 
 N_initial = N0 + 0.5 * N_double_prime_0 * (r0**2)
 dN_initial = N_double_prime_0 * r0
