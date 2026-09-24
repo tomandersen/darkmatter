@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 
 # --- Physical Constants (SI Units) ---
 k_B = 1.380649e-23     # J/K
-T = 1e6                # Gas temperature (K)
+T = 2e4                # Gas temperature (K)
 G = 6.67430e-11        # m^3 / (kg s^2)
 m_p = 1.67262192e-27   # Proton mass (kg)
-P_power = 0      # Field power (W)
+P_power = 10      # Field power (W)
 c = 299792458.0        # Speed of light (m/s)
 mu = 1.0 # for normal hydrogen helium mix gas - in the 20K temp regime we use
 
@@ -26,7 +26,7 @@ C_dark = P_power / (c**3)
 
 # --- Density Thresholds ---
 min_density_cm3 = 0.0
-max_density_cm3 = 0.1 # at densities over this, power is P_power
+max_density_cm3 = 0.00001 # at densities over this, power is P_power
  
 N_min = min_density_cm3 * 1e6  # Convert to particles/m^3
 N_max = max_density_cm3 * 1e6  

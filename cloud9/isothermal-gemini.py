@@ -10,7 +10,7 @@ M_sun = 1.98847e30       # Solar mass (kg)
 kpc = 3.085677581e19     # Kiloparsec in meters
 
 # --- Input Parameters ---
-T = 1e6              # Temperature in Kelvin
+T = 2e2               # Temperature in Kelvin
 n_c = 0.5 * 1e6          # Central particle density (0.5 per cm^3 converted to m^-3)
 mu = 1.0                 # Usually 0.6, but my other script uses 1, (and usually temps near 20000K - Mean molecular weight (approx for ionized primordial gas)
 
