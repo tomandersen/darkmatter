@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 
 # --- Physical Constants (SI Units) ---
 k_B = 1.380649e-23     # J/K
-T = 3e5                # Gas temperature (K)
+T = 1e6                # Gas temperature (K)
 G = 6.67430e-11        # m^3 / (kg s^2)
 m_p = 1.67262192e-27   # Proton mass (kg)
-P_power = 60      # Field power (W)
+P_power = 0      # Field power (W)
 c = 299792458.0        # Speed of light (m/s)
+mu = 1.0 # for normal hydrogen helium mix gas - in the 20K temp regime we use
 
 # --- Conversion Factors ---
 pc_to_m = 3.086e16
@@ -25,8 +26,8 @@ C_dark = P_power / (c**3)
 
 # --- Density Thresholds ---
 min_density_cm3 = 0.0
-max_density_cm3 = 0.000001 # at densities over this, power is P_power
-
+max_density_cm3 = 0.1 # at densities over this, power is P_power
+ 
 N_min = min_density_cm3 * 1e6  # Convert to particles/m^3
 N_max = max_density_cm3 * 1e6  
 # def dm_mass(N): 
@@ -91,19 +92,19 @@ def d_dm_mass_dN(N):
 
 # --- Density Functions (with Cutoff) ---
 def rho(N):
-    """Total mass density (kg/m^3). DM breaks down below N_min."""
-    return m_p * N + dm_mass(N)
+    """Total mass density (kg/m^3)."""
+    return m_p * mu * N + dm_mass(N)
 
 def drho_dN(N):
     """Derivative of total mass density w.r.t N."""
-    return m_p + d_dm_mass_dN(N)
+    return m_p * mu + d_dm_mass_dN(N)
 
 # Vectorized version of rho for processing the final arrays
 def rho_array(N_arr):
     res = np.zeros_like(N_arr)
     mask = N_arr < N_min
-    res[mask] = m_p * N_arr[mask]
-    res[~mask] = m_p * N_arr[~mask] + C_dark * (N_arr[~mask]**(2/3))
+    res[mask] = m_p * mu * N_arr[mask]
+    res[~mask] = m_p * mu * N_arr[~mask] + C_dark * (N_arr[~mask]**(2/3))
     return res
 
 # --- ODE System ---
@@ -124,7 +125,7 @@ def hydrostatic_ode(r, y):
     d2N_dr2 = term1 + term2 + term3
     
     # dM/dr for Enclosed Mass
-    dM_gas_dr = 4 * np.pi * (r**2) * m_p * N
+    dM_gas_dr = 4 * np.pi * (r**2) * m_p * mu * N
     dM_tot_dr = 4 * np.pi * (r**2) * rho(N)
     
 
