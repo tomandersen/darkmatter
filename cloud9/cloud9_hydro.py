@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # --- Physical Constants (SI Units) ---
 k_B = 1.380649e-23     # J/K
-T = 3e4                # Gas temperature (K)
+T = 3e5                # Gas temperature (K)
 G = 6.67430e-11        # m^3 / (kg s^2)
 m_p = 1.67262192e-27   # Proton mass (kg)
 P_power = 60      # Field power (W)
@@ -18,27 +18,60 @@ kg_to_Msun = 1.0 / 1.98847e30
 kg_to_amu = 1.0 / 1.66053906660e-27  # Convert kg to atomic mass units
 kg_m3_to_amu_cm3 = kg_to_amu / 1e6   # Convert kg/m^3 to amu/cm^3
 
+# --- Boundary Conditions ---
+N0_cm3 = 0.5  
+N0 = N0_cm3 * 1e6  # particles/m^3
 C_dark = P_power / (c**3)
 
 # --- Density Thresholds ---
-min_density_cm3 = 0.0002
-max_density_cm3 = 2 # at densities over this, power is P_power
+min_density_cm3 = 0.0
+max_density_cm3 = 0.000001 # at densities over this, power is P_power
 
 N_min = min_density_cm3 * 1e6  # Convert to particles/m^3
 N_max = max_density_cm3 * 1e6  
+# def dm_mass(N): 
+#     if N <= N_min:
+#         print(f"rho = 0 , N={N}, fraction={0}")
+#         return 0
+#     if N >= N_max:
+#         print(f"rho = {C_dark * (N**(2/3))} , N={N}, fraction={1}")
+#         return C_dark * (N**(2/3))
+
+#     #interpolate between these points
+#     range = N_max - N_min
+#     fraction = (N - N_min) / range
+#     rho = C_dark * np.sqrt(fraction) * (N**(2/3))
+#     print(f"rho = {rho} , N={N}, fraction={fraction}")
+#     return rho
+
+# def d_dm_mass_dN(N):
+#     if N <= N_min:
+#         return 0
+#     if N >= N_max:
+#         return (2/3) * C_dark * (N**(-1/3))
+
+#      # $$f'(N) = \frac{\text{CONST} \cdot (7N - 4N_m)}{6 \cdot \sqrt{R_c} \cdot \sqrt{N - N_m} \cdot N^{1/3}}$$
+#     # did the derivate with LLM
+#     range = N_max - N_min
+#     top = C_dark*(7*N - 4*N_min) 
+#     bottom = 6 * np.sqrt(range)*np.sqrt(N - N_min)*N**(1/3)
+#     return top/bottom
+
+
+# LINEAR
 def dm_mass(N): 
     if N <= N_min:
-        print(f"rho = 0 , N={N}, fraction={0}")
+        #print(f"rho = 0 , N={N}, fraction={0}")
         return 0
     if N >= N_max:
-        print(f"rho = {C_dark * (N**(2/3))} , N={N}, fraction={1}")
+        #print(f"rho = {C_dark * (N**(2/3))} , N={N}, fraction={1}")
         return C_dark * (N**(2/3))
 
     #interpolate between these points
     range = N_max - N_min
     fraction = (N - N_min) / range
-    rho = C_dark * np.sqrt(fraction) * (N**(2/3))
-    print(f"rho = {rho} , N={N}, fraction={fraction}")
+    rho = C_dark * fraction * (N**(2/3))
+    #print(f"rho = {rho} , N={N}, fraction={fraction}")
     return rho
 
 def d_dm_mass_dN(N):
@@ -50,9 +83,10 @@ def d_dm_mass_dN(N):
      # $$f'(N) = \frac{\text{CONST} \cdot (7N - 4N_m)}{6 \cdot \sqrt{R_c} \cdot \sqrt{N - N_m} \cdot N^{1/3}}$$
     # did the derivate with LLM
     range = N_max - N_min
-    top = C_dark*(7*N - 4*N_min) 
-    bottom = 6 * np.sqrt(range)*np.sqrt(N - N_min)*N**(1/3)
+    top = C_dark*(5*N - 2*N_min) 
+    bottom = 3 * range * N**(1/3)
     return top/bottom
+
 
 
 # --- Density Functions (with Cutoff) ---
@@ -102,9 +136,6 @@ def hydrostatic_ode(r, y):
 
     return retarray
 
-# --- Boundary Conditions ---
-N0_cm3 = 0.5  
-N0 = N0_cm3 * 1e6  # particles/m^3
 
 r0 = 1e-10 * pc_to_m 
 N_double_prime_0 = - (4 * np.pi * G / (3 * k_B * T)) * (rho(N0)**2)
@@ -124,8 +155,8 @@ def cloud_edge(r, y):
     return y[0] - 1e-6  # Stop if N drops to near absolute zero
 cloud_edge.terminal = True
 
-# --- Execute Solver ---
-solution = solve_ivp(hydrostatic_ode, r_span, y0, method='Radau', events=cloud_edge)
+# --- Execute Solver --- 'Radau', 'RK45'
+solution = solve_ivp(hydrostatic_ode, r_span, y0, method='RK45', events=cloud_edge, rtol=1e-10)
 
 # Extract results
 r_arr = solution.t
@@ -162,7 +193,8 @@ ax1.set_title(f"Cloud 9 $T={T:.2e}$K, Power = {P_power} W, N_i = {N0_cm3} partic
 ax1.set_xlabel("Radius (kpc)")
 ax1.set_ylabel(r"Mass Density (amu / cm$^3$) (hydrostatic EQ)")
 ax1.set_yscale("log")
-ax1.set_xlim(0, 10)
+ax1.set_xscale("log")
+ax1.set_xlim(0.02, 10)
 ax1.grid(True, which="both", ls="--", alpha=0.5)
 ax1.legend()
 
