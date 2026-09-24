@@ -1,10 +1,11 @@
+from matplotlib import mathtext
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
 # --- Physical Constants (SI Units) ---
 k_B = 1.380649e-23     # J/K
-T = 3e5                # Gas temperature (K)
+T = 3e4                # Gas temperature (K)
 G = 6.67430e-11        # m^3 / (kg s^2)
 m_p = 1.67262192e-27   # Proton mass (kg)
 P_power = 60      # Field power (W)
@@ -20,22 +21,48 @@ kg_m3_to_amu_cm3 = kg_to_amu / 1e6   # Convert kg/m^3 to amu/cm^3
 C_dark = P_power / (c**3)
 
 # --- Density Thresholds ---
-min_density_cm3 = 0.0000002
+min_density_cm3 = 0.0002
+max_density_cm3 = 2 # at densities over this, power is P_power
+
 N_min = min_density_cm3 * 1e6  # Convert to particles/m^3
+N_max = max_density_cm3 * 1e6  
+def dm_mass(N): 
+    if N <= N_min:
+        print(f"rho = 0 , N={N}, fraction={0}")
+        return 0
+    if N >= N_max:
+        print(f"rho = {C_dark * (N**(2/3))} , N={N}, fraction={1}")
+        return C_dark * (N**(2/3))
+
+    #interpolate between these points
+    range = N_max - N_min
+    fraction = (N - N_min) / range
+    rho = C_dark * np.sqrt(fraction) * (N**(2/3))
+    print(f"rho = {rho} , N={N}, fraction={fraction}")
+    return rho
+
+def d_dm_mass_dN(N):
+    if N <= N_min:
+        return 0
+    if N >= N_max:
+        return (2/3) * C_dark * (N**(-1/3))
+
+     # $$f'(N) = \frac{\text{CONST} \cdot (7N - 4N_m)}{6 \cdot \sqrt{R_c} \cdot \sqrt{N - N_m} \cdot N^{1/3}}$$
+    # did the derivate with LLM
+    range = N_max - N_min
+    top = C_dark*(7*N - 4*N_min) 
+    bottom = 6 * np.sqrt(range)*np.sqrt(N - N_min)*N**(1/3)
+    return top/bottom
+
 
 # --- Density Functions (with Cutoff) ---
 def rho(N):
     """Total mass density (kg/m^3). DM breaks down below N_min."""
-    if N < N_min:
-        N = N_min
-        #return m_p * N
-    return m_p * N + C_dark * (N**(2/3))
+    return m_p * N + dm_mass(N)
 
 def drho_dN(N):
     """Derivative of total mass density w.r.t N."""
-    if N < N_min:
-        return 0
-    return m_p + (2/3) * C_dark * (N**(-1/3))
+    return m_p + d_dm_mass_dN(N)
 
 # Vectorized version of rho for processing the final arrays
 def rho_array(N_arr):
@@ -49,9 +76,9 @@ def rho_array(N_arr):
 def hydrostatic_ode(r, y):
     N, dN_dr, M_gas, M_tot = y
     
-    if N <= N_min:
-        N = N_min
-        dN_dr = 0
+    # if N <= N_min:
+    #     N = N_min
+    #     dN_dr = 0
  
     # if N <= 1e-14:
     #     return [0, 0, 0, 0]
@@ -66,7 +93,14 @@ def hydrostatic_ode(r, y):
     dM_gas_dr = 4 * np.pi * (r**2) * m_p * N
     dM_tot_dr = 4 * np.pi * (r**2) * rho(N)
     
-    return [dN_dr, d2N_dr2, dM_gas_dr, dM_tot_dr]
+
+    retarray = [dN_dr, d2N_dr2, dM_gas_dr, dM_tot_dr]
+    # if any of the retarray is NAN or Inf, then print it and the arguments 
+    for i, val in enumerate(retarray):
+        if np.isnan(val) or np.isinf(val):
+            print(f"NAN or Inf detected at r={r}, y={y}, index={i}")
+
+    return retarray
 
 # --- Boundary Conditions ---
 N0_cm3 = 0.5  
@@ -128,7 +162,7 @@ ax1.set_title(f"Cloud 9 $T={T:.2e}$K, Power = {P_power} W, N_i = {N0_cm3} partic
 ax1.set_xlabel("Radius (kpc)")
 ax1.set_ylabel(r"Mass Density (amu / cm$^3$) (hydrostatic EQ)")
 ax1.set_yscale("log")
-ax1.set_xlim(0, 2)
+ax1.set_xlim(0, 10)
 ax1.grid(True, which="both", ls="--", alpha=0.5)
 ax1.legend()
 
