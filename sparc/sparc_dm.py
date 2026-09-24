@@ -13,11 +13,11 @@ G_SI = 6.67430e-11        # Gravitational constant: m^3 kg^-1 s^-2
 PROTON_MASS_KG = 1.67e-27   # Mass of a proton in kilograms
 
 Power = 30.0 #Guess Watts per particle. You heard it here first, people!
-DENSITY_THRESHOLD=.00002
+DENSITY_THRESHOLD=0.0000000
 
 CONVERT_ACCELERATION =  3.2408e-14 #Given v in km/sec, R in kpc, g = CONVERT_ACCELERATION*v^2/R
 REJECT_LOW_Q_AND_LOW_INCL = False # does not make much of a difference
-ADD_EXTRA_GALAXIES = False
+ADD_EXTRA_GALAXIES = False # i added a galaxy for fun. (Malin1) 
 
 #reads the SPARC asci i data as from the web site. 
 def read_ascii(data_file):
@@ -204,7 +204,7 @@ def dm_model(pw, rs, Vgas, R_d, name, densities, dm_densities, densities_r):
         densities_r.append(r)
         dm_density_baryonspercc = 0.0 # initialize
 
-        if baryon_density_n_cm3 >= DENSITY_THRESHOLD:
+        if baryon_density_n_cm3 > DENSITY_THRESHOLD:
             #average distance between gas particles
             d_avg_gas_m = np.cbrt(1.0 / baryon_density_n_cm3)/100 # cm to m
             dm_per_particle = (pw*d_avg_gas_m/c)*(1/c**2) #Power in watts times dist/c is energy, then 1/c^2 is mass in kg
