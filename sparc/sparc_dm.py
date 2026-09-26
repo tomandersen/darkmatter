@@ -12,12 +12,15 @@ METRE_PER_KPC = 3.086e19
 G_SI = 6.67430e-11        # Gravitational constant: m^3 kg^-1 s^-2
 PROTON_MASS_KG = 1.67e-27   # Mass of a proton in kilograms
 
-Power = 30.0 #Guess Watts per particle. You heard it here first, people!
-DENSITY_THRESHOLD=0.03
+POWER_GUESS = 30.0 #Guess Watts per particle. You heard it here first, people!
 
 CONVERT_ACCELERATION =  3.2408e-14 #Given v in km/sec, R in kpc, g = CONVERT_ACCELERATION*v^2/R
 REJECT_LOW_Q_AND_LOW_INCL = False # does not make much of a difference
 ADD_EXTRA_GALAXIES = False # i added a galaxy for fun. (Malin1) 
+
+# fit control. I assume galaxies always have at least DENSITY_THRESHOLD in baryons/cm^3
+DENSITY_THRESHOLD=0.0
+SCALE_GAS_EACH_GALAXY = False # set to true to scale gas density each galaxy
 
 #reads the SPARC asci i data as from the web site. 
 def read_ascii(data_file):
@@ -96,6 +99,8 @@ def read_galaxy_properties(file_path, galaxies):
         galaxies[name]['R_d'] = Rdisk
         galaxies[name]['inclination'] = incl
         galaxies[name]['Quality'] = quality
+        galaxies[name]['gas_density_scale'] = 1.0 # used when i fit each galaxy with one parameter.
+
 
     # cut down the galaxies like the 2016 paperSPARC: MASS MODELS FOR 175 DISK GALAXIES WITH SPITZER PHOTOMETRY AND ACCURATE ROTATION CURVES.
     # for 176 galaxies with quality flag Q >= 2 (146 LTGs and 30 ETGs).
@@ -135,6 +140,7 @@ def add_extra_galaxies(galaxies):
     malin['R_d'] = 20
     malin['inclination'] = 40.0
     malin['Quality'] = 1
+    malin['gas_density_scale'] = 1.0
     galaxies['Malin1'] = malin
 
     return galaxies
@@ -162,7 +168,7 @@ def get_sparc_galaxy_scale_height(radius_kpc, R_d):
 
 # model of dark matter - depends on gas density and galaxy thickness at r.
 # takes in arrays of R, vGas, disk scale factor, returns 
-def dm_model(pw, rs, Vgas, R_d, name, densities, dm_densities, densities_r):
+def dm_model(pw, rs, Vgas, gas_density_scale, R_d, name, densities, dm_densities, densities_r):
     r_prev = 0
     v_prev = 0
     Vdm = []
@@ -194,6 +200,12 @@ def dm_model(pw, rs, Vgas, R_d, name, densities, dm_densities, densities_r):
         net_mass_shell_kg = mass_encl_kg - mass_encl_prev_kg
         num_baryons_shell = net_mass_shell_kg / PROTON_MASS_KG
         baryon_density_n_cm3 = num_baryons_shell / shell_volume_cm3
+
+        # apply a one parameter scaling to the baryon density. 
+        # this factor could be between 0 and 4 (for the most massive dwarf galaxy)
+        # use 1 to use the sparc gas densities exactly. 
+        baryon_density_n_cm3 = baryon_density_n_cm3 * gas_density_scale
+
         if baryon_density_n_cm3 < DENSITY_THRESHOLD: 
             #print(f"{name}: Low or negative Baryon density {baryon_density_n_cm3} cm^-3 at r {r} kpc, R_d {R_d} kpc, setting to {DENSITY_THRESHOLD}")
             baryon_density_n_cm3 = DENSITY_THRESHOLD
@@ -254,9 +266,10 @@ def run_model(galaxies, pw, densities, dm_densities, densities_r):
         Vdisk = data['Vdisk']
         Vbul = data['Vbul']
         R_d = data['R_d']
+        gas_density_scale = data['gas_density_scale']
 
         # Calculate sums and DM proxy
-        V_dm = dm_model(pw, R, Vgas, R_d, name, densities, dm_densities, densities_r)
+        V_dm = dm_model(pw, R, Vgas, gas_density_scale, R_d, name, densities, dm_densities, densities_r)
         galaxies[name]['V_dm'] = V_dm
 
         # the formula to add velocities is sqrt(g^2 + d^2 + b^2)
@@ -284,7 +297,7 @@ def bestFit(galaxies, initialPower):
     densities_r = []
 
 
-    numSteps = 1000
+    numSteps = 500
     step = initialPower/numSteps*5
     pw = step
     print(f'bestFit starting power: {pw}')
@@ -322,6 +335,34 @@ def bestFit(galaxies, initialPower):
     print(f'Best fit chi_sq MOND: {lowest_chi_sq_err_MOND}')
     print(f'Best fit linear MOND: {lowest_linear_err_MOND}')
     return lowest_linear_err_power
+
+def best_fit_scale_gas_each_galaxy(galaxies, the_power):
+    densities = []
+    dm_densities = []
+    densities_r = []
+
+    for name, data in galaxies.items():
+        data['gas_density_scale'] = 0.0
+        a_gal = {}
+        a_gal[name] = data
+        # optimize each galaxy, minimize fit_params['total_linear_error'] for each galaxy 
+        # by varying gas_density_scale 
+        numSteps = 100
+        step = 5.0/numSteps
+        best_linear_error = 1e99
+        best_gas_density_scale = 1.0
+        for count in range(numSteps):
+            data['gas_density_scale'] = step*count
+            a_gal, fit_params = run_model(a_gal, the_power, densities, dm_densities, densities_r)
+            if fit_params['total_linear_error'] < best_linear_error:
+                best_linear_error = fit_params['total_linear_error']
+                best_gas_density_scale = data['gas_density_scale']
+        # print(f'Best fit linear error for galaxy {name}: {best_linear_error}')
+        # print(f'Best fit gas density scale for galaxy {name}: {best_gas_density_scale}')
+        data['gas_density_scale'] = best_gas_density_scale
+
+    return
+
 
 
 def main():
@@ -362,12 +403,26 @@ def main():
 
 
     # determine best fits
-    best_power = bestFit(galaxies, Power)
+    best_power = bestFit(galaxies, POWER_GUESS)
     best_power = float(int(best_power))
     print(f"Best fit Power: {best_power}") 
+
+    if SCALE_GAS_EACH_GALAXY:
+        #ok - let the galaxies figure it out...
+        best_fit_scale_gas_each_galaxy(galaxies, best_power)
+
+
+        #run for the best power again: (seems to get same power)
+        best_power = bestFit(galaxies, POWER_GUESS)
+        best_power = float(int(best_power))
+        print(f"Best fit Power after galaxy gas1 : {best_power}") 
+
+
     galaxies, fit_params = run_model(galaxies, best_power, densities, dm_densities, densities_r)
 
     file_name_part = f"power-{int(best_power)}W-{DENSITY_THRESHOLD}-cc"
+    if SCALE_GAS_EACH_GALAXY:
+        file_name_part += "-gasScale"
     out_dir = f'sparc/{file_name_part}/curves/'
     os.makedirs(out_dir, exist_ok=True)
 
@@ -386,14 +441,14 @@ def main():
         plt.errorbar(data['R'], data['Vobs'], yerr=data['e_Vobs'], fmt='k.', label='V_observed', capsize=3, elinewidth=0.5)
          
         # Plot components
-        plt.plot(data['R'], data['Vgas'], 'g:', label='Gas', linewidth=1)
-        plt.plot(data['R'], data['Vdisk'], 'r--', label='Disk', linewidth=1)
-        plt.plot(data['R'], data['Vbul'], color='orange', linestyle='--', label='Bulge', linewidth=1)
+        plt.plot(data['R'], data['Vgas'], 'g:', label='SPARC Gas', linewidth=1)
+        plt.plot(data['R'], data['Vdisk'], 'r--', label='SPARC Disk', linewidth=1)
+        plt.plot(data['R'], data['Vbul'], color='orange', linestyle='--', label='SPARC Bulge', linewidth=1)
         
 
         # do 
         # Plot total (blue dashed to distinguish from Vobs)
-        plt.plot(data['R'], data['Vtot_baryons'], color='blue', linestyle='--', label='gas+disk+bulge', linewidth=1.)
+        plt.plot(data['R'], data['Vtot_baryons'], color='blue', linestyle='--', label='SPARC gas+disk+bulge', linewidth=1.)
         
         # Plot dm
         plt.plot(data['R'], data['V_dm'], color='cyan', linestyle=':', label='DM Model', linewidth=1)
@@ -404,7 +459,12 @@ def main():
         # plot MOND
         plt.plot(data['R'], data['V_MOND'], color='grey', linestyle='-', label='MOND', linewidth=2)
 
-        plt.title(f"{name} Rotation Curve")
+        # args string
+        args_str = f"P={int(best_power)}W, min gas={DENSITY_THRESHOLD:0.3f}/cm$^3$"
+        if SCALE_GAS_EACH_GALAXY:
+            args_str += f", gas_scale = {data['gas_density_scale']:0.2f}"
+ 
+        plt.title(f"{name} Rotation Curve ({args_str})")
         plt.xlabel('Radius (kpc)')
         plt.ylabel('Velocity (km/s)')
         
@@ -449,6 +509,7 @@ def main():
     plt.ylabel('Frequency')
     plt.legend()
     plt.savefig(f'sparc/{file_name_part}/gas_densities-{file_name_part}.png', dpi=300)
+    plt.close()
 
     # Ok now make an X-Y scatter plot of the DM velocities and radiuses 
     # plot one dot for each densities, densities_r pair, make the densities on the y scale, make the y scale logarithimic
@@ -463,6 +524,7 @@ def main():
     plt.ylabel('Density (n/cm^3)')
     plt.legend()
     plt.savefig(f'sparc/{file_name_part}/densities_scatter_combined-{file_name_part}.png', dpi=300)
+    plt.close()
 
     # Ok now make a graph showing oberved vs predicted as a scatter plot, log/log scale.
     # Graph 4 
@@ -496,6 +558,7 @@ def main():
     plt.ylabel('Acceleration (m/s^2)  Observed')
     plt.legend()
     plt.savefig(f'sparc/{file_name_part}/acceleration_scatter_combined-{file_name_part}.png', dpi=300)
+    plt.close()
 
 
     # Graph 5. Plot the the same Graph 4 above only with binned data  bins
@@ -560,6 +623,24 @@ def main():
     plt.legend()
     plt.savefig(f'sparc/{file_name_part}/binnedLTGs-{file_name_part}.png', dpi=300)
 
+    make_gas_density_scale_plot(galaxies, best_power, file_name_part)
+
+def make_gas_density_scale_plot(galaxies, power, file_name_part):
+    # get best fit gas density scale for each galaxy
+    gas_scale = []
+    for name, data in galaxies.items():
+        gas_scale.append(data['gas_density_scale'])
+        
+    # now make a histogram of the gas density scales
+    fig, ax = plt.subplots()
+    bins = np.linspace(0, 5, 41)  # 20 linear bins from 0 to 5
+    ax.hist(gas_scale, bins=bins, color='blue')
+    ax.set_xlim(0, 5)
+    ax.set_xlabel("Gas Density Scale (dimensionless)")
+    ax.set_ylabel("Frequency")
+    ax.set_title("SPARC Gas Density Scale Distribution, power="+str(power))
+    fig.savefig(f'sparc/{file_name_part}/gas_density_scale_hist-{file_name_part}.png', dpi=300)
+    plt.close(fig)
 
 if __name__ == "__main__":
     main()
