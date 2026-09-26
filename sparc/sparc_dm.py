@@ -3,6 +3,8 @@ import numpy as np
 from matplotlib import mathtext
 import os
 import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 G = 4.3009e-6             # Gravitational constant: kpc * (km/s)^2 / M_sun
 c = 299792458.0           # Speed of light: m/s
@@ -20,7 +22,7 @@ ADD_EXTRA_GALAXIES = False # i added a galaxy for fun. (Malin1)
 
 # fit control. I assume galaxies always have at least DENSITY_THRESHOLD in baryons/cm^3
 DENSITY_THRESHOLD=0.0
-SCALE_GAS_EACH_GALAXY = False # set to true to scale gas density each galaxy
+SCALE_GAS_EACH_GALAXY = True # set to true to scale gas density each galaxy
 
 #reads the SPARC asci i data as from the web site. 
 def read_ascii(data_file):
@@ -624,6 +626,7 @@ def main():
     plt.savefig(f'sparc/{file_name_part}/binnedLTGs-{file_name_part}.png', dpi=300)
 
     make_gas_density_scale_plot(galaxies, best_power, file_name_part)
+    plot_absolute_residual_dist(galaxies, file_name_part)
 
 def make_gas_density_scale_plot(galaxies, power, file_name_part):
     # get best fit gas density scale for each galaxy
@@ -641,6 +644,66 @@ def make_gas_density_scale_plot(galaxies, power, file_name_part):
     ax.set_title("SPARC Gas Density Scale Distribution, power="+str(power))
     fig.savefig(f'sparc/{file_name_part}/gas_density_scale_hist-{file_name_part}.png', dpi=300)
     plt.close(fig)
+
+def plot_absolute_residual_dist(galaxies, file_name_part):
+    # --- 1. Compute the Absolute Residuals Arrays ---
+    # Replace these placeholders with your actual data arrays
+    # residuals_my_model = np.abs(V_obs - V_pred_your_model)
+    # residuals_mond = np.abs(V_obs - V_pred_mond)
+    residuals_my_model = []
+    residuals_mond = []
+    for name, data in galaxies.items():
+        for v_obs, v_err, v_tot_all, v_mond in zip(data['Vobs'], data['e_Vobs'], data['Vtot_all'], data['V_MOND']):
+            residuals_my_model.append(np.abs(v_obs - v_tot_all))
+            residuals_mond.append(np.abs(v_obs - v_mond))
+
+
+    # --- 2. Create the Shared Plot ---
+    plt.figure(figsize=(10, 6))
+
+    # Plot your model's absolute residuals
+    sns.histplot(
+        residuals_my_model, 
+        color='royalblue', 
+        label=r'Your Model ($\rho_{dm} \propto n_b^{2/3}$)', 
+        kde=True,       # Adds a smooth density curve
+        alpha=0.5,      # Makes bars semi-transparent so they overlap cleanly
+        element="step", # Clean look for comparing distributions
+        bins=40
+    )
+
+    # Plot MOND's absolute residuals
+    sns.histplot(
+        residuals_mond, 
+        color='crimson', 
+        label='MOND', 
+        kde=True, 
+        alpha=0.4, 
+        element="step",
+        bins=40
+    )
+
+    # --- 3. Format and Label the Chart ---
+    plt.title('Distribution of Absolute Velocity Residuals (SPARC Dataset)', fontsize=14, fontweight='bold')
+    plt.xlabel('Absolute Residual $|V_{obs} - V_{pred}|$ (km/s)', fontsize=12)
+    plt.ylabel('Count (Number of Data Points)', fontsize=12)
+
+    # Set an appropriate X-limit based on your maximum error (e.g., 0 to 100 km/s)
+    plt.xlim(0, 100) 
+
+    # Add lines marking the Mean Absolute Error (MAE) for both
+    plt.axvline(np.mean(residuals_my_model), color='blue', linestyle='--', linewidth=1.5, 
+                label=f'Your MAE: {np.mean(residuals_my_model):.1f} km/s')
+    plt.axvline(np.mean(residuals_mond), color='red', linestyle='--', linewidth=1.5, 
+                label=f'MOND MAE: {np.mean(residuals_mond):.1f} km/s')
+
+    plt.legend(fontsize=11, loc='upper right')
+    plt.grid(True, linestyle=':', alpha=0.6)
+
+    plt.tight_layout()
+    plt.savefig(f'sparc/{file_name_part}/absolute_residual_dist-{file_name_part}.png', dpi=300)
+    plt.close()
+
 
 if __name__ == "__main__":
     main()
