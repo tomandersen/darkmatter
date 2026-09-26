@@ -21,8 +21,9 @@ REJECT_LOW_Q_AND_LOW_INCL = False # does not make much of a difference
 ADD_EXTRA_GALAXIES = False # i added a galaxy for fun. (Malin1) 
 
 # fit control. I assume galaxies always have at least DENSITY_THRESHOLD in baryons/cm^3
-DENSITY_THRESHOLD=0.0
-SCALE_GAS_EACH_GALAXY = True # set to true to scale gas density each galaxy
+DENSITY_THRESHOLD=0.00
+SCALE_GAS_EACH_GALAXY = False # set to true to scale gas density each galaxy
+MAX_GAS_SCALE = 5.0
 
 #reads the SPARC asci i data as from the web site. 
 def read_ascii(data_file):
@@ -350,7 +351,7 @@ def best_fit_scale_gas_each_galaxy(galaxies, the_power):
         # optimize each galaxy, minimize fit_params['total_linear_error'] for each galaxy 
         # by varying gas_density_scale 
         numSteps = 100
-        step = 5.0/numSteps
+        step = MAX_GAS_SCALE/numSteps
         best_linear_error = 1e99
         best_gas_density_scale = 1.0
         for count in range(numSteps):
@@ -636,7 +637,7 @@ def make_gas_density_scale_plot(galaxies, power, file_name_part):
         
     # now make a histogram of the gas density scales
     fig, ax = plt.subplots()
-    bins = np.linspace(0, 5, 41)  # 20 linear bins from 0 to 5
+    bins = np.linspace(0, MAX_GAS_SCALE, 31)  # 20 linear bins from 0 to 5
     ax.hist(gas_scale, bins=bins, color='blue')
     ax.set_xlim(0, 5)
     ax.set_xlabel("Gas Density Scale (dimensionless)")
