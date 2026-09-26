@@ -4,20 +4,20 @@
 \newcommand\aastex{AAS\TeX}
 \newcommand\latex{L\textsubscript{E}\TeX}
 
-\shorttitle{1-Parameter Empirical Dark Matter Density Profile}
+\shorttitle{A One-parameter, Purely Baryon Driven, Dark Matter Density Profile}
 \shorttitle{Galactic Rotation Curves from a Singular Parameter}
-\shortauthors{Author et al.}
+\shortauthors{Thomas C. Andersen}
 
 \begin{document}
 
-\title{A Parsimonious 1-Parameter Empirical Dark Matter Density Profile for Galactic Rotation Curves}
+\title{A One-parameter, Purely Baryon Driven, Dark Matter Density Profile}
 
-\author[0000-0000-0000-0000]{Author Name}
-\affiliation{Department of Physics and Astronomy, University Name \\
-Street Address, City, State, Zip, Country}
+\author[0000-0003-1614-4124]{Thomas C. Andersen}
+\affiliation{nSCIr \\
+Ontario, Canada}
 
 \begin{abstract}
-We present a novel, top-down empirical dark matter density profile derived from galactic kinematics, defined by the strict 1-parameter scaling relation $\rho_{\text{dm}} = K \cdot n_b^{2/3}$, where $n_b$ is the local volumetric baryon density and $K$ is a universal global constant. To evaluate its generalizability, we optimize and test this relation against the complete Spitzer Photometry and Accurate Rotation Curves (SPARC) database, comprising 3,391 data points across 175 morphologically diverse galaxies. Optimization is performed via robust Least Absolute Deviations (LAD) regression to mitigate the impact of localized kinematic correlations and observational scatter. Our strict 1-parameter model achieves a global Mean Absolute Error (MAE) of 25.6~km/s. This directly matches the statistical performance scale of Modified Newtonian Dynamics (MOND), which yields an MAE of 18.7~km/s on the same dataset despite decades of framework optimization. Notably, allocating 179 additional free parameters to absorb individual galaxy-by-galaxy variations only marginally reduces the total absolute error, demonstrating that structural departures from this universal $2/3$ scaling law are negligible. The model proves highly stable, showing minimal sensitivity to observational zero-values in inner-disk gas profiles. By mapping galactic rotation curves via a singular geometric parameter, this work establishes a data-driven baseline for the necessary structural properties of the dark mass field, independent of specific particle physics mechanisms.
+We present a novel, top-down empirical dark matter density profile derived from galactic kinematics, defined by the strict one-parameter scaling relation $\rho_{\text{dm}} = K \cdot n_b^{2/3}$, where $n_b$ is the local volumetric baryon density and $K$ is a universal global constant. To evaluate its generalizability, we optimize and test this relation against the complete Spitzer Photometry and Accurate Rotation Curves (SPARC) database, comprising 3,391 data points across 175 morphologically diverse galaxies. Optimization is performed via robust Least Absolute Deviations (LAD) regression to mitigate the impact of localized kinematic correlations and observational scatter. Our strict one-parameter model achieves a global Mean Absolute Error (MAE) of 26~km/s. This directly matches the statistical performance scale of Modified Newtonian Dynamics (MOND), which yields an MAE of 18.7~km/s on the same dataset despite decades of framework optimization. Notably, allocating 179 additional free parameters to absorb individual galaxy-by-galaxy variations only marginally reduces the total absolute error, demonstrating that structural departures from this universal $2/3$ scaling law are negligible. The model proves highly stable, showing minimal sensitivity to observational zero-values in inner-disk gas profiles. By mapping galactic rotation curves via a singular geometric parameter, this work establishes a data-driven baseline for the necessary structural properties of the dark mass field, independent of specific particle physics mechanisms.
 \end{abstract}
 
 \keywords{Dark matter --- Galaxies: kinematics and dynamics --- Rotation curves --- Astrostatistics: regression}
@@ -30,7 +30,7 @@ This prolonged absence of local detection signatures has motivated two primary p
 
 Rather than approaching this problem from the bottom up by inventing novel particle physics models or modifying gravitational field equations, this paper approaches the dark mass problem from the opposite direction: top-down phenomenological mapping. Historically, when fundamental microphysics are unknown, progress is driven by identifying the exact geometric and empirical laws mandated by observation---much as Kepler’s laws mapping planetary orbits paved the structural path for Newton’s universal gravitation. 
 
-In this work, we propose a strict, 1-parameter empirical dark matter density profile governed by a universal geometric scaling relation: $\rho_{\text{dm}} = K \cdot n_b^{2/3}$, where $n_b$ is the local volumetric baryon density and $K$ is a singular global constant. By utilizing the complete, high-fidelity Spitzer Photometry and Accurate Rotation Curves (SPARC) database as a benchmark, we bypass individual halo tuning entirely. We test whether a singular, invariant scaling law---evaluated via robust Least Absolute Deviations (LAD) regression---can reproduce observed galactic rotation curves across a wide morphological spectrum, establishing a strict observational baseline to which future microphysical and particle frameworks must conform.
+In this work, we propose a strict, one-parameter empirical dark matter density profile governed by a universal geometric scaling relation: $\rho_{\text{dm}} = K \cdot n_b^{2/3}$, where $n_b$ is the local volumetric baryon density and $K$ is a singular global constant. By utilizing the complete, high-fidelity Spitzer Photometry and Accurate Rotation Curves (SPARC) database as a benchmark, we bypass individual halo tuning entirely. We test whether a singular, invariant scaling law---evaluated via robust Least Absolute Deviations (LAD) regression---can reproduce observed galactic rotation curves across a wide morphological spectrum, establishing a strict observational baseline to which future microphysical and particle frameworks must conform.
 
 \section{Data and Methodology} \label{sec:meth}
 
@@ -53,7 +53,7 @@ The resulting model fit is characterized via the Mean Absolute Error (MAE), defi
 \section{Results and Discussion} \label{sec:results}
 
 \subsection{Model Stability and Parsimony}
-The global optimization of our 1-parameter model yields a total absolute residual sum of 86,794 across the 3,391 SPARC observations, translating to a global MAE of 25.6~km/s. When juxtaposed with the highly optimized MOND framework ($\text{MAE} = 18.7\text{ km/s}$), our model achieves a remarkably similar accuracy profile using only a single universal parameter. 
+The global optimization of our one-parameter model yields a total absolute residual sum of 86,794 across the 3,391 SPARC observations, translating to a global MAE of 25.6~km/s. When juxtaposed with the highly optimized MOND framework ($\text{MAE} = 18.7\text{ km/s}$), our model achieves a remarkably similar accuracy profile using only a single universal parameter. 
 
 To evaluate the mathematical justification for our model's simplicity, we compare it against an ultra-phenomenological, 180-parameter alternative that permits individual parameter variations for each of the 175 galaxies. Expanding the model complexity by 179 free parameters only marginally compresses the global error. This demonstrates that the vast majority of galactic velocity variance across the SPARC sample is governed by the global $2/3$ power law, with galaxy-specific adjustments fitting minor localized noise rather than structural cosmic variations.
 
@@ -82,7 +82,7 @@ An analysis of the absolute residual distributions reveals that MOND’s localiz
 
 \section{Conclusion} \label{sec:conclusion}
 
-In this paper, we have evaluated a universal, 1-parameter empirical dark matter density profile defined by the geometric relation $\rho_{\text{dm}} = K \cdot n_b^{2/3}$ against the complete SPARC database. By optimizing the global constant via robust Least Absolute Deviations (LAD) regression across 3,391 data points from 175 morphologically diverse galaxies, our model achieves a global Mean Absolute Error (MAE) of 25.6~km/s. This performance directly matches the statistical scale of the highly optimized MOND framework ($\text{MAE} = 18.7\text{ km/s}$), despite our model utilizing only a single free parameter applied uniformly across all systems.
+In this paper, we have evaluated a universal, one-parameter empirical dark matter density profile defined by the geometric relation $\rho_{\text{dm}} = K \cdot n_b^{2/3}$ against the complete SPARC database. By optimizing the global constant via robust Least Absolute Deviations (LAD) regression across 3,391 data points from 175 morphologically diverse galaxies, our model achieves a global Mean Absolute Error (MAE) of 25.6~km/s. This performance directly matches the statistical scale of the highly optimized MOND framework ($\text{MAE} = 18.7\text{ km/s}$), despite our model utilizing only a single free parameter applied uniformly across all systems.
 
 The statistical parsimony of this model provides compelling evidence for a universal coupling between baryonic density and dark mass distribution. Crucially, expanding the model’s complexity by 179 free parameters to absorb individual galaxy-by-galaxy variations yields negligible improvements in fit precision, mathematically demonstrating that the $2/3$ scaling law captures the primary structural variance of the dataset. Furthermore, the model proves highly robust against observational sensitivity limits, exhibiting minimal variance when accounting for unrecorded inner-disk gas fractions. 
 
