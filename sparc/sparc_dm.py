@@ -21,7 +21,7 @@ REJECT_LOW_Q_AND_LOW_INCL = False # does not make much of a difference
 ADD_EXTRA_GALAXIES = False # i added a galaxy for fun. (Malin1) 
 
 # fit control. I assume galaxies always have at least DENSITY_THRESHOLD in baryons/cm^3
-DENSITY_THRESHOLD=0.00
+DENSITY_THRESHOLD=0
 SCALE_GAS_EACH_GALAXY = False # set to true to scale gas density each galaxy
 MAX_GAS_SCALE = 5.0
 
@@ -423,7 +423,9 @@ def main():
 
     galaxies, fit_params = run_model(galaxies, best_power, densities, dm_densities, densities_r)
 
-    file_name_part = f"power-{int(best_power)}W-{DENSITY_THRESHOLD}-cc"
+    file_name_part = f"power-{int(best_power)}W"
+    if DENSITY_THRESHOLD > 0:
+        file_name_part += f"-{DENSITY_THRESHOLD}-cc" 
     if SCALE_GAS_EACH_GALAXY:
         file_name_part += "-gasScale"
     out_dir = f'sparc/{file_name_part}/curves/'
