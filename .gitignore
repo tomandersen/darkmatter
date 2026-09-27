@@ -179,3 +179,61 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+
+
+
+# Core LaTeX auxiliary files
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+
+# Intermediate documents
+*.dvi
+*.xdv
+*.synctex.gz
+*.synctex(busy)
+*.pdfsync
+
+# Bibliography files (BibTeX / Biber)
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*-blx.aux
+*-blx.bib
+
+# Build tools and latexmk
+*.fdb_latexmk
+*.fls
+*.upa
+*.upb
+
+# Package-specific auxiliary files
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.idx
+*.ilg
+*.ind
+*.ist
+*.nav
+*.snm
+*.vrb
+
+# OS and Editor junk
+.DS_Store
+Thumbs.db
+*.bak
+*.swp
+*.vscode/
