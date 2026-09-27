@@ -20,10 +20,11 @@ CONVERT_ACCELERATION =  3.2408e-14 #Given v in km/sec, R in kpc, g = CONVERT_ACC
 REJECT_LOW_Q_AND_LOW_INCL = False # does not make much of a difference
 ADD_EXTRA_GALAXIES = False # i added a galaxy for fun. (Malin1) 
 
-# fit control. I assume galaxies always have at least DENSITY_THRESHOLD in baryons/cm^3
-DENSITY_THRESHOLD=0
+# fit control. I assume galaxies always have at least MIN_GAS_DENSITY in baryons/cm^3
+MIN_GAS_DENSITY=3
 SCALE_GAS_EACH_GALAXY = False # set to true to scale gas density each galaxy
 MAX_GAS_SCALE = 5.0
+DENSITY_CUT_FOR_EFFECT = 0 # gas below this density does not make dark mass
 
 #reads the SPARC asci i data as from the web site. 
 def read_ascii(data_file):
@@ -184,6 +185,7 @@ def dm_model(pw, rs, Vgas, gas_density_scale, R_d, name, densities, dm_densities
     # (take out negative values, and also smooth it.  smooth with a boxcar).?.
     mass_encl_prev_kg = 0
     r_m_prev = 0
+    dm_enclosed_prev = 0;
     for r, Vg in zip(rs, Vgas):
         v_m_per_sec = Vg * 1000.0
         if v_m_per_sec < 0:
@@ -208,9 +210,9 @@ def dm_model(pw, rs, Vgas, gas_density_scale, R_d, name, densities, dm_densities
         # this factor could be between 0 and 4 (for the most massive dwarf galaxy)
         # use 1 to use the sparc gas densities exactly. 
         baryon_density_n_cm3 = baryon_density_n_cm3 * gas_density_scale
-        if baryon_density_n_cm3 < DENSITY_THRESHOLD: 
-            #print(f"{name}: Low or negative Baryon density {baryon_density_n_cm3} cm^-3 at r {r} kpc, R_d {R_d} kpc, setting to {DENSITY_THRESHOLD}")
-            baryon_density_n_cm3 = DENSITY_THRESHOLD
+        if baryon_density_n_cm3 < MIN_GAS_DENSITY: 
+            #print(f"{name}: Low or negative Baryon density {baryon_density_n_cm3} cm^-3 at r {r} kpc, R_d {R_d} kpc, setting to {MIN_GAS_DENSITY}")
+            baryon_density_n_cm3 = MIN_GAS_DENSITY
         
         # ok we have baryon density. Calc the num baryons and the density
         num_baryons_shell = shell_volume_cm3 * baryon_density_n_cm3 #recalc incase of underflow
@@ -219,26 +221,27 @@ def dm_model(pw, rs, Vgas, gas_density_scale, R_d, name, densities, dm_densities
         densities.append(baryon_density_n_cm3)
         densities_r.append(r)
         dm_density_baryonspercc = 0.0 # initialize
-
-        if baryon_density_n_cm3 > 0:
+        dm_inShell_kg = 0
+        if baryon_density_n_cm3 > DENSITY_CUT_FOR_EFFECT:
             #average distance between gas particles
             d_avg_gas_m = np.cbrt(1.0 / baryon_density_n_cm3)/100 # cm to m
             dm_per_particle = (pw*d_avg_gas_m/c)*(1/c**2) #Power in watts times dist/c is energy, then 1/c^2 is mass in kg
             dm_inShell_kg = num_baryons_shell*dm_per_particle
             dm_density_baryonspercc = dm_per_particle/PROTON_MASS_KG*baryon_density_n_cm3
 
+        # total dm inside r matters:
+        total_dm_inside_r = dm_enclosed_prev + dm_inShell_kg;
 
-            #r_av = (r_m + r_m_prev)/2
-            V_dm_km_per_sec = np.sqrt(G_SI*dm_inShell_kg / (r_m + 1e-10))/1000 # divide by 1000 to get km/sec
-            
-            #only (my weirdo) dark matter contribution here.
-            Vdm.append(V_dm_km_per_sec)
-        else:
-            Vdm.append(0.0)
+        V_dm_km_per_sec = np.sqrt(G_SI*total_dm_inside_r / (r_m + 1e-10))/1000 # divide by 1000 to get km/sec
         
+        #only (my ) dark mass contribution here.
+        Vdm.append(V_dm_km_per_sec)
+
+
         dm_densities.append(dm_density_baryonspercc)
         
         mass_encl_prev = mass_encl_kg
+        dm_enclosed_prev = total_dm_inside_r
         r_m_prev = r_m
 
     return Vdm
@@ -425,8 +428,8 @@ def main():
     galaxies, fit_params = run_model(galaxies, best_power, densities, dm_densities, densities_r)
 
     file_name_part = f"power-{int(best_power)}W"
-    if DENSITY_THRESHOLD > 0:
-        file_name_part += f"-{DENSITY_THRESHOLD}-cc" 
+    if MIN_GAS_DENSITY > 0:
+        file_name_part += f"-{MIN_GAS_DENSITY}-cc" 
     if SCALE_GAS_EACH_GALAXY:
         file_name_part += "-gasScale"
     out_dir = f'sparc/{file_name_part}/curves/'
@@ -466,7 +469,7 @@ def main():
         plt.plot(data['R'], data['V_MOND'], color='grey', linestyle='-', label='MOND', linewidth=2)
 
         # args string
-        args_str = f"P={int(best_power)}W, min gas={DENSITY_THRESHOLD:0.3f}/cm$^3$"
+        args_str = f"P={int(best_power)}W, min gas={MIN_GAS_DENSITY:0.3f}/cm$^3$"
         if SCALE_GAS_EACH_GALAXY:
             args_str += f", gas_scale = {data['gas_density_scale']:0.2f}"
  
@@ -503,7 +506,7 @@ def main():
     # 1. Plot the densities histogram
     # 2. Define logarithmically spaced bins
     # This creates 50 bins between 10^0 (1) and 10^4 (10000)
-    bins = np.logspace(np.log10(min(densities) - DENSITY_THRESHOLD/10), np.log10(max(densities)), 50)
+    bins = np.logspace(np.log10(min(densities) - MIN_GAS_DENSITY/10), np.log10(max(densities)), 50)
  
     # 3. Plot the histogram with the custom bins
     plt.hist([densities, dm_densities], bins=bins, color=['blue', 'red'], label=['Gas', 'Model DM'])
