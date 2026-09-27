@@ -181,7 +181,7 @@ def dm_model(pw, rs, Vgas, gas_density_scale, R_d, name, densities, dm_densities
     # The mass could turn out to be negative, in which case I take a low number for density.
     
     # I wonder if I should get the enclosed gas masses, as an array, then clean it up   
-    # (take out negative values, and also smooth it.  smooth with a boxcar of width 3).?.
+    # (take out negative values, and also smooth it.  smooth with a boxcar).?.
     mass_encl_prev_kg = 0
     r_m_prev = 0
     for r, Vg in zip(rs, Vgas):
@@ -208,10 +208,11 @@ def dm_model(pw, rs, Vgas, gas_density_scale, R_d, name, densities, dm_densities
         # this factor could be between 0 and 4 (for the most massive dwarf galaxy)
         # use 1 to use the sparc gas densities exactly. 
         baryon_density_n_cm3 = baryon_density_n_cm3 * gas_density_scale
-
         if baryon_density_n_cm3 < DENSITY_THRESHOLD: 
             #print(f"{name}: Low or negative Baryon density {baryon_density_n_cm3} cm^-3 at r {r} kpc, R_d {R_d} kpc, setting to {DENSITY_THRESHOLD}")
             baryon_density_n_cm3 = DENSITY_THRESHOLD
+        
+        # ok we have baryon density. Calc the num baryons and the density
         num_baryons_shell = shell_volume_cm3 * baryon_density_n_cm3 #recalc incase of underflow
         net_mass_shell_kg = num_baryons_shell*PROTON_MASS_KG # redo in case we need it
 
