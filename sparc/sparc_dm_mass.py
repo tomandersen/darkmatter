@@ -196,6 +196,7 @@ def global_linear_err(P_test):
         
         # Absolute Linear Error (L1 Norm)
         linear_err = np.sum(np.abs(g['Vobs'] - V_tot_test) / g['eVobs'])
+        #linear_err = np.sum(np.abs(g['Vobs'] - V_tot_test)) # this gets error in km/s squared, divide by number of points to get km/sec
         total_linear += linear_err
         
     return total_linear
