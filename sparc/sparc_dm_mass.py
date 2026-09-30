@@ -126,7 +126,7 @@ for i, gal in enumerate(galaxies):
     V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + V_gas_ms * np.abs(V_gas_ms), 0, None)
     Sigma_b[valid] = V_bar_sq[valid] / (2 * np.pi * G * R_m[valid])
     
-    rho_b = Sigma_b / (2 * hz_m)
+    rho_b = Sigma_b / (2 * hz_m) # use twice the height to get full volumne.
     n_R = rho_b / m_p 
     
     # Convert density thresholds from cm^-3 to m^-3
