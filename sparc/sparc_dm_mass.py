@@ -12,16 +12,16 @@ warnings.filterwarnings("ignore")
 # Upsilon of, say 1/2 for the mass to luminousity ratio for stars. Since velocity is a sqrt affair
 # then a constant Upsilon just scales things by a factor of sqrt(1/2).
 # See the 2016 paper "SPARC: MASS MODELS FOR 175 DISK GALAXIES WITH SPITZER PHOTOMETRY AND ACCURATE ROTATION CURVES."
-Upsilon_disk = 0.5
-Upsilon_bulge = 0.7 
+Upsilon_disk = 0.63#0.5   # McGaugh uses 0.5 here, our best fit is 0.63
+Upsilon_bulge = 0.54# 0.7   # McGaugh uses 0.7 here, our best fit is 0.54
 
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 # Optional Power Cuts (Set to 0.0 to disable)
-MIN_DENSITY_FOR_DM = 0# Absolute minimum global density threshold (particles/cm^3)
-MIN_DENSITY_WITHIN_R_D = 0.0   # Threshold to ignore central "gas holes" within R_d (particles/cm^3)
- 
+MIN_DENSITY_FOR_DM = 0.08# Absolute minimum global density threshold (particles/cm^3)
+MIN_DENSITY_WITHIN_R_D = 0.1   # Threshold to ignore central "gas holes" within R_d (particles/cm^3)
+
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """
     Calculates the vertical disk scale height (thickness) of a SPARC galaxy.
