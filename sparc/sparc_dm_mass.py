@@ -14,14 +14,14 @@ warnings.filterwarnings("ignore")
 # See the 2016 paper "SPARC: MASS MODELS FOR 175 DISK GALAXIES WITH SPITZER PHOTOMETRY AND ACCURATE ROTATION CURVES."
 Upsilon_disk = 0.5
 Upsilon_bulge = 0.7 
-# the data in the file is listed with Upsilon = 1 (stellar mass to luminousity ratio)
-# but we want to plot the mass, so we need to multiply by Upsilon. We can do this by 
-# multiplying the velocity by sqrt(Upsilon).
+
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
-
-
+# Optional Power Cuts (Set to 0.0 to disable)
+MIN_DENSITY_FOR_DM = 0# Absolute minimum global density threshold (particles/cm^3)
+MIN_DENSITY_WITHIN_R_D = 0.0   # Threshold to ignore central "gas holes" within R_d (particles/cm^3)
+ 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """
     Calculates the vertical disk scale height (thickness) of a SPARC galaxy.
@@ -129,8 +129,25 @@ for i, gal in enumerate(galaxies):
     rho_b = Sigma_b / (2 * hz_m)
     n_R = rho_b / m_p 
     
+    # Convert density thresholds from cm^-3 to m^-3
+    min_n_global = MIN_DENSITY_FOR_DM * 1e6
+    min_n_inner = MIN_DENSITY_WITHIN_R_D * 1e6
+    
+    # Create mask for density cuts
+    valid_dm_density = np.ones_like(n_R, dtype=bool)
+    
+    # Apply global cutoff
+    if MIN_DENSITY_FOR_DM > 0:
+        valid_dm_density &= (n_R >= min_n_global)
+        
+    # Apply inner "gas hole" cutoff (only applies within R_d)
+    if MIN_DENSITY_WITHIN_R_D > 0:
+        inner_mask = g_data['R'] <= R_d
+        valid_dm_density[inner_mask] &= (n_R[inner_mask] >= min_n_inner)
+
     # Calculate Base Dark Mass Profile (P=1)
-    rho_dm_base = (1.0 / c**3) * (n_R ** (2/3))
+    rho_dm_base = np.zeros_like(n_R)
+    rho_dm_base[valid_dm_density] = (1.0 / c**3) * (n_R[valid_dm_density] ** (2/3))
     Sigma_dm_base = rho_dm_base * (2 * hz_m)
     
     V_dm_sq_base = np.zeros_like(R_m)
