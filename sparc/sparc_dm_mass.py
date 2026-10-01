@@ -159,13 +159,15 @@ for i, gal in enumerate(galaxies):
     # I'm not sure of this integral stuff the LLM made. It seems broken. 
     # so need to do this right by hand. From first principles.
 
-
-
+    # as a test of my gas density numbers, i want to make an array of Vgas_test from the gas density
+    V_gas_sq = np.zeros_like(R_m)
+ 
     for i_idx, R_i in enumerate(R_m):
         if R_i == 0:
             continue
             
         radial_integrand = np.zeros_like(R_m)
+        radial_integrand_gas = np.zeros_like(R_m)
         for j_idx, R_j in enumerate(R_m):
             if R_j == 0:
                 continue
@@ -177,12 +179,16 @@ for i, gal in enumerate(galaxies):
                 
             ang_int, _ = quad(theta_integrand, 0, 2 * np.pi)
             radial_integrand[j_idx] = Sigma_dm_base[j_idx] * R_j * ang_int
+            radial_integrand_gas[j_idx] = Sigma_gas_m2[j_idx] * m_p * R_j * ang_int
             
         V_dm_sq_val = G * R_i * trapezoid(radial_integrand, R_m)
         V_dm_sq_base[i_idx] = max(0, V_dm_sq_val)
+
+        V_gas_sq[i_idx] = G * R_i * trapezoid(radial_integrand_gas, R_m)
         
     g_data['V_dm_sq_base_kms'] = V_dm_sq_base / (1000.0**2)
-    
+    g_data['Vgas_test'] = np.sign(V_gas_sq)*np.sqrt(np.fabs(V_gas_sq))/1000.0
+     
     # MOND Prediction Calculation
     # Estimate baryonic surface mass density (using sign preservation for gas holes)
     V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + V_gas_ms * np.abs(V_gas_ms), 0, None)
@@ -262,6 +268,7 @@ for gal in galaxies:
     plt.figure(figsize=(8, 5))
     plt.plot(g['R'], g['Vgas'], 'b:', label='Gas')
     plt.plot(g['R'], g['Vdisk'], 'y:', label='Stars')
+    plt.plot(g['R'], g['Vgas_test'], 'k:', label='Gas_test')
     if np.any(g['Vbul'] > 0):
         plt.plot(g['R'], g['Vbul'], 'g:', label='Bulge')
     plt.plot(g['R'], V_dm_final_kms, 'm--', label=f'Dark Mass (P={best_global_P:.2f}W)')
