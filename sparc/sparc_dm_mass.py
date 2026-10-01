@@ -32,7 +32,7 @@ def get_sparc_galaxy_scale_height(radius_kpc, R_d):
 
 # 1. Setup and Parse the Data
 properties_file = "./sparc/SPARC_Lelli2016c.mrt.txt"
-kinematics_file = "./sparc/MassModels_Lelli2016c.mrt"
+kinematics_file = "./sparc/MassModels_Lelli2016_SigmaGas.mrt"
 output_galaxies = "./sparc/dm_mass/galaxies"
 output_dir = "./sparc/dm_mass"
 os.makedirs(output_galaxies, exist_ok=True)
@@ -57,7 +57,7 @@ galaxies = {}
 with open(kinematics_file, 'r') as f:
     for line in f:
         parts = line.split()
-        if len(parts) == 10 and not line.startswith('---') and not line.startswith('Byte'):
+        if len(parts) == 11 and not line.startswith('---') and not line.startswith('Byte'):
             try:
                 gal_name = parts[0]
                 R = float(parts[2])
@@ -66,6 +66,7 @@ with open(kinematics_file, 'r') as f:
                 Vgas = float(parts[5])
                 Vdisk = float(parts[6])
                 Vbul = float(parts[7])
+                Sigma_gas = float(parts[10]) #without helium. So mult by 1.33
                 
                 # Multiply by sqrt(Upsilon) to convert from luminousity to mass
                 Vdisk = Vdisk * sqrt_Upsilon_disk
@@ -78,7 +79,7 @@ with open(kinematics_file, 'r') as f:
                 # Only include galaxies that have a known R_d from the properties file
                 if gal_name in rd_dict:
                     if gal_name not in galaxies:
-                        galaxies[gal_name] = {'R': [], 'Vobs': [], 'eVobs': [], 'Vgas': [], 'Vdisk': [], 'Vbul': []}
+                        galaxies[gal_name] = {'R': [], 'Vobs': [], 'eVobs': [], 'Vgas': [], 'Vdisk': [], 'Vbul': [], 'Sigma_gas': []}
                     
                     galaxies[gal_name]['R'].append(R)
                     galaxies[gal_name]['Vobs'].append(Vobs)
@@ -86,7 +87,10 @@ with open(kinematics_file, 'r') as f:
                     galaxies[gal_name]['Vgas'].append(Vgas)
                     galaxies[gal_name]['Vdisk'].append(Vdisk)
                     galaxies[gal_name]['Vbul'].append(Vbul)
+                    galaxies[gal_name]['Sigma_gas'].append(Sigma_gas)
+                    
             except ValueError:
+                print(line)
                 continue
 
 # Convert lists to numpy arrays
@@ -113,6 +117,7 @@ for i, gal in enumerate(galaxies):
     V_gas_ms = g_data['Vgas'] * 1000.0
     V_disk_ms = g_data['Vdisk'] * 1000.0
     V_bul_ms = g_data['Vbul'] * 1000.0
+    Sigma_gas_cm2 = g_data['Sigma_gas'] 
     
     # Calculate galaxy-specific scale height
     R_d = rd_dict[gal]
@@ -122,19 +127,12 @@ for i, gal in enumerate(galaxies):
     valid = R_m > 0
     #Sigma_b = np.zeros_like(R_m)
     
-    # Estimate baryonic surface mass density (using sign preservation for gas holes)
-    V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + V_gas_ms * np.abs(V_gas_ms), 0, None)
-    #Sigma_b[valid] = V_bar_sq[valid] / (2 * np.pi * G * R_m[valid])
-    
-    #get surface gas density only for my baryon thing
-    Sigma_g = np.zeros_like(R_m)
-    V_gas_sq = np.clip(V_gas_ms * np.abs(V_gas_ms), 0, None)
-    Sigma_g[valid] = V_gas_sq[valid] / (2 * np.pi * G * R_m[valid])
-    
     
     # this is WRONG - this - if its anything at all - is the gas density average for all gas out to R
-    rho_g = Sigma_g / (2 * hz_m) # use twice the height to get full volumne.
-    n_R_gas = rho_g / m_p 
+    Sigma_gas_m2 = Sigma_gas_cm2*100.0*100.0
+    n_R_gas = Sigma_gas_m2 / (2 * hz_m) # use twice the height to get full volumne.
+    n_R_gas = n_R_gas*1.33 # helium, etc
+    print(n_R_gas[2]/1e6) # print particles per cm^3
     
     # Convert density thresholds from cm^-3 to m^-3
     min_n_global = MIN_DENSITY_FOR_DM * 1e6
@@ -186,6 +184,9 @@ for i, gal in enumerate(galaxies):
     g_data['V_dm_sq_base_kms'] = V_dm_sq_base / (1000.0**2)
     
     # MOND Prediction Calculation
+    # Estimate baryonic surface mass density (using sign preservation for gas holes)
+    V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + V_gas_ms * np.abs(V_gas_ms), 0, None)
+
     g_N = np.zeros_like(R_m)
     g_N[valid] = V_bar_sq[valid] / R_m[valid]
     
