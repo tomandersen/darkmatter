@@ -8,7 +8,6 @@ import warnings
 # Suppress all integration warnings to keep terminal output clean
 warnings.filterwarnings("ignore")
 
-# https://www.wolframalpha.com/input?i=%28%281e6+solar+mass%29%2F%28mass+of+proton%29%29+*%28cm+per+kiloparsec%29%5E2
 # Convert millions of solar masses per kpc^2 to protons per cm^2
 MILLIONS_SOLAR_MASS_PER_KPC_2_TO_PROTONS_PER_CM_2 = 1.249e20
 
@@ -126,6 +125,19 @@ def main(input_file, output_file):
         Vgas_arr = np.array(data['Vgas'])
         
         Sigma_fit_Msun_pc2 = fit_galaxy_surface_density(R_arr, Vgas_arr)
+        
+        # --- Convergence Check ---
+        M_matrix = build_gravity_matrix(R_arr)
+        Gamma_test = M_matrix @ Sigma_fit_Msun_pc2
+        # Re-derive velocity, maintaining the sign
+        Vgas_test = np.sign(Gamma_test) * np.sqrt(np.abs(Gamma_test))
+        
+        errors = np.abs(Vgas_test - Vgas_arr)
+        max_error = np.max(errors)
+        
+        if max_error > 0.5:
+            print(f"WARNING: Convergence issue for {gal_id} | Max error: {max_error:.2f} km/s")
+        # -------------------------
         
         # Convert to particles/cm^2 (Hydrogen column density N_HI)
         N_HI_particles_cm2 = (Sigma_fit_Msun_pc2 / 1.33) * MILLIONS_SOLAR_MASS_PER_KPC_2_TO_PROTONS_PER_CM_2

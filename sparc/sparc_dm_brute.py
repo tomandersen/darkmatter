@@ -17,8 +17,8 @@ MIN_DENSITY_FOR_DM = 0
 MIN_DENSITY_WITHIN_R_D = 0   
 
 
-NUM_BLOBS_THETA = 360
-NUM_LAYERS_Z = 25
+NUM_BLOBS_THETA = 957
+NUM_LAYERS_Z = 177
 USE_EXPONENTIAL_DISK = True
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
