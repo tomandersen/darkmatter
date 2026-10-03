@@ -17,8 +17,8 @@ MIN_DENSITY_FOR_DM = 0
 MIN_DENSITY_WITHIN_R_D = 0   
 
 
-NUM_BLOBS_THETA = 720
-NUM_LAYERS_Z = 47
+NUM_BLOBS_THETA = 360
+NUM_LAYERS_Z = 25
 USE_EXPONENTIAL_DISK = True
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
@@ -60,7 +60,7 @@ with open(kinematics_file, 'r') as f:
                 Vgas = float(parts[5])
                 Vdisk = float(parts[6])
                 Vbul = float(parts[7])
-                Sigma_gas = float(parts[10])
+                Sigma_gas = float(parts[10]) # HI particle surface density per cm^2
                 
                 Vdisk = Vdisk * sqrt_Upsilon_disk
                 Vbul = Vbul * sqrt_Upsilon_bulge
@@ -115,7 +115,7 @@ for i, gal in enumerate(galaxies):
     valid = R_m > 0
     Sigma_gas_m2 = Sigma_gas_cm2 * 100.0 * 100.0
     n_R_gas = Sigma_gas_m2 / (2 * hz_m) 
-    n_R_gas = n_R_gas * 1.33 
+    n_R_gas = n_R_gas * 1.0833 # multiplies by 1.0833 to include He and other particle counts... 
     
     min_n_global = MIN_DENSITY_FOR_DM * 1e6
     min_n_inner = MIN_DENSITY_WITHIN_R_D * 1e6
@@ -157,8 +157,9 @@ for i, gal in enumerate(galaxies):
     # Blob volume
     dV = R_grid * dTheta * dR_grid * dZ
     
-    # Map 1D density constraints into the 3D grid
-    Sigma_gas_kg_m2_for_Vgas = Sigma_gas_m2 * m_p
+    # Map 1D density constraints into the 3D grid 
+    gas_particle_count_He_factor = (1.33)**3 # This SHOULD be 1.33....
+    Sigma_gas_kg_m2_for_Vgas = Sigma_gas_m2 * m_p*gas_particle_count_He_factor # (should be 1.33 I think) accounts for density of the Helium, etc
     gas_density_1d = np.where(R_m > 0, Sigma_gas_kg_m2_for_Vgas / (2.0 * hz_m), 0.0)
     dm_density_1d = rho_dm_base 
     

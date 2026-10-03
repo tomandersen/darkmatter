@@ -138,7 +138,7 @@ def main(input_file, output_file):
             
             if clean_line.startswith("   69- 76 F8.2   solLum/pc2   SBbul"):
                 f.write(clean_line + "\n")
-                f.write("   78- 87 E10.3  part/cm2 Sigma_gas Calculated gas particle density\n")
+                f.write("   78- 87 E10.3  part/cm2 Sigma_gas Calculated HI particle density \n")
             elif clean_line.startswith("   61- 67 F7.2   solLum/pc2   SBdisk"):
                 f.write(clean_line + "      Sigma_gas\n")
             elif idx in new_columns and new_columns[idx] != "":
