@@ -16,9 +16,9 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 MIN_DENSITY_FOR_DM = 0
 MIN_DENSITY_WITHIN_R_D = 0   
 
-
-NUM_BLOBS_THETA = 957
-NUM_LAYERS_Z = 177
+NUM_BLOBS_THETA = 180
+NUM_LAYERS_Z = 17
+NUM_R_BINS = 107  # Added for continuous 3D volume integration
 USE_EXPONENTIAL_DISK = True
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
@@ -60,7 +60,7 @@ with open(kinematics_file, 'r') as f:
                 Vgas = float(parts[5])
                 Vdisk = float(parts[6])
                 Vbul = float(parts[7])
-                Sigma_gas = float(parts[10]) # HI particle surface density per cm^2
+                Sigma_gas = float(parts[10]) 
                 
                 Vdisk = Vdisk * sqrt_Upsilon_disk
                 Vbul = Vbul * sqrt_Upsilon_bulge
@@ -96,110 +96,101 @@ kpc_to_m = pc_to_m * 1000
 a0_mond = 1.2e-10      
 
 # 3. Pre-calculate Base Integrals (P=1 Watt) for ALL galaxies
-print(f"Pre-calculating base arrays for {len(galaxies)} galaxies via 3D brute force...")
+print(f"Pre-calculating base arrays for {len(galaxies)} galaxies via continuous 3D brute force...")
 
 for i, gal in enumerate(galaxies):
     print(f"Processing {gal} ({i+1}/{len(galaxies)})...", end='\r')
     
     g_data = galaxies[gal]
-    R_m = g_data['R'] * kpc_to_m
+    R_obs_kpc = g_data['R']
+    R_m_obs = R_obs_kpc * kpc_to_m
     V_gas_ms = g_data['Vgas'] * 1000.0
     V_disk_ms = g_data['Vdisk'] * 1000.0
     V_bul_ms = g_data['Vbul'] * 1000.0
-    Sigma_gas_cm2 = g_data['Sigma_gas'] 
+    
+    # Create continuous, evenly spaced grid
+    max_R_kpc = np.max(R_obs_kpc)
+    R_grid_kpc = np.linspace(max_R_kpc / NUM_R_BINS, max_R_kpc, NUM_R_BINS)
+    R_grid_m = R_grid_kpc * kpc_to_m
+    dR_m = R_grid_m[1] - R_grid_m[0]
+    
+    # Interpolate input data onto the continuous grid
+    Sigma_gas_cm2_grid = np.interp(R_grid_kpc, R_obs_kpc, g_data['Sigma_gas'])
+    g_data['Vdisk_grid'] = np.interp(R_grid_kpc, R_obs_kpc, g_data['Vdisk'])
+    g_data['Vbul_grid'] = np.interp(R_grid_kpc, R_obs_kpc, g_data['Vbul'])
+    g_data['Vgas_grid'] = np.interp(R_grid_kpc, R_obs_kpc, g_data['Vgas'])
     
     R_d = rd_dict[gal]
     hz_kpc = get_sparc_galaxy_scale_height(None, R_d)
     hz_m = hz_kpc * kpc_to_m
     
-    valid = R_m > 0
-    Sigma_gas_m2 = Sigma_gas_cm2 * 100.0 * 100.0
-    n_R_gas = Sigma_gas_m2 / (2 * hz_m) 
-    n_R_gas = n_R_gas * 1.0833 # multiplies by 1.0833 to include He and other particle counts... 
+    valid_obs = R_m_obs > 0
+    Sigma_gas_m2_grid = Sigma_gas_cm2_grid * 100.0 * 100.0
+    n_R_gas_grid = Sigma_gas_m2_grid / (2 * hz_m) 
+    n_R_gas_grid = n_R_gas_grid * 1.0833 
     
     min_n_global = MIN_DENSITY_FOR_DM * 1e6
     min_n_inner = MIN_DENSITY_WITHIN_R_D * 1e6
     
-    valid_dm_density = np.ones_like(n_R_gas, dtype=bool)
+    valid_dm_density = np.ones_like(n_R_gas_grid, dtype=bool)
     
     if MIN_DENSITY_FOR_DM > 0:
-        valid_dm_density &= (n_R_gas >= min_n_global)
+        valid_dm_density &= (n_R_gas_grid >= min_n_global)
         
     if MIN_DENSITY_WITHIN_R_D > 0:
-        inner_mask = g_data['R'] <= R_d
-        valid_dm_density[inner_mask] &= (n_R_gas[inner_mask] >= min_n_inner)
+        inner_mask = R_grid_kpc <= R_d
+        valid_dm_density[inner_mask] &= (n_R_gas_grid[inner_mask] >= min_n_inner)
 
-    rho_dm_base = np.zeros_like(n_R_gas)
-    rho_dm_base[valid_dm_density] = (1.0 / c**3) * (n_R_gas[valid_dm_density] ** (2/3))
+    rho_dm_base_grid = np.zeros_like(n_R_gas_grid)
+    rho_dm_base_grid[valid_dm_density] = (1.0 / c**3) * (n_R_gas_grid[valid_dm_density] ** (2/3))
     
     # ---------------------------------------------------------
-    # BRUTE FORCE 3D BLOB CALCULATION
+    # BRUTE FORCE 3D BLOB CALCULATION (Continuous Grid)
     # ---------------------------------------------------------
-    nR = len(R_m)
     nz = NUM_LAYERS_Z
     ntheta = NUM_BLOBS_THETA
     
-    # R grid dimensions
-    dR = np.gradient(R_m)
-    
-    # Z grid: NUM_LAYERS_Z layers from -2.0*hz_m to +2.0*hz_m
     Z_m = np.linspace(-2.0 * hz_m, 2.0 * hz_m, nz)
     dZ = Z_m[1] - Z_m[0] if nz > 1 else 2.0 * hz_m
     
-    # Theta grid: ntheta blobs around the z-axis (0 to 360 degrees)
     theta_rad = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
     dTheta = 2 * np.pi / ntheta
     
-    # Create 3D meshgrids (Vectorized equivalent of nested loops)
-    R_grid, Z_grid, Theta_grid = np.meshgrid(R_m, Z_m, theta_rad, indexing='ij')
-    dR_grid = dR[:, None, None]
+    R_grid_3d, Z_grid_3d, Theta_grid_3d = np.meshgrid(R_grid_m, Z_m, theta_rad, indexing='ij')
     
-    # Blob volume
-    dV = R_grid * dTheta * dR_grid * dZ
+    dV = R_grid_3d * dTheta * dR_m * dZ
     
-    # Map 1D density constraints into the 3D grid 
-    gas_particle_count_He_factor = (1.33)**3 # This SHOULD be 1.33....
-    Sigma_gas_kg_m2_for_Vgas = Sigma_gas_m2 * m_p*gas_particle_count_He_factor # (should be 1.33 I think) accounts for density of the Helium, etc
-    gas_density_1d = np.where(R_m > 0, Sigma_gas_kg_m2_for_Vgas / (2.0 * hz_m), 0.0)
-    dm_density_1d = rho_dm_base 
+    # Corrected Helium Factor
+    gas_particle_count_He_factor = 1.33 
+    Sigma_gas_kg_m2_for_Vgas = Sigma_gas_m2_grid * m_p * gas_particle_count_He_factor 
     
-    gas_density_grid = gas_density_1d[:, None, None] * np.ones_like(Z_grid)
-    dm_density_grid = dm_density_1d[:, None, None] * np.ones_like(Z_grid)
+    gas_density_1d = np.where(R_grid_m > 0, Sigma_gas_kg_m2_for_Vgas / (2.0 * hz_m), 0.0)
+    dm_density_1d = rho_dm_base_grid 
+    
+    gas_density_grid = gas_density_1d[:, None, None] * np.ones_like(Z_grid_3d)
+    dm_density_grid = dm_density_1d[:, None, None] * np.ones_like(Z_grid_3d)
 
-    # ----------------------------------------------------------------------
-    # Apply density profile (Hard Cut or Exponential Falloff)
-    # ----------------------------------------------------------------------
     if USE_EXPONENTIAL_DISK:
-        # Exponential falloff in Z: rho ~ exp(-2/3 |z| / h_z)
-        gas_density_grid *= 0.5*np.exp(-(2.0/3.0) * np.abs(Z_grid) / hz_m)
+        gas_density_grid *= 0.5*np.exp(-(2.0/3.0) * np.abs(Z_grid_3d) / hz_m)
     else:
-        # Hard cut at z = +/- h_z
-        z_mask = np.abs(Z_grid) <= hz_m
+        z_mask = np.abs(Z_grid_3d) <= hz_m
         gas_density_grid[~z_mask] = 0.0
         dm_density_grid[~z_mask] = 0.0
 
-    
-    # Blob Masses
     dm_gas = gas_density_grid * dV
     dm_dm = dm_density_grid * dV
     
-    # Cartesian positions of all blobs
-    X_blob = R_grid * np.cos(Theta_grid)
-    Y_blob = R_grid * np.sin(Theta_grid)
-    Z_blob = Z_grid
+    X_blob = R_grid_3d * np.cos(Theta_grid_3d)
+    Y_blob = R_grid_3d * np.sin(Theta_grid_3d)
+    Z_blob = Z_grid_3d
     
-    V_gas_sq = np.zeros_like(R_m)
-    V_dm_sq_base = np.zeros_like(R_m)
+    V_gas_sq_grid = np.zeros_like(R_grid_m)
+    V_dm_sq_base_grid = np.zeros_like(R_grid_m)
     
-    # Softening prevents infinite acceleration if a test point shares exact coordinates with a blob center
     softening_sq = (0.01 * hz_m)**2 
     
-    # Loop over each target test point radius
-    for i_idx, R_test in enumerate(R_m):
-        if R_test == 0:
-            continue
-            
-        # Distances from target test point (R_test, 0, 0) to all surrounding blobs
+    # Evaluate across continuous grid
+    for i_idx, R_test in enumerate(R_grid_m):
         dx = X_blob - R_test
         dy = Y_blob
         dz = Z_blob
@@ -207,30 +198,30 @@ for i, gal in enumerate(galaxies):
         dist_sq = dx**2 + dy**2 + dz**2 + softening_sq
         dist = np.sqrt(dist_sq)
         
-        # Calculate x-component of gravitational acceleration from each blob
-        # da_x = G * dm * dx / dist^3
         da_x_factor = G * dx / (dist_sq * dist)
         
         a_x_gas = np.sum(da_x_factor * dm_gas)
         a_x_dm = np.sum(da_x_factor * dm_dm)
         
-        # Inward radial acceleration is -a_x. Since V^2 / R = a_inward, then V^2 = -a_x * R_test
-        V_gas_sq_val = -a_x_gas * R_test
-        V_dm_sq_val = -a_x_dm * R_test
+        V_gas_sq_grid[i_idx] = -a_x_gas * R_test
+        V_dm_sq_base_grid[i_idx] = max(0, -a_x_dm * R_test)
         
-        V_gas_sq[i_idx] = V_gas_sq_val
-        V_dm_sq_base[i_idx] = max(0, V_dm_sq_val)
-        
-    g_data['V_dm_sq_base_kms'] = V_dm_sq_base / (1000.0**2)
-    g_data['Vgas_test'] = np.sign(V_gas_sq) * np.sqrt(np.abs(V_gas_sq)) / 1000.0
-    # ---------------------------------------------------------
-     
+    # Store continuous fields for smooth plotting
+    g_data['R_grid_kpc'] = R_grid_kpc
+    g_data['V_dm_sq_base_grid_kms'] = V_dm_sq_base_grid / 1e6
+    g_data['Vgas_test_grid_kms'] = np.sign(V_gas_sq_grid) * np.sqrt(np.abs(V_gas_sq_grid)) / 1000.0
+    
+    # Map back to observation points for optimization and errors
+    g_data['V_dm_sq_base_kms'] = np.interp(R_obs_kpc, R_grid_kpc, V_dm_sq_base_grid / 1e6)
+    g_data['Vgas_test'] = np.interp(R_obs_kpc, R_grid_kpc, g_data['Vgas_test_grid_kms'])
+    
+    # Calculate simple MOND for reference
     V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + V_gas_ms * np.abs(V_gas_ms), 0, None)
-    g_N = np.zeros_like(R_m)
-    g_N[valid] = V_bar_sq[valid] / R_m[valid]
+    g_N = np.zeros_like(R_m_obs)
+    g_N[valid_obs] = V_bar_sq[valid_obs] / R_m_obs[valid_obs]
     
     g_mond = (g_N + np.sqrt(g_N**2 + 4 * g_N * a0_mond)) / 2.0
-    g_data['V_mond_kms'] = np.sqrt(g_mond * R_m) / 1000.0
+    g_data['V_mond_kms'] = np.sqrt(g_mond * R_m_obs) / 1000.0
 
 print("\nIntegrations complete. Optimizing global parameter for Linear Absolute Error...")
 
@@ -284,23 +275,34 @@ all_V_pred = []
 for gal in galaxies:
     g = galaxies[gal]
     
-    V_dm_final_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
-    V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None)
-    V_tot_final_kms = np.sqrt(V_bar_sq_kms + V_dm_final_kms**2)
+    # Point-matching for error tracking
+    V_dm_final_obs_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
+    V_bar_sq_obs_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None)
+    V_tot_final_obs_kms = np.sqrt(V_bar_sq_obs_kms + V_dm_final_obs_kms**2)
     
     all_V_obs.extend(g['Vobs'])
-    all_V_pred.extend(V_tot_final_kms)
+    all_V_pred.extend(V_tot_final_obs_kms)
+    
+    # Continuous arrays for plotting
+    V_dm_final_grid_kms = np.sqrt(best_global_P * g['V_dm_sq_base_grid_kms'])
+    V_bar_sq_grid_kms = np.clip(g['Vdisk_grid']**2 + g['Vbul_grid']**2 + g['Vgas_grid'] * np.abs(g['Vgas_grid']), 0, None)
+    V_tot_final_grid_kms = np.sqrt(V_bar_sq_grid_kms + V_dm_final_grid_kms**2)
     
     plt.figure(figsize=(8, 5))
     plt.plot(g['R'], g['Vgas'], 'b:', label='Gas')
     plt.plot(g['R'], g['Vdisk'], 'y:', label='Stars')
-    plt.plot(g['R'], g['Vgas_test'], 'k:', label='Gas_test')
+    
+    # Plot model against high-res grid
+    plt.plot(g['R_grid_kpc'], g['Vgas_test_grid_kms'], 'k:', label='Gas_test (3D Grid)')
+    
     if np.any(g['Vbul'] > 0):
         plt.plot(g['R'], g['Vbul'], 'g:', label='Bulge')
-    plt.plot(g['R'], V_dm_final_kms, 'm--', label=f'Dark Mass (P={best_global_P:.2f}W)')
-    
+        
+    plt.plot(g['R_grid_kpc'], V_dm_final_grid_kms, 'm--', label=f'Dark Mass (P={best_global_P:.2f}W)')
     plt.plot(g['R'], g['V_mond_kms'], 'c-.', linewidth=2, label='MOND (Simple)')
-    plt.plot(g['R'], V_tot_final_kms, 'r-', linewidth=2, label='Total DM Predicted')
+    
+    # Plot final total prediction on the smooth grid
+    plt.plot(g['R_grid_kpc'], V_tot_final_grid_kms, 'r-', linewidth=2, label='Total DM Predicted')
     plt.errorbar(g['R'], g['Vobs'], yerr=g['eVobs'], fmt='ko', label='Observed Data', capsize=2)
     
     plt.xlabel('Radius (kpc)')

@@ -11,6 +11,11 @@ warnings.filterwarnings("ignore")
 # Convert millions of solar masses per kpc^2 to protons per cm^2
 MILLIONS_SOLAR_MASS_PER_KPC_2_TO_PROTONS_PER_CM_2 = 1.249e20
 
+# Regularization parameter to penalize "wiggles" in the surface density.
+# Increase this value if the density profile is still too jagged.
+# Decrease this value if the model is failing to follow real trends in V_gas.
+SMOOTHING_WEIGHT = 50.0
+
 def integrand_log(a, r):
     """The K(m) term contains a logarithmic singularity. quad handles this using points=[r]."""
     m = (4.0 * a * r) / (r + a)**2
@@ -81,14 +86,23 @@ def build_gravity_matrix(R_bins):
     M_matrix = np.nan_to_num(M_matrix, nan=0.0, posinf=0.0, neginf=0.0)
     return M_matrix
 
-def fit_galaxy_surface_density(R_obs, V_gas_obs):
-    """Iteratively solves for Sigma_gas (M_sun/pc^2) given R and V_gas."""
+def fit_galaxy_surface_density(R_obs, V_gas_obs, smooth_weight=SMOOTHING_WEIGHT):
+    """Iteratively solves for Sigma_gas (M_sun/pc^2) given R and V_gas with Tikhonov regularization."""
     Gamma_obs = V_gas_obs * np.abs(V_gas_obs) # Preserves the outward pull sign
     M_matrix = build_gravity_matrix(R_obs)
     
     def residuals(Sigma_array):
+        # Base physical error: Model V^2 vs Observed V^2
         Gamma_model = M_matrix @ Sigma_array
-        return Gamma_model - Gamma_obs
+        base_residuals = Gamma_model - Gamma_obs
+        
+        # Regularization: Penalize the second derivative (curvature) to force a smooth curve
+        if len(Sigma_array) > 2:
+            curvature_penalty = smooth_weight * np.diff(Sigma_array, n=2)
+            # Append the penalty array to the residuals array
+            return np.concatenate((base_residuals, curvature_penalty))
+        else:
+            return base_residuals
 
     # Initial flat guess of 2.0 M_sun/pc^2
     Sigma_guess = np.ones_like(R_obs) * 2.0 
@@ -118,7 +132,7 @@ def main(input_file, output_file):
 
     new_columns = {idx: "" for idx in range(len(lines))}
 
-    print(f"Processing {len(galaxies)} galaxies...")
+    print(f"Processing {len(galaxies)} galaxies with Smoothness Weight = {SMOOTHING_WEIGHT}...")
     
     for gal_id, data in galaxies.items():
         R_arr = np.array(data['R'])
@@ -136,7 +150,7 @@ def main(input_file, output_file):
         max_error = np.max(errors)
         
         if max_error > 0.5:
-            print(f"WARNING: Convergence issue for {gal_id} | Max error: {max_error:.2f} km/s")
+            print(f"WARNING: Convergence/Smoothing trade-off for {gal_id} | Max error: {max_error:.2f} km/s")
         # -------------------------
         
         # Convert to particles/cm^2 (Hydrogen column density N_HI)
