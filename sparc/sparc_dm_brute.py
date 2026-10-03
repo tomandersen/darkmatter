@@ -21,6 +21,9 @@ NUM_LAYERS_Z = 11
 NUM_R_BINS = 77  # Added for continuous 3D volume integration
 USE_EXPONENTIAL_DISK = True
 
+# a silly model where we just scale V_gas
+USE_VGAS_MULT_MODEL = False
+
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
     z_d = 0.196 * (R_d ** 0.633)
@@ -230,17 +233,30 @@ def global_linear_err(P_test):
     total_linear = 0
     for gal in galaxies:
         g = galaxies[gal]
-        V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
+        if USE_VGAS_MULT_MODEL:
+            V_dm_test_sq = P_test * g['Vgas_test']**2
+        else:
+            V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
         
         V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None)
-        V_tot_test = np.sqrt(V_bar_sq_kms + V_dm_test_sq)
+        V_tot_test = np.sqrt(np.fabs(V_bar_sq_kms + V_dm_test_sq))
         
-        linear_err = np.sum(np.abs(g['Vobs'] - V_tot_test) / g['eVobs'])
+        linear_err = 0
+        if np.any(g['eVobs'] == 0):
+            print(f"SKIPPPING GALAXY {gal}")
+            linear_err = 0
+        else:
+            linear_err = np.sum(np.fabs(g['Vobs'] - V_tot_test))
+        if np.isnan(linear_err):
+            print(f"SKIPPPING GALAXY {gal}")
+            linear_err = 0
+        
         total_linear += linear_err
         
+    print(f"Total Linear Error: {total_linear}")
     return total_linear
 
-result = minimize_scalar(global_linear_err, bounds=(2.0, 100.0), method='bounded')
+result = minimize_scalar(global_linear_err, bounds=(2.0, 1000.0), method='bounded')
 best_global_P = result.x
 min_linear_err = result.fun
 
@@ -250,13 +266,17 @@ mond_chi2_total = 0
 
 for gal in galaxies:
     g = galaxies[gal]
-    V_dm_final_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
+    if USE_VGAS_MULT_MODEL:
+        V_dm_final_kms = np.sqrt(best_global_P * g['Vgas_test'])
+    else:
+        V_dm_final_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
+
     V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None)
-    V_tot_final_kms = np.sqrt(V_bar_sq_kms + V_dm_final_kms**2)
+    V_tot_final_kms = np.sqrt(np.fabs(V_bar_sq_kms + V_dm_final_kms**2))
     
     dm_chi2_total += np.sum(((g['Vobs'] - V_tot_final_kms) / g['eVobs'])**2)
     
-    mond_linear_total += np.sum(np.abs(g['Vobs'] - g['V_mond_kms']) / g['eVobs'])
+    mond_linear_total += np.sum(np.abs(g['Vobs'] - g['V_mond_kms']))
     mond_chi2_total += np.sum(((g['Vobs'] - g['V_mond_kms']) / g['eVobs'])**2)
 
 print(f"\n--- GLOBAL OPTIMIZATION RESULTS ---")
@@ -276,7 +296,11 @@ for gal in galaxies:
     g = galaxies[gal]
     
     # Point-matching for error tracking
-    V_dm_final_obs_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
+    if USE_VGAS_MULT_MODEL:
+        V_dm_final_obs_kms = np.sqrt(best_global_P * g['Vgas_test'])
+    else:
+        V_dm_final_obs_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
+
     V_bar_sq_obs_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None)
     V_tot_final_obs_kms = np.sqrt(V_bar_sq_obs_kms + V_dm_final_obs_kms**2)
     
@@ -348,7 +372,12 @@ for gal in galaxies:
     R_m = g['R'] * kpc_to_m
     valid = R_m > 0 
     
-    V_dm_final_sq = best_global_P * g['V_dm_sq_base_kms']
+    if USE_VGAS_MULT_MODEL:
+        V_dm_final_sq = best_global_P * g['Vgas_test']
+    else:
+        V_dm_final_sq = best_global_P * g['V_dm_sq_base_kms']
+
+
     V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + np.sign(g['Vgas'])*(g['Vgas']**2), 0, None)
     
     V_tot_final_sq_ms = (V_bar_sq_kms + V_dm_final_sq) * (1000.0**2)
