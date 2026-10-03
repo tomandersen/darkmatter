@@ -16,9 +16,9 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 MIN_DENSITY_FOR_DM = 0
 MIN_DENSITY_WITHIN_R_D = 0   
 
-NUM_BLOBS_THETA = 180
-NUM_LAYERS_Z = 27
-NUM_R_BINS = 87  # Added for continuous 3D volume integration
+NUM_BLOBS_THETA = 90
+NUM_LAYERS_Z = 11
+NUM_R_BINS = 77  # Added for continuous 3D volume integration
 USE_EXPONENTIAL_DISK = True
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
@@ -288,29 +288,35 @@ for gal in galaxies:
     V_bar_sq_grid_kms = np.clip(g['Vdisk_grid']**2 + g['Vbul_grid']**2 + g['Vgas_grid'] * np.abs(g['Vgas_grid']), 0, None)
     V_tot_final_grid_kms = np.sqrt(V_bar_sq_grid_kms + V_dm_final_grid_kms**2)
     
-    plt.figure(figsize=(8, 5))
-    plt.plot(g['R'], g['Vgas'], 'b:', label='Gas')
-    plt.plot(g['R'], g['Vdisk'], 'y:', label='Stars')
-    
-    # Plot model against high-res grid
-    plt.plot(g['R_grid_kpc'], g['Vgas_test_grid_kms'], 'k:', label='Gas_test (3D Grid)')
-    plt.plot(g['R_grid_kpc'], np.sqrt(V_bar_sq_grid_kms), 'y:', label='Baryons')
-    
-    if np.any(g['Vbul'] > 0):
-        plt.plot(g['R'], g['Vbul'], 'g:', label='Bulge')
-        
-    plt.plot(g['R_grid_kpc'], V_dm_final_grid_kms, 'm--', label=f'Dark Mass (P={best_global_P:.2f}W)')
-    plt.plot(g['R'], g['V_mond_kms'], 'c-.', linewidth=2, label='MOND (Simple)')
-    
+    plt.figure(figsize=(9, 6))
+
     # Plot final total prediction on the smooth grid
-    plt.plot(g['R_grid_kpc'], V_tot_final_grid_kms, 'r-', linewidth=2, label='Total DM Predicted')
-    plt.errorbar(g['R'], g['Vobs'], yerr=g['eVobs'], fmt='ko', label='Observed Data', capsize=2)
+    plt.plot(g['R_grid_kpc'], V_dm_final_grid_kms, 'm--', label=f'dark mass (dm)')
+    plt.plot(g['R_grid_kpc'], V_tot_final_grid_kms, 'r-', linewidth=2, label='baryons + dm')
+
+
+    plt.plot(g['R'], g['Vgas'], 'g', label='gas', linestyle='dotted', linewidth=0.7)
+    plt.plot(g['R'], g['Vdisk'], 'violet', label='disk', linestyle='dashdot', linewidth=0.7)
+    if np.any(g['Vbul'] > 0):
+        plt.plot(g['R'], g['Vbul'], 'red', label='bulge', linestyle='dashed', linewidth=0.7)
+  
+    # Plot model against high-res grid
+    plt.plot(g['R_grid_kpc'], g['Vgas_test_grid_kms'], 'g', label="gas ($\\Sigma_{gas}$)", linewidth=0.5)
+    plt.plot(g['R_grid_kpc'], np.sqrt(V_bar_sq_grid_kms), 'blue', label='all baryons', linewidth=0.7)
+    
+
+    plt.plot(g['R'], g['V_mond_kms'], 'c-.', linewidth=1, label='MOND')
+
+ 
+    plt.errorbar(g['R'], g['Vobs'], yerr=g['eVobs'], fmt='ko', label='observed', capsize=1.5, capthick=1.0, markersize=2, elinewidth=0.6)
     
     plt.xlabel('Radius (kpc)')
     plt.ylabel('Velocity (km/s)')
     plt.title(f'{gal} Kinematics (Universal P = {best_global_P:.2f} W)')
-    plt.legend()
-    plt.grid(True)
+    leg = plt.legend(fontsize="small")
+    leg.get_frame().set_linewidth(0.0) # borderless but opaque white background
+
+    plt.grid(True, linewidth=0.5, alpha=0.7)
     
     plt.savefig(os.path.join(output_galaxies, f"{gal}_dm_mass.png"), bbox_inches='tight', dpi=300)
     plt.close()
@@ -323,7 +329,7 @@ plt.plot([0, max_val], [0, max_val], 'k--', linewidth=2, label='Perfect Fit (1:1
 plt.xlabel('Observed Velocity (km/s)', fontsize=12)
 plt.ylabel('Predicted Velocity (km/s)', fontsize=12)
 plt.title(f'Global Fit: Dark Mass Theory vs SPARC Dataset\n(Total Points = {len(all_V_obs)}, Universal P = {best_global_P:.2f} W)', fontsize=14)
-plt.legend()
+plt.legend(fontsize="small")
 plt.grid(True)
 plt.axis('equal')
 plt.xlim(0, max_val + 20)
@@ -355,7 +361,7 @@ for gal in galaxies:
     all_g_pred.extend(g_pred)
 
 plt.figure(figsize=(9, 9))
-plt.scatter(all_g_obs, all_g_pred, alpha=0.3, edgecolors='none', c='blue')
+plt.scatter(all_g_pred, all_g_obs, alpha=0.3, edgecolors='none', c='blue')
 
 plt.xscale('log')
 plt.yscale('log')
@@ -369,10 +375,10 @@ plt.xlim(min_val, max_val)
 plt.ylim(min_val, max_val)
 plt.axis('square')
 
-plt.xlabel('Observed Acceleration $g_{obs}$ (m/s$^2$)', fontsize=12)
-plt.ylabel('Predicted Acceleration $g_{pred}$ (m/s$^2$)', fontsize=12)
+plt.ylabel('Observed Acceleration $g_{obs}$ (m/s$^2$)', fontsize=12)
+plt.xlabel('Predicted Acceleration $g_{pred}$ (m/s$^2$)', fontsize=12)
 plt.title(f'Global Fit: Dark Mass vs Observed Acceleration\n(Total Points = {len(all_g_obs)}, Universal P = {best_global_P:.2f} W)', fontsize=14)
-plt.legend()
+plt.legend(fontsize="small")
 plt.grid(True, which="both", ls="--", alpha=0.5)
 
 plt.savefig(os.path.join(output_dir, "global_predicted_accel_vs_obs.png"), bbox_inches='tight', dpi=200)
