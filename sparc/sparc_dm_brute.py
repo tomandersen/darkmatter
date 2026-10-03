@@ -17,8 +17,8 @@ MIN_DENSITY_FOR_DM = 0
 MIN_DENSITY_WITHIN_R_D = 0   
 
 NUM_BLOBS_THETA = 180
-NUM_LAYERS_Z = 17
-NUM_R_BINS = 107  # Added for continuous 3D volume integration
+NUM_LAYERS_Z = 27
+NUM_R_BINS = 87  # Added for continuous 3D volume integration
 USE_EXPONENTIAL_DISK = True
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
@@ -294,6 +294,7 @@ for gal in galaxies:
     
     # Plot model against high-res grid
     plt.plot(g['R_grid_kpc'], g['Vgas_test_grid_kms'], 'k:', label='Gas_test (3D Grid)')
+    plt.plot(g['R_grid_kpc'], np.sqrt(V_bar_sq_grid_kms), 'y:', label='Baryons')
     
     if np.any(g['Vbul'] > 0):
         plt.plot(g['R'], g['Vbul'], 'g:', label='Bulge')
