@@ -125,14 +125,10 @@ for i, gal in enumerate(galaxies):
     hz_m = hz_kpc * kpc_to_m
     
     valid = R_m > 0
-    #Sigma_b = np.zeros_like(R_m)
-    
-    
-    # this is WRONG - this - if its anything at all - is the gas density average for all gas out to R
     Sigma_gas_m2 = Sigma_gas_cm2*100.0*100.0
     n_R_gas = Sigma_gas_m2 / (2 * hz_m) # use twice the height to get full volumne.
     n_R_gas = n_R_gas*1.33 # helium, etc
-    print(n_R_gas[2]/1e6) # print particles per cm^3
+    #print(n_R_gas[2]/1e6) # print particles per cm^3
     
     # Convert density thresholds from cm^-3 to m^-3
     min_n_global = MIN_DENSITY_FOR_DM * 1e6

@@ -27,10 +27,10 @@ def get_sparc_galaxy_scale_height(radius_kpc, R_d):
 
 # 1. Setup and Parse the Data
 properties_file = "./sparc/SPARC_Lelli2016c.mrt.txt"
-kinematics_file = "./sparc/MassModels_Lelli2016c.mrt"
+kinematics_file = "./sparc/MassModels_Lelli2016_SigmaGas.mrt"
 output_galaxies = "./sparc/dm_mass_3d/galaxies"
 output_dir = "./sparc/dm_mass_3d"
-os.makedirs(output_galaxies, exist_ok=True)
+os.makedirs(output_galaxies, exist_ok=True) 
 os.makedirs(output_dir, exist_ok=True)
 
 rd_dict = {}
@@ -49,7 +49,7 @@ galaxies = {}
 with open(kinematics_file, 'r') as f:
     for line in f:
         parts = line.split()
-        if len(parts) == 10 and not line.startswith('---') and not line.startswith('Byte'):
+        if len(parts) == 11 and not line.startswith('---') and not line.startswith('Byte'):
             try:
                 gal_name = parts[0]
                 R = float(parts[2])
@@ -58,12 +58,13 @@ with open(kinematics_file, 'r') as f:
                 Vgas = float(parts[5])
                 Vdisk = float(parts[6]) * sqrt_Upsilon_disk
                 Vbul = float(parts[7]) * sqrt_Upsilon_bulge
+                Sigma_gas = float(parts[10])
                 
                 if eVobs <= 0: eVobs = 1.0 
                     
                 if gal_name in rd_dict:
                     if gal_name not in galaxies:
-                        galaxies[gal_name] = {'R': [], 'Vobs': [], 'eVobs': [], 'Vgas': [], 'Vdisk': [], 'Vbul': []}
+                        galaxies[gal_name] = {'R': [], 'Vobs': [], 'eVobs': [], 'Vgas': [], 'Vdisk': [], 'Vbul': [], 'Sigma_gas': []}
                     
                     galaxies[gal_name]['R'].append(R)
                     galaxies[gal_name]['Vobs'].append(Vobs)
@@ -71,6 +72,7 @@ with open(kinematics_file, 'r') as f:
                     galaxies[gal_name]['Vgas'].append(Vgas)
                     galaxies[gal_name]['Vdisk'].append(Vdisk)
                     galaxies[gal_name]['Vbul'].append(Vbul)
+                    galaxies[gal_name]['Sigma_gas'].append(Sigma_gas)
             except ValueError:
                 continue
 
@@ -101,6 +103,8 @@ for i, gal in enumerate(galaxies):
     V_gas_ms = g_data['Vgas'] * 1000.0
     V_disk_ms = g_data['Vdisk'] * 1000.0
     V_bul_ms = g_data['Vbul'] * 1000.0
+    Sigma_gas_cm2 = g_data['Sigma_gas'] 
+
     
     R_d = rd_dict[gal]
     hz_kpc = get_sparc_galaxy_scale_height(None, R_d)
@@ -149,13 +153,15 @@ for i, gal in enumerate(galaxies):
             M_geom[i_idx, j_idx] = G * Ri * Rj * integral_val * w[j_idx]
             
     valid = R_m > 0
-    Sigma_b = np.zeros_like(R_m)
-    V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + np.sign(V_gas_ms)*(V_gas_ms**2), 0, None)
-    Sigma_b[valid] = V_bar_sq[valid] / (2 * np.pi * G * R_m[valid])
+    Sigma_gas_m2 = Sigma_gas_cm2*100.0*100.0 # surface density particles/metre sq
+
+
+    # Sigma_b = np.zeros_like(R_m)
+    # Sigma_b[valid] = V_bar_sq[valid] / (2 * np.pi * G * R_m[valid])
     
-    rho_b_midplane = Sigma_b / (2 * hz_m) 
-    n_R = rho_b_midplane / m_p 
-    
+    n_R = Sigma_gas_m2 / (2 * hz_m) 
+    n_R = n_R*1.33 # helium, etc
+
     min_n_global = MIN_DENSITY_FOR_DM * 1e6
     min_n_inner = MIN_DENSITY_WITHIN_R_D * 1e6
     
@@ -176,7 +182,8 @@ for i, gal in enumerate(galaxies):
     
     g_data['V_dm_sq_base_kms'] = V_dm_sq_base / (1000.0**2)
     
-    # MOND Prediction 
+    # MOND Prediction
+    V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + np.sign(V_gas_ms)*(V_gas_ms**2), 0, None)
     g_N = np.zeros_like(R_m)
     g_N[valid] = V_bar_sq[valid] / R_m[valid]
     g_mond = (g_N + np.sqrt(g_N**2 + 4 * g_N * a0_mond)) / 2.0
@@ -195,7 +202,7 @@ def global_linear_err(P_test):
         total_linear += np.sum(np.abs(g['Vobs'] - V_tot_test) / g['eVobs'])
     return total_linear
 
-result = minimize_scalar(global_linear_err, bounds=(2.0, 20.0), method='bounded')
+result = minimize_scalar(global_linear_err, bounds=(2.0, 100.0), method='bounded')
 best_global_P = result.x
 min_linear_err = result.fun
 
