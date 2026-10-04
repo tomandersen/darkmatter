@@ -15,11 +15,13 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 MIN_DENSITY_FOR_DM = 0
 MIN_DENSITY_WITHIN_R_D = 0   
-
-NUM_BLOBS_THETA = 90
-NUM_LAYERS_Z = 11
-NUM_R_BINS = 77  # Added for continuous 3D volume integration
+ 
+NUM_BLOBS_THETA = 159
+NUM_LAYERS_Z = 23
+NUM_R_BINS = 87  # Added for continuous 3D volume integration
 USE_EXPONENTIAL_DISK = True
+
+
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
@@ -225,9 +227,10 @@ for i, gal in enumerate(galaxies):
 
 print("\nIntegrations complete. Optimizing global parameter for Linear Absolute Error...")
 
+
 # 4. Global Optimization Function
-def global_linear_err(P_test):
-    total_linear = 0
+def global_fit_err(P_test):
+    total_err = 0
     for gal in galaxies:
         g = galaxies[gal]
         V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
@@ -235,18 +238,30 @@ def global_linear_err(P_test):
         V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None)
         V_tot_test = np.sqrt(V_bar_sq_kms + V_dm_test_sq)
         
-        linear_err = np.sum(np.abs(g['Vobs'] - V_tot_test) / g['eVobs'])
-        total_linear += linear_err
-        
-    return total_linear
+        # comment one of these out to switch error functions
+        #the_err = np.sum(np.abs(g['Vobs'] - V_tot_test) / g['eVobs']) # linear with error bars
+        #the_err = np.sum(np.abs(g['Vobs'] - V_tot_test)) # in km/sec
+        the_err = np.sum(((g['Vobs'] - V_tot_test) / g['eVobs'])**2) # chi-sq
+        total_err += the_err
 
-result = minimize_scalar(global_linear_err, bounds=(2.0, 100.0), method='bounded')
+    print(f"Current P_test: {P_test:.4f} Watts, Current Error: {total_err:.2f}")   
+    return total_err
+
+result = minimize_scalar(global_fit_err, bounds=(2.0, 100.0), method='bounded')
 best_global_P = result.x
-min_linear_err = result.fun
+min_found_err = result.fun
 
+# print(f"Trying Power test 0 - 100W")
+# for power_guess in np.linspace(0.1, 100.0, 100):
+#     error = global_fit_err(power_guess)
+
+    
 dm_chi2_total = 0
-mond_linear_total = 0
+dm_linear_total = 0
+dm_linear_total_err = 0
 mond_chi2_total = 0
+mond_linear_total = 0
+mond_linear_total_err = 0
 
 for gal in galaxies:
     g = galaxies[gal]
@@ -255,17 +270,23 @@ for gal in galaxies:
     V_tot_final_kms = np.sqrt(V_bar_sq_kms + V_dm_final_kms**2)
     
     dm_chi2_total += np.sum(((g['Vobs'] - V_tot_final_kms) / g['eVobs'])**2)
-    
-    mond_linear_total += np.sum(np.abs(g['Vobs'] - g['V_mond_kms']) / g['eVobs'])
+    dm_linear_total_err += np.sum(np.abs(g['Vobs'] - V_tot_final_kms) / g['eVobs'])
+    dm_linear_total += np.sum(np.abs(g['Vobs'] - V_tot_final_kms)) # in km/sec
+
     mond_chi2_total += np.sum(((g['Vobs'] - g['V_mond_kms']) / g['eVobs'])**2)
+    mond_linear_total_err += np.sum(np.abs(g['Vobs'] - g['V_mond_kms']) / g['eVobs'])
+    mond_linear_total += np.sum(np.abs(g['Vobs'] - g['V_mond_kms'])) # in km/sec
 
 print(f"\n--- GLOBAL OPTIMIZATION RESULTS ---")
 print(f"Best Universal Power (P): {best_global_P:.4f} Watts")
-print(f"Dark Mass Theory - Minimum Linear Error:  {min_linear_err:.2f}")
+print(f"Dark Mass Theory - Found Error:  {min_found_err:.2f}")
 print(f"Dark Mass Theory - Resulting Chi-squared: {dm_chi2_total:.2f}")
+print(f"Dark Mass Theory - Resulting Linear: {dm_linear_total_err:.2f}")
+print(f"Dark Mass Theory - Resulting Linear - km2: {dm_linear_total:.2f}")
 print(f"\n--- MOND (Simple) PREDICTION ERRORS ---")
-print(f"MOND - Linear Error:  {mond_linear_total:.2f}")
 print(f"MOND - Chi-squared:   {mond_chi2_total:.2f}")
+print(f"MOND - Linear Error :  {mond_linear_total_err:.2f}")
+print(f"MOND - Linear Error - km2: {mond_linear_total:.2f}")
 
 # 5. Generate Output Plots
 print("\nGenerating individual galaxy plots and master summary...")
