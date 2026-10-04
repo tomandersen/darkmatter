@@ -17,6 +17,7 @@ Byte-by-byte Description of file: datafile2.txt
   54- 59 F6.2   km/s         Vbul    Bulge velocity contribution (3)
   61- 67 F7.2   solLum/pc2   SBdisk  Disk surface brightness
   69- 76 F8.2   solLum/pc2   SBbul   Bulge surface brightness
+  78- 87 E10.3  part/cm2 Sigma_gas Calculated HI particle density 
 --------------------------------------------------------------------------------
 Note (1): Random error due to non-circular motions and/or kinematic asymmetries.
 It does not include systematic uncertainties due to inclination corrections.

@@ -13,12 +13,13 @@ Upsilon_bulge = 0.7
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
-MIN_DENSITY_FOR_DM = 0
-MIN_DENSITY_WITHIN_R_D = 0   
+# Put controls here for adding a halo of gas around the galaxy
+#MIN_DENSITY_FOR_DM = 0
+#MIN_DENSITY_WITHIN_R_D = 0   
  
-NUM_BLOBS_THETA = 159
-NUM_LAYERS_Z = 23
-NUM_R_BINS = 87  # Added for continuous 3D volume integration
+NUM_BLOBS_THETA = 153
+NUM_LAYERS_Z = 19
+NUM_R_BINS = 137  # Added for continuous 3D volume integration
 USE_EXPONENTIAL_DISK = True
 
 
@@ -126,62 +127,56 @@ for i, gal in enumerate(galaxies):
     hz_kpc = get_sparc_galaxy_scale_height(None, R_d)
     hz_m = hz_kpc * kpc_to_m
     
-    valid_obs = R_m_obs > 0
-    Sigma_gas_m2_grid = Sigma_gas_cm2_grid * 100.0 * 100.0
-    n_R_gas_grid = Sigma_gas_m2_grid / (2 * hz_m) 
-    n_R_gas_grid = n_R_gas_grid * 1.0833 
+    valid_obs = R_m_obs > 0 # indexes of valid observed radii
+    Sigma_gas_m2_grid = Sigma_gas_cm2_grid * 100.0 * 100.0 # work in SI units. This is observed surface gas density in particles/m^2
     
-    min_n_global = MIN_DENSITY_FOR_DM * 1e6
-    min_n_inner = MIN_DENSITY_WITHIN_R_D * 1e6
-    
-    valid_dm_density = np.ones_like(n_R_gas_grid, dtype=bool)
-    
-    if MIN_DENSITY_FOR_DM > 0:
-        valid_dm_density &= (n_R_gas_grid >= min_n_global)
-        
-    if MIN_DENSITY_WITHIN_R_D > 0:
-        inner_mask = R_grid_kpc <= R_d
-        valid_dm_density[inner_mask] &= (n_R_gas_grid[inner_mask] >= min_n_inner)
-
-    rho_dm_base_grid = np.zeros_like(n_R_gas_grid)
-    rho_dm_base_grid[valid_dm_density] = (1.0 / c**3) * (n_R_gas_grid[valid_dm_density] ** (2/3))
+    # n_R_gas_grid = Sigma_gas_m2_grid / (2 * hz_m) 
+    # n_R_gas_grid = n_R_gas_grid * 1.0833 # account for other species like He, as the Sigma numbers are HI gas only 
+    # valid_dm_density = np.ones_like(n_R_gas_grid, dtype=bool)
+    # rho_dm_base_grid = np.zeros_like(n_R_gas_grid)
+    # rho_dm_base_grid[valid_dm_density] = (1.0 / c**3) * (n_R_gas_grid[valid_dm_density] ** (2/3))
     
     # ---------------------------------------------------------
     # BRUTE FORCE 3D BLOB CALCULATION (Continuous Grid)
     # ---------------------------------------------------------
+    
+    # create the 3D array
     nz = NUM_LAYERS_Z
     ntheta = NUM_BLOBS_THETA
     
-    Z_m = np.linspace(-2.0 * hz_m, 2.0 * hz_m, nz)
-    dZ = Z_m[1] - Z_m[0] if nz > 1 else 2.0 * hz_m
+    Z_m = np.linspace(-2.0 * hz_m, 2.0 * hz_m, nz) # 3hz to 3hz maybe better?    OR MORE for a extragalacit gas halo??
+    dZ = Z_m[1] - Z_m[0] if nz > 1 else 2.0 * hz_m 
     
     theta_rad = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
     dTheta = 2 * np.pi / ntheta
-    
+
     R_grid_3d, Z_grid_3d, Theta_grid_3d = np.meshgrid(R_grid_m, Z_m, theta_rad, indexing='ij')
     
-    dV = R_grid_3d * dTheta * dR_m * dZ
+    dV = R_grid_3d * dTheta * dR_m * dZ # Volume element of a blob in the grid
     
-    # Corrected Helium Factor
-    gas_particle_count_He_factor = 1.33 
-    Sigma_gas_kg_m2_for_Vgas = Sigma_gas_m2_grid * m_p * gas_particle_count_He_factor 
-    
-    gas_density_1d = np.where(R_grid_m > 0, Sigma_gas_kg_m2_for_Vgas / (2.0 * hz_m), 0.0)
-    dm_density_1d = rho_dm_base_grid 
-    
-    gas_density_grid = gas_density_1d[:, None, None] * np.ones_like(Z_grid_3d)
-    dm_density_grid = dm_density_1d[:, None, None] * np.ones_like(Z_grid_3d)
 
+    # layout gas particles per volume blob 
+    gas_particle_density_1d = np.where(R_grid_m > 0, Sigma_gas_m2_grid / (2.0 * hz_m), 0.0)
+    gas_particle_density_grid = gas_particle_density_1d[:, None, None] * np.ones_like(Z_grid_3d)
+
+    # that put the same amount of gas into each blob, vertically. We now have twice as much gas as we need. 
+    # We do the disk profile to get that right. 
     if USE_EXPONENTIAL_DISK:
-        gas_density_grid *= 0.5*np.exp(-(2.0/3.0) * np.abs(Z_grid_3d) / hz_m)
-    else:
+        gas_particle_density_grid *= 0.5*np.exp(-np.abs(Z_grid_3d) / hz_m)
+        # The integral of 0.5*np.exp(-z / hz_m) dz from 0 to 2hz 
+        # is exactly 0.5 
+    else: 
         z_mask = np.abs(Z_grid_3d) <= hz_m
-        gas_density_grid[~z_mask] = 0.0
-        dm_density_grid[~z_mask] = 0.0
+        gas_particle_density_grid[~z_mask] = 0.0
 
-    dm_gas = gas_density_grid * dV
-    dm_dm = dm_density_grid * dV
-    
+    # ok, so now gas_particle_density_grid has HI densities in particles/m^3 for each blob
+    # we use this to create two 3D arrays, one for gas mass in each blob, and one for dm mass in each blob
+    gas_particle_count_He_factor = 1.33 
+    dm_gas = gas_particle_density_grid *m_p*gas_particle_count_He_factor * dV
+    dm_base_dm = (1/c**3)*gas_particle_density_grid**(2/3) * dV 
+    # CHECK: Does the sum of all the gas mass densities*dZ over all the z-values for a given R give the surface density in particles/m^2?
+    # If not, I need to fix it.  
+
     X_blob = R_grid_3d * np.cos(Theta_grid_3d)
     Y_blob = R_grid_3d * np.sin(Theta_grid_3d)
     Z_blob = Z_grid_3d
@@ -203,7 +198,7 @@ for i, gal in enumerate(galaxies):
         da_x_factor = G * dx / (dist_sq * dist)
         
         a_x_gas = np.sum(da_x_factor * dm_gas)
-        a_x_dm = np.sum(da_x_factor * dm_dm)
+        a_x_dm = np.sum(da_x_factor * dm_base_dm)
         
         V_gas_sq_grid[i_idx] = -a_x_gas * R_test
         V_dm_sq_base_grid[i_idx] = max(0, -a_x_dm * R_test)

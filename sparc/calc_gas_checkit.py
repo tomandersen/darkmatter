@@ -165,12 +165,9 @@ def main(input_file, output_file):
     with open(output_file, 'w') as f:
         for idx, line in enumerate(lines):
             clean_line = line.rstrip('\n')
-            
-            if clean_line.startswith("   69- 76 F8.2   solLum/pc2   SBbul"):
+            if "Bulge surface brightness" in clean_line:
                 f.write(clean_line + "\n")
-                f.write("   78- 87 E10.3  part/cm2 Sigma_gas Calculated HI particle density \n")
-            elif clean_line.startswith("   61- 67 F7.2   solLum/pc2   SBdisk"):
-                f.write(clean_line + "      Sigma_gas\n")
+                f.write("  78- 87 E10.3  part/cm2 Sigma_gas Calculated HI particle density \n")
             elif idx in new_columns and new_columns[idx] != "":
                 f.write(f"{clean_line} {new_columns[idx]}\n")
             else:
