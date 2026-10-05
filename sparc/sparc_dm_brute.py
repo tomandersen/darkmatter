@@ -17,9 +17,13 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 #MIN_DENSITY_FOR_DM = 0
 #MIN_DENSITY_WITHIN_R_D = 0   
  
-NUM_BLOBS_THETA = 153
-NUM_LAYERS_Z = 19
-NUM_R_BINS = 137  # Added for continuous 3D volume integration
+NUM_BLOBS_THETA = 87
+NUM_LAYERS_Z = 51
+Z_HEIGHT = 5 # number of scale heights of the disk we go to. Needs to be at least 2 for exponential disks, 1 would work for non exponential (i guess). 
+             # I want to experiment with adding extra galactic gas around the galaxy, which should create a lot of dark mass, lowering the required P
+             # and perhaps improving the scores.
+
+NUM_R_BINS = 87  # Added for continuous 3D volume integration
 USE_EXPONENTIAL_DISK = True
 
 
@@ -144,7 +148,7 @@ for i, gal in enumerate(galaxies):
     nz = NUM_LAYERS_Z
     ntheta = NUM_BLOBS_THETA
     
-    Z_m = np.linspace(-2.0 * hz_m, 2.0 * hz_m, nz) # 3hz to 3hz maybe better?    OR MORE for a extragalacit gas halo??
+    Z_m = np.linspace(-Z_HEIGHT * hz_m, Z_HEIGHT * hz_m, nz) # 3hz to 3hz maybe better?    OR MORE for a extragalacit gas halo??
     dZ = Z_m[1] - Z_m[0] if nz > 1 else 2.0 * hz_m 
     
     theta_rad = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
