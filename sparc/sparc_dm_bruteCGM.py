@@ -1,3 +1,4 @@
+from gizmo_analysis import gizmo_default
 import numpy as np
 import os
 from scipy.optimize import minimize_scalar
@@ -17,11 +18,11 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 #MIN_DENSITY_FOR_DM = 0
 #MIN_DENSITY_WITHIN_R_D = 0   
  
-NUM_BLOBS_THETA = 23 
-NUM_LAYERS_Z = 303
-Z_HEIGHT =40 # number of scale heights of the disk we go to. Needs to be at least 2 for exponential disks, 1 would work for non exponential (i guess). 
+NUM_BLOBS_THETA = 87 
+NUM_LAYERS_Z = 503
+Z_HEIGHT =170 # number of scale heights of the disk we go to. Needs to be at least 2 for exponential disks, 1 would work for non exponential (i guess). 
              # If USE_CGM_MODEL is True, you want to reach out of the scale height....go at least 20.
-
+ 
 
 NUM_R_BINS = 97  # Added for continuous 3D volume integration
 USE_EXPONENTIAL_DISK = True
@@ -30,6 +31,7 @@ USE_CGM_MODEL = True # add a CGM halo of gas (which will have its own dm with it
                      # IF USING CGM - we expand the disk 2x in the R direction, so make NUM_R_BINS like over 60 (say 200 for prod)
                      # also make Z_HEIGHT over 20, likely 40
 GGM_GRID_SCALE = 2.0
+CGM_CENTRAL_DENSITY = 0.3
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
@@ -134,11 +136,25 @@ for i, gal in enumerate(galaxies):
     R_grid_m = R_grid_kpc * kpc_to_m
     dR_m = R_grid_m[1] - R_grid_m[0]
     
+    # we get surprises when we let the gas go on forever, so taper things off... 
+    g_data_r_obs_kpc = R_obs_kpc
+    g_data_sigma_gas = g_data['Sigma_gas']
+    g_data_Vdisk = g_data['Vdisk']
+    g_data_Vbul = g_data['Vbul']
+    g_data_Vgas = g_data['Vgas']
+    if USE_CGM_MODEL: # add extra point at the end, let the interp function do its job.
+        rscale = 1.0/(GGM_GRID_SCALE * GGM_GRID_SCALE)
+        g_data_r_obs_kpc = np.append(R_obs_kpc, grid_max)
+        g_data_sigma_gas = np.append(g_data_sigma_gas, 0.0)
+        g_data_Vdisk = np.append(g_data_Vdisk, rscale*g_data_Vdisk[-1])
+        g_data_Vbul = np.append(g_data_Vbul, rscale*g_data_Vbul[-1])
+        g_data_Vgas = np.append(g_data_Vgas, rscale*g_data_Vgas[-1])
+    
     # Interpolate input data onto the continuous grid
-    Sigma_gas_cm2_grid = np.interp(R_grid_kpc, R_obs_kpc, g_data['Sigma_gas'])
-    g_data['Vdisk_grid'] = np.interp(R_grid_kpc, R_obs_kpc, g_data['Vdisk'])
-    g_data['Vbul_grid'] = np.interp(R_grid_kpc, R_obs_kpc, g_data['Vbul'])
-    g_data['Vgas_grid'] = np.interp(R_grid_kpc, R_obs_kpc, g_data['Vgas'])
+    Sigma_gas_cm2_grid = np.interp(R_grid_kpc, g_data_r_obs_kpc, g_data_sigma_gas)
+    g_data['Vdisk_grid'] = np.interp(R_grid_kpc, g_data_r_obs_kpc, g_data_Vdisk)
+    g_data['Vbul_grid'] = np.interp(R_grid_kpc, g_data_r_obs_kpc, g_data_Vbul)
+    g_data['Vgas_grid'] = np.interp(R_grid_kpc, g_data_r_obs_kpc, g_data_Vgas)
     
     R_d = rd_dict[gal]
     hz_kpc = get_sparc_galaxy_scale_height(None, R_d)
@@ -197,7 +213,7 @@ for i, gal in enumerate(galaxies):
 
         r_core_kpc = 2.0*(total_mass*1e9/1e11)**(1/3)
         r_core_m = r_core_kpc*kpc_to_m
-        n_0_cgs = 0.01 # central density in particles per cm^3 
+        n_0_cgs = CGM_CENTRAL_DENSITY # central density in particles per cm^3 
         n_0_m3 =  n_0_cgs * (100)**3
         beta = 2.0/3.0
         exponent = -3.0*beta/2.0
@@ -254,6 +270,11 @@ for i, gal in enumerate(galaxies):
     
     g_mond = (g_N + np.sqrt(g_N**2 + 4 * g_N * a0_mond)) / 2.0
     g_data['V_mond_kms'] = np.sqrt(g_mond * R_m_obs) / 1000.0
+
+    if gal == 'NGC5033':
+        print(g_mond)
+        print(g_data['V_mond_kms'])
+        
 
 print("\nIntegrations complete. Optimizing global parameter for Linear Absolute Error...")
 
@@ -356,8 +377,8 @@ for gal in galaxies:
     plt.plot(g['R_grid_kpc'], np.sqrt(V_bar_sq_grid_kms), 'blue', label='all baryons', linewidth=0.7)
     
     max_r = max(g['R'])
-    plt.xlim(0, max_r + 2) 
-
+    plt.xlim(0.0, max_r) 
+    #plt.xscale('log')
     plt.plot(g['R'], g['V_mond_kms'], 'c-.', linewidth=1, label='MOND')
 
  
