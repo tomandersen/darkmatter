@@ -22,12 +22,12 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
  
 NUM_BLOBS_THETA = 57 
 NUM_LAYERS_Z = 303
-Z_HEIGHT = 100  
+Z_HEIGHT = 100  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
 NUM_R_BINS = 87  
-USE_EXPONENTIAL_DISK = False
+USE_EXPONENTIAL_DISK = True
 
-USE_CGM_MODEL = False 
+USE_CGM_MODEL = True 
 GGM_GRID_SCALE = 2.0
 CGM_CENTRAL_DENSITY = 0.3
 
@@ -185,7 +185,7 @@ for i, gal in enumerate(galaxies):
     gas_particle_density_grid = gas_particle_density_1d[:, None, None] * np.ones_like(Z_grid_3d)
 
     if USE_EXPONENTIAL_DISK:
-        gas_particle_density_grid *= 0.5*np.exp(-np.abs(Z_grid_3d) / hz_m)
+        gas_particle_density_grid *= np.exp(-np.abs(Z_grid_3d) / hz_m)
     else: 
         z_mask = np.abs(Z_grid_3d) <= hz_m
         gas_particle_density_grid[~z_mask] = 0.0
@@ -267,7 +267,7 @@ def global_fit_err(P_test):
         the_err = np.sum(((g['Vobs'] - V_tot_test) / g['eVobs'])**2) 
         total_err += the_err
 
-    print(f"Current P_test: {P_test:.4f} Watts, Current Error: {total_err:.2f}")   
+    #print(f"Current P_test: {P_test:.4f} Watts, Current Error: {total_err:.2f}")   
     return total_err
 
 result = minimize_scalar(global_fit_err, bounds=(2.0, 100.0), method='bounded')
