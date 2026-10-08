@@ -20,17 +20,17 @@ Upsilon_bulge = 0.7
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
  
-NUM_BLOBS_THETA = 57 
-NUM_LAYERS_Z = 303
+NUM_BLOBS_THETA = 123 
+NUM_LAYERS_Z = 700
 Z_HEIGHT = 100  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 87  
+NUM_R_BINS = 135  
 USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True 
 GGM_GRID_SCALE = 2.0
-CGM_CENTRAL_DENSITY = 0.3
-
+CGM_CENTRAL_DENSITY = 0.4
+ 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
     z_d = 0.196 * (R_d ** 0.633)
@@ -320,7 +320,8 @@ def compute_galaxy_stats(galaxy_dict, best_P):
         
         dm_mb_ratio = tot_dm_mass_msun / m_b if m_b > 0 else 0.0
         dm_gas_ratio = tot_dm_mass_msun / tot_gas_mass_msun if tot_gas_mass_msun > 0 else 0.0
-        
+        dm_allbaryons_ratio = tot_dm_mass_msun / (tot_gas_mass_msun + tl) if (tot_gas_mass_msun + tl) > 0 else 0.0
+
         stats.append({
             'name': name,
             'M_b': m_b,
@@ -331,7 +332,8 @@ def compute_galaxy_stats(galaxy_dict, best_P):
             'Gas_Plus_TL': gas_plus_tl,
             'Total_DM_Mass': tot_dm_mass_msun,
             'DM_Mb_Ratio': dm_mb_ratio,
-            'DM_Gas_Ratio': dm_gas_ratio
+            'DM_Gas_Ratio': dm_gas_ratio,
+            'DM_AllBaryons_Ratio': dm_allbaryons_ratio
         })
     return stats
 
@@ -359,12 +361,13 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write(f"  Best Global P: {best_P:.4f} W\n")
         log_file.write(f"  DM Chi^2 Total: {dm_chi2:.2f}\n")
         log_file.write(f"  DM Linear Total Error (Weighted): {dm_lin_err:.2f}\n")
-        log_file.write(f"  DM Linear Total Error (Unweighted): {dm_lin:.2f} km/s\n\n")
+        number_of_points = np.sum([len(galaxies[gal]['Vobs']) for gal in galaxies]) # g = galaxies[gal]
+        log_file.write(f"  DM Linear Total Error (Unweighted): {dm_lin:.2f} km/s, per point: {dm_lin/number_of_points:.2f} km/s\n\n")
         
         log_file.write("--- MOND (Simple) PREDICTION ERRORS ---\n")
         log_file.write(f"  MOND Chi^2 Total: {mond_chi2:.2f}\n")
         log_file.write(f"  MOND Linear Total Error (Weighted): {mond_lin_err:.2f}\n")
-        log_file.write(f"  MOND Linear Total Error (Unweighted): {mond_lin:.2f} km/s\n\n")
+        log_file.write(f"  MOND Linear Total Error (Unweighted): {mond_lin:.2f} km/s, per point: {mond_lin/number_of_points:.2f} km/s\n\n")
         
         log_file.write("--- GALAXY STATISTICAL BREAKDOWN ---\n")
         log_file.write("Column Legend:\n")
@@ -378,8 +381,9 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write("  Total DM Mass: Integrated Dark Mass via theory formula [M_sun]\n")
         log_file.write("  Total DM Mass/M_b: Ratio of Dark Mass to Total Baryons\n")
         log_file.write("  Total DM Mass/Total Gas: Ratio of Dark Mass to Integrated Gas Mass\n\n")
+        log_file.write("  Total DM Mass/Total Baryons: Ratio of Dark Mass to all baryons\n\n")
         
-        header = f"{'name':<16} {'M_b (Msun)':<14} {'TL (Msun)':<14} {'HIMass (Msun)':<14} {'Total Gas (Msun)':<18} {'HI/TotGas':<12} {'Gas+TL (Msun)':<16} {'Total DM (Msun)':<16} {'DM/M_b':<12} {'DM/TotGas':<12}\n"
+        header = f"{'name':<16} {'M_b (Msun)':<14} {'TL (Msun)':<14} {'HIMass (Msun)':<14} {'Total Gas (Msun)':<18} {'HI/TotGas':<12} {'Gas+TL (Msun)':<16} {'Total DM (Msun)':<16} {'DM/M_b':<12} {'DM/TotGas':<12} {'DM/AllBaryons':<12}\n"
         log_file.write(header)
         log_file.write("-" * len(header) + "\n")
         
@@ -387,7 +391,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
             log_file.write(f"{row['name']:<16} {row['M_b']:<14.4e} {row['TL']:<14.4e} {row['HIMass']:<14.4e} "
                            f"{row['Total_Gas_Mass']:<18.4e} {row['HIMass_Total_Gas_Ratio']:<12.4f} "
                            f"{row['Gas_Plus_TL']:<16.4e} {row['Total_DM_Mass']:<16.4e} "
-                           f"{row['DM_Mb_Ratio']:<12.4f} {row['DM_Gas_Ratio']:<12.4f}\n")
+                           f"{row['DM_Mb_Ratio']:<12.4f} {row['DM_Gas_Ratio']:<12.4f} {row['DM_AllBaryons_Ratio']:<12.4f}\n")
         
         log_file.write("========================================================================================================\n\n")
 
