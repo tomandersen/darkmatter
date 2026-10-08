@@ -20,11 +20,11 @@ Upsilon_bulge = 0.7
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
  
-NUM_BLOBS_THETA = 123 
-NUM_LAYERS_Z = 700
-Z_HEIGHT = 100  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 57 
+NUM_LAYERS_Z = 300
+Z_HEIGHT = 70  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 135  
+NUM_R_BINS = 65  
 USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True 
@@ -241,7 +241,7 @@ for i, gal in enumerate(galaxies):
     g_data['Vgas_test_grid_kms'] = np.sign(V_gas_sq_grid) * np.sqrt(np.abs(V_gas_sq_grid)) / 1000.0
     
     g_data['V_dm_sq_base_kms'] = np.interp(R_obs_kpc, R_grid_kpc, V_dm_sq_base_grid / 1e6)
-    g_data['Vgas_test'] = np.interp(R_obs_kpc, R_grid_kpc, g_data['Vgas_test_grid_kms'])
+    g_data['Vgas_test'] = np.interp(R_obs_kpc, R_grid_kpc, g_data['Vgas_test_grid_kms']) # the gas I calculate, may include CGM, estimated at each R_obs
     
     V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + V_gas_ms * np.abs(V_gas_ms), 0, None)
     g_N = np.zeros_like(R_m_obs)
@@ -261,7 +261,13 @@ def global_fit_err(P_test):
         g = galaxies[gal]
         V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
         
-        V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None)
+        # OK - i need to use Vgas_test here, especially if I am using CGM I decided to go with Lelli data is CGM is off, simpler to explain
+        # this way uses the Lelli data only for gas, which is wrong, because I am calculating extra gas from CGM model
+        gas_to_use = 'Vgas'
+        if USE_CGM_MODEL:
+            gas_to_use = 'Vgas_test'
+
+        V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g[gas_to_use] * np.abs(g[gas_to_use]), 0, None) 
         V_tot_test = np.sqrt(V_bar_sq_kms + V_dm_test_sq)
         
         the_err = np.sum(((g['Vobs'] - V_tot_test) / g['eVobs'])**2) 
@@ -283,8 +289,13 @@ mond_linear_total_err = 0
 
 for gal in galaxies:
     g = galaxies[gal]
+
+    gas_to_use = 'Vgas'
+    if USE_CGM_MODEL:
+        gas_to_use = 'Vgas_test'
+
     V_dm_final_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
-    V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None)
+    V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g[gas_to_use] * np.abs(g[gas_to_use]), 0, None)
     V_tot_final_kms = np.sqrt(V_bar_sq_kms + V_dm_final_kms**2)
     
     dm_chi2_total += np.sum(((g['Vobs'] - V_tot_final_kms) / g['eVobs'])**2)
@@ -493,8 +504,12 @@ all_V_pred = []
 for gal in galaxies:
     g = galaxies[gal]
     
+    gas_to_use = 'Vgas'
+    if USE_CGM_MODEL:
+        gas_to_use = 'Vgas_test'
+
     V_dm_final_obs_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
-    V_bar_sq_obs_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None)
+    V_bar_sq_obs_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g[gas_to_use] * np.abs(g[gas_to_use]), 0, None)
     V_tot_final_obs_kms = np.sqrt(V_bar_sq_obs_kms + V_dm_final_obs_kms**2)
     
     all_V_obs.extend(g['Vobs'])
@@ -561,8 +576,12 @@ for gal in galaxies:
     R_m = g['R'] * kpc_to_m
     valid = R_m > 0 
     
+    gas_to_use = 'Vgas'
+    if USE_CGM_MODEL:
+        gas_to_use = 'Vgas_test'
+
     V_dm_final_sq = best_global_P * g['V_dm_sq_base_kms']
-    V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + np.sign(g['Vgas'])*(g['Vgas']**2), 0, None)
+    V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + np.sign(g[gas_to_use])*(g[gas_to_use]**2), 0, None)
     
     V_tot_final_sq_ms = (V_bar_sq_kms + V_dm_final_sq) * (1000.0**2)
     V_obs_sq_ms = (g['Vobs'] * 1000.0)**2
