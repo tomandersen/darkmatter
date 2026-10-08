@@ -3,6 +3,7 @@
 # tom stuff
 *.hdf5
 .DS_Store
+sparc/dm_mass*
 
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
