@@ -20,17 +20,17 @@ Upsilon_bulge = 0.7
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
  
-NUM_BLOBS_THETA = 137 
-NUM_LAYERS_Z = 700
-Z_HEIGHT = 120  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 117 
+NUM_LAYERS_Z = 800
+Z_HEIGHT = 200  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 147  
+NUM_R_BINS = 187  
 USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True 
-GGM_GRID_SCALE = 2.0
-CGM_CENTRAL_DENSITY = 0.5
- 
+GGM_GRID_SCALE = 3.0
+CGM_CENTRAL_DENSITY = 0.8
+
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
     z_d = 0.196 * (R_d ** 0.633)
