@@ -6,6 +6,7 @@ from scipy.optimize import minimize_scalar
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import warnings
+import gc # Added for explicit garbage collection
 
 # Record start time and date
 start_time = time.time()
@@ -20,16 +21,18 @@ Upsilon_bulge = 0.7
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
  
-NUM_BLOBS_THETA = 117 
-NUM_LAYERS_Z = 800
-Z_HEIGHT = 200  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 77 
+NUM_LAYERS_Z = 300
+Z_HEIGHT = 100  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 187  
+NUM_R_BINS = 87  
 USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True 
-GGM_GRID_SCALE = 3.0
-CGM_CENTRAL_DENSITY = 0.8
+GGM_GRID_SCALE = 2.0
+CGM_CENTRAL_DENSITY = 0.5
+CGM_BETA = 1.3*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores...
+
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
@@ -145,9 +148,11 @@ for i, gal in enumerate(galaxies):
     g_data_Vbul = g_data['Vbul']
     g_data_Vgas = g_data['Vgas']
     
-    if USE_CGM_MODEL: 
+    if USE_CGM_MODEL:
+        # scale the gas density to zero halfway to grid max. Don't go all the way, we want the max r, z to be just CGM.
+        last_x = g_data_r_obs_kpc[-1] + (grid_max - g_data_r_obs_kpc[-1])/2.0
         rscale = 1.0/(GGM_GRID_SCALE * GGM_GRID_SCALE)
-        g_data_r_obs_kpc = np.append(R_obs_kpc, grid_max)
+        g_data_r_obs_kpc = np.append(g_data_r_obs_kpc, last_x)
         g_data_sigma_gas = np.append(g_data_sigma_gas, 0.0)
         g_data_Vdisk = np.append(g_data_Vdisk, rscale*g_data_Vdisk[-1])
         g_data_Vbul = np.append(g_data_Vbul, rscale*g_data_Vbul[-1])
@@ -201,16 +206,17 @@ for i, gal in enumerate(galaxies):
         r_core_m = r_core_kpc*kpc_to_m
         n_0_cgs = CGM_CENTRAL_DENSITY  
         n_0_m3 =  n_0_cgs * (100)**3
-        beta = 2.0/3.0
-        exponent = -3.0*beta/2.0
+        exponent = -3.0*CGM_BETA/2.0
         gas_particle_density_grid += n_0_m3*(1 + (X_blob**2 + Y_blob**2 + Z_blob**2)/r_core_m**2)**exponent
 
-    # --- Store quantities needed for galaxy stats ---
-    g_data['gas_particle_density_grid'] = gas_particle_density_grid
-    g_data['dV'] = dV
+    # --- Store quantities needed for galaxy stats without keeping 3D grids ---
     g_data['R_grid_kpc'] = R_grid_kpc
     g_data['Z_grid_kpc'] = Z_m / kpc_to_m
     g_data['gas_density_slice_m3'] = gas_particle_density_grid[:, :, 0].copy()
+    
+    # Pre-calculate volume integrals needed for downstream stat functions
+    g_data['sum_gas_mass_integral'] = np.sum(gas_particle_density_grid * dV)
+    g_data['sum_dm_mass_integral'] = np.sum((gas_particle_density_grid**(2.0/3.0)) * dV)
 
     gas_particle_mass_He_factor = 1.33  
     dm_gas = gas_particle_density_grid * m_p * gas_particle_mass_He_factor * dV
@@ -241,7 +247,7 @@ for i, gal in enumerate(galaxies):
     g_data['Vgas_test_grid_kms'] = np.sign(V_gas_sq_grid) * np.sqrt(np.abs(V_gas_sq_grid)) / 1000.0
     
     g_data['V_dm_sq_base_kms'] = np.interp(R_obs_kpc, R_grid_kpc, V_dm_sq_base_grid / 1e6)
-    g_data['Vgas_test'] = np.interp(R_obs_kpc, R_grid_kpc, g_data['Vgas_test_grid_kms']) # the gas I calculate, may include CGM, estimated at each R_obs
+    g_data['Vgas_test'] = np.interp(R_obs_kpc, R_grid_kpc, g_data['Vgas_test_grid_kms'])
     
     V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + V_gas_ms * np.abs(V_gas_ms), 0, None)
     g_N = np.zeros_like(R_m_obs)
@@ -250,6 +256,11 @@ for i, gal in enumerate(galaxies):
     g_mond = (g_N + np.sqrt(g_N**2 + 4 * g_N * a0_mond)) / 2.0
     g_data['V_mond_kms'] = np.sqrt(g_mond * R_m_obs) / 1000.0
 
+    # Explicitly clear 3D Arrays to free memory before next iteration
+    del R_grid_3d, Z_grid_3d, Theta_grid_3d
+    del X_blob, Y_blob, Z_blob
+    del gas_particle_density_grid, dV, dm_gas, dm_base_dm
+    gc.collect()
 
 print("\nIntegrations complete. Optimizing global parameter for Linear Absolute Error...")
 
@@ -261,8 +272,6 @@ def global_fit_err(P_test):
         g = galaxies[gal]
         V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
         
-        # OK - i need to use Vgas_test here, especially if I am using CGM I decided to go with Lelli data is CGM is off, simpler to explain
-        # this way uses the Lelli data only for gas, which is wrong, because I am calculating extra gas from CGM model
         gas_to_use = 'Vgas'
         if USE_CGM_MODEL:
             gas_to_use = 'Vgas_test'
@@ -272,8 +281,7 @@ def global_fit_err(P_test):
         
         the_err = np.sum(((g['Vobs'] - V_tot_test) / g['eVobs'])**2) 
         total_err += the_err
-
-    #print(f"Current P_test: {P_test:.4f} Watts, Current Error: {total_err:.2f}")   
+  
     return total_err
 
 result = minimize_scalar(global_fit_err, bounds=(2.0, 100.0), method='bounded')
@@ -318,15 +326,15 @@ def compute_galaxy_stats(galaxy_dict, best_P):
         hi = HIMass_dict.get(name, 0.0) * 1e9      # M_sun
         m_b = tl + hi                             # M_b with Upsilon = 1
         
-        # Integrate total gas mass (kg -> M_sun)
-        tot_gas_mass_kg = np.sum(g['gas_particle_density_grid'] * g['dV'] * m_p * 1.33)
+        # Integrate total gas mass using pre-calculated integrals
+        tot_gas_mass_kg = g['sum_gas_mass_integral'] * m_p * 1.33
         tot_gas_mass_msun = tot_gas_mass_kg / M_sun
         
         hi_gas_ratio = hi / tot_gas_mass_msun if tot_gas_mass_msun > 0 else 0.0
         gas_plus_tl = tot_gas_mass_msun + tl
         
-        # DM Mass = best_P * (1/c^3) * sum( density^(2/3) * dV ) (kg -> M_sun)
-        tot_dm_mass_kg = best_P * (1.0 / c**3) * np.sum((g['gas_particle_density_grid']**(2.0/3.0)) * g['dV'])
+        # DM Mass using pre-calculated integrals
+        tot_dm_mass_kg = best_P * (1.0 / c**3) * g['sum_dm_mass_integral']
         tot_dm_mass_msun = tot_dm_mass_kg / M_sun
         
         dm_mb_ratio = tot_dm_mass_msun / m_b if m_b > 0 else 0.0
@@ -366,8 +374,12 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write(f"  USE_EXPONENTIAL_DISK = {USE_EXPONENTIAL_DISK}\n")
         log_file.write(f"  USE_CGM_MODEL = {USE_CGM_MODEL}\n")
         log_file.write(f"  GGM_GRID_SCALE = {GGM_GRID_SCALE}\n")
-        log_file.write(f"  CGM_CENTRAL_DENSITY = {CGM_CENTRAL_DENSITY}\n\n")
-        
+        log_file.write(f"  CGM_CENTRAL_DENSITY = {CGM_CENTRAL_DENSITY}\n")
+        log_file.write(f"  CGM_BETA = {CGM_BETA}\n\n")
+        log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n\n")
+        log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n\n")
+
+
         log_file.write("--- GLOBAL OPTIMIZATION RESULTS ---\n")
         log_file.write(f"  Best Global P: {best_P:.4f} W\n")
         log_file.write(f"  DM Chi^2 Total: {dm_chi2:.2f}\n")
@@ -383,7 +395,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write("--- GALAXY STATISTICAL BREAKDOWN ---\n")
         log_file.write("Column Legend:\n")
         log_file.write("  name: Galaxy identifier\n")
-        log_file.write("  M_b: Total baryon mass [M_sun] (TL + HIMass, assuming Upsilon = 1)\n")
+        log_file.write("  M_b: Total baryon mass [M_sun] (TL + HIMass, assuming Upsilon = 1 - Lelli 2016 data)\n")
         log_file.write("  TL: Stellar luminosity-derived mass [M_sun]\n")
         log_file.write("  HIMass: Neutral Hydrogen mass from literature [M_sun]\n")
         log_file.write("  Total Gas Mass: Integrated gas disk mass from 3D density grid * 1.33 [M_sun]\n")
