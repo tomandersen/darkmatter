@@ -23,16 +23,16 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 USE_LINEAR_ERROR = True
 
-NUM_BLOBS_THETA = 83 
-NUM_LAYERS_Z = 505 
-Z_HEIGHT = 110  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 127 
+NUM_LAYERS_Z = 705 
+Z_HEIGHT = 130  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 129
+NUM_R_BINS = 189
 USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True
 GGM_GRID_SCALE = 3.0 # If CGM is ON, then we blow out the max_r by a factor of GGM_GRID_SCALE. Make it 3 or 4 for max accuracy, but 2 works fine 
-CGM_CENTRAL_DENSITY = 0.8 # particles per cm^3. This is not just CGM gas, but also 'misssing' gas from the cores of most of the galaxies.
+CGM_CENTRAL_DENSITY = 1.0 # particles per cm^3. This is not just CGM gas, but also 'misssing' gas from the cores of most of the galaxies.
 CGM_BETA = 1.3*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores...
 
 DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
@@ -393,7 +393,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write(f"  NUM_LAYERS_Z = {NUM_LAYERS_Z}\n")
         log_file.write(f"  Z_HEIGHT (total units of disk scale heights) = {Z_HEIGHT}\n")
         log_file.write(f"  NUM_R_BINS = {NUM_R_BINS}\n")
-        log_file.write(f"  Total 3D grid points per galaxy = {NUM_R_BINS * NUM_BLOBS_THETA * NUM_LAYERS_Z}\n")
+        log_file.write(f"  Total 3D grid points per galaxy = {NUM_R_BINS * NUM_BLOBS_THETA * NUM_LAYERS_Z/1e6:.2f} million\n")
         log_file.write(f"  Grid Points per disk thickness = {NUM_LAYERS_Z/Z_HEIGHT:.2f}\n")
         log_file.write(f"  USE_EXPONENTIAL_DISK = {USE_EXPONENTIAL_DISK}\n")
         log_file.write(f"  USE_CGM_MODEL = {USE_CGM_MODEL}\n")
@@ -401,11 +401,11 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write(f"  CGM_CENTRAL_DENSITY = {CGM_CENTRAL_DENSITY}\n")
         log_file.write(f"  CGM_BETA = {CGM_BETA}\n")
         log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n")
-        log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n")
+        log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n\n")
 
 
         log_file.write("--- GLOBAL OPTIMIZATION RESULTS ---\n")
-        log_file.write(f"  USE_LINEAR_ERROR = {USE_LINEAR_ERROR}\n\n")
+        log_file.write(f"  USE_LINEAR_ERROR = {USE_LINEAR_ERROR}\n")
         log_file.write(f"  Best Global P: {best_P:.4f} W\n")
         log_file.write(f"  DM Chi^2 Total: {dm_chi2:.2f}\n")
         log_file.write(f"  DM Linear Total Error (Weighted): {dm_lin_err:.2f}\n")
@@ -566,8 +566,8 @@ for gal in galaxies:
     
     plt.figure(figsize=(9, 6))
 
-    plt.plot(g['R_grid_kpc'], V_dm_final_grid_kms, 'm--', label=f'dark mass (dm)')
     plt.plot(g['R_grid_kpc'], V_tot_final_grid_kms, 'r-', linewidth=2, label='baryons + dm')
+    plt.plot(g['R_grid_kpc'], V_dm_final_grid_kms, 'm--', label=f'dark mass (dm)', linewidth=0.8)
     plt.plot(g['R_grid_kpc'], g['Vgas_test_grid_kms'], 'g', label="gas (as used)", linewidth=0.5)
 
     # Plot Lelli data as from data:
