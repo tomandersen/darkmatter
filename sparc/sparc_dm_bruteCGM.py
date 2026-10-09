@@ -15,24 +15,27 @@ start_datetime = datetime.now()
 # Suppress integration warnings for highly dense inner rings
 warnings.filterwarnings("ignore")
 
-Upsilon_disk = 0.5   
+Upsilon_disk = 0.5   # I have tested with upsilon, and making them both 0.6 seems to work better than 0.5, 0.7
 Upsilon_bulge = 0.7  
 
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
- 
-NUM_BLOBS_THETA = 77 
-NUM_LAYERS_Z = 405 
-Z_HEIGHT = 100  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 87  
+USE_LINEAR_ERROR = True
+
+NUM_BLOBS_THETA = 83 
+NUM_LAYERS_Z = 505 
+Z_HEIGHT = 110  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+
+NUM_R_BINS = 129
 USE_EXPONENTIAL_DISK = True
 
-USE_CGM_MODEL = True 
-GGM_GRID_SCALE = 2.0
-CGM_CENTRAL_DENSITY = 0.8
+USE_CGM_MODEL = True
+GGM_GRID_SCALE = 3.0 # If CGM is ON, then we blow out the max_r by a factor of GGM_GRID_SCALE. Make it 3 or 4 for max accuracy, but 2 works fine 
+CGM_CENTRAL_DENSITY = 0.8 # particles per cm^3. This is not just CGM gas, but also 'misssing' gas from the cores of most of the galaxies.
 CGM_BETA = 1.3*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores...
 
+DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
@@ -279,7 +282,10 @@ def global_fit_err(P_test):
         V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g[gas_to_use] * np.abs(g[gas_to_use]), 0, None) 
         V_tot_test = np.sqrt(V_bar_sq_kms + V_dm_test_sq)
         
-        the_err = np.sum(((g['Vobs'] - V_tot_test) / g['eVobs'])**2) 
+        if USE_LINEAR_ERROR:
+            the_err = np.sum(np.abs(g['Vobs'] - V_tot_test))
+        else:
+            the_err = np.sum(((g['Vobs'] - V_tot_test) / g['eVobs'])**2) 
         total_err += the_err
   
     return total_err
@@ -385,18 +391,21 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write("INPUT CONSTANTS:\n")
         log_file.write(f"  NUM_BLOBS_THETA = {NUM_BLOBS_THETA}\n")
         log_file.write(f"  NUM_LAYERS_Z = {NUM_LAYERS_Z}\n")
-        log_file.write(f"  Z_HEIGHT = {Z_HEIGHT}\n")
+        log_file.write(f"  Z_HEIGHT (total units of disk scale heights) = {Z_HEIGHT}\n")
         log_file.write(f"  NUM_R_BINS = {NUM_R_BINS}\n")
+        log_file.write(f"  Total 3D grid points per galaxy = {NUM_R_BINS * NUM_BLOBS_THETA * NUM_LAYERS_Z}\n")
+        log_file.write(f"  Grid Points per disk thickness = {NUM_LAYERS_Z/Z_HEIGHT:.2f}\n")
         log_file.write(f"  USE_EXPONENTIAL_DISK = {USE_EXPONENTIAL_DISK}\n")
         log_file.write(f"  USE_CGM_MODEL = {USE_CGM_MODEL}\n")
         log_file.write(f"  GGM_GRID_SCALE = {GGM_GRID_SCALE}\n")
         log_file.write(f"  CGM_CENTRAL_DENSITY = {CGM_CENTRAL_DENSITY}\n")
-        log_file.write(f"  CGM_BETA = {CGM_BETA}\n\n")
-        log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n\n")
-        log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n\n")
+        log_file.write(f"  CGM_BETA = {CGM_BETA}\n")
+        log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n")
+        log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n")
 
 
         log_file.write("--- GLOBAL OPTIMIZATION RESULTS ---\n")
+        log_file.write(f"  USE_LINEAR_ERROR = {USE_LINEAR_ERROR}\n\n")
         log_file.write(f"  Best Global P: {best_P:.4f} W\n")
         log_file.write(f"  DM Chi^2 Total: {dm_chi2:.2f}\n")
         log_file.write(f"  DM Linear Total Error (Weighted): {dm_lin_err:.2f}\n")
@@ -528,7 +537,8 @@ def generate_density_heatmaps(galaxy_dict, best_P):
         plt.close()
 
 # Execute heatmaps
-generate_density_heatmaps(galaxies, best_global_P)
+if DO_HEATMAPS:
+    generate_density_heatmaps(galaxies, best_global_P)
 
 # 5. Generate Output Plots
 print("\nGenerating individual galaxy plots and master summary...")
@@ -542,32 +552,35 @@ for gal in galaxies:
     if USE_CGM_MODEL:
         gas_to_use = 'Vgas_test'
 
+    # make data for overall fit for all 3319 points of data. Use interpolations where needed. 
     V_dm_final_obs_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
     V_bar_sq_obs_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g[gas_to_use] * np.abs(g[gas_to_use]), 0, None)
-    V_tot_final_obs_kms = np.sqrt(V_bar_sq_obs_kms + V_dm_final_obs_kms**2)
-    
+    V_tot_final_pred_kms = np.sqrt(V_bar_sq_obs_kms + V_dm_final_obs_kms**2)
     all_V_obs.extend(g['Vobs'])
-    all_V_pred.extend(V_tot_final_obs_kms)
+    all_V_pred.extend(V_tot_final_pred_kms)
     
+    # show my predicted lines - use the grid points. 
     V_dm_final_grid_kms = np.sqrt(best_global_P * g['V_dm_sq_base_grid_kms'])
-    V_bar_sq_grid_kms = np.clip(g['Vdisk_grid']**2 + g['Vbul_grid']**2 + g['Vgas_grid'] * np.abs(g['Vgas_grid']), 0, None)
-    V_tot_final_grid_kms = np.sqrt(V_bar_sq_grid_kms + V_dm_final_grid_kms**2)
+    V_bar_sq_grid_kms_tom = np.clip(g['Vdisk_grid']**2 + g['Vbul_grid']**2 + g['Vgas_test_grid_kms'] * np.abs(g['Vgas_test_grid_kms']), 0, None) 
+    V_tot_final_grid_kms = np.sqrt(V_bar_sq_grid_kms_tom + V_dm_final_grid_kms**2)
     
     plt.figure(figsize=(9, 6))
 
     plt.plot(g['R_grid_kpc'], V_dm_final_grid_kms, 'm--', label=f'dark mass (dm)')
     plt.plot(g['R_grid_kpc'], V_tot_final_grid_kms, 'r-', linewidth=2, label='baryons + dm')
+    plt.plot(g['R_grid_kpc'], g['Vgas_test_grid_kms'], 'g', label="gas (as used)", linewidth=0.5)
 
-    plt.plot(g['R'], g['Vgas'], 'g', label='gas', linestyle='dotted', linewidth=0.7)
-    plt.plot(g['R'], g['Vdisk'], 'violet', label='disk', linestyle='dashdot', linewidth=0.7)
+    # Plot Lelli data as from data:
+    plt.plot(g['R'], g['Vgas'], 'g', label='gas (Lelli)', linestyle='dotted', linewidth=0.7)
+    plt.plot(g['R'], g['Vdisk'], 'violet', label='disk (Lelli)', linestyle='dashdot', linewidth=0.7)
     if np.any(g['Vbul'] > 0):
-        plt.plot(g['R'], g['Vbul'], 'red', label='bulge', linestyle='dashed', linewidth=0.7)
-  
-    plt.plot(g['R_grid_kpc'], g['Vgas_test_grid_kms'], 'g', label="gas ($\\Sigma_{gas}$)", linewidth=0.5)
-    plt.plot(g['R_grid_kpc'], np.sqrt(V_bar_sq_grid_kms), 'blue', label='all baryons', linewidth=0.7)
+        plt.plot(g['R'], g['Vbul'], 'red', label='bulge (Lelli)', linestyle='dashed', linewidth=0.7)
+
+    lelli_all_baryon_v = np.sqrt(np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None))
+    plt.plot(g['R'], lelli_all_baryon_v, 'blue', label='baryons (Lelli)', linewidth=0.7)
     
     max_r = max(g['R'])
-    plt.xlim(0.0, max_r) 
+    plt.xlim(0.0, max_r + max_r*0.02) 
     plt.plot(g['R'], g['V_mond_kms'], 'c-.', linewidth=1, label='MOND')
  
     plt.errorbar(g['R'], g['Vobs'], yerr=g['eVobs'], fmt='ko', label='observed', capsize=1.5, capthick=1.0, markersize=2, elinewidth=0.6)
