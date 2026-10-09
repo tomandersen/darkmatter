@@ -22,7 +22,7 @@ sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
  
 NUM_BLOBS_THETA = 77 
-NUM_LAYERS_Z = 300
+NUM_LAYERS_Z = 405 
 Z_HEIGHT = 100  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
 NUM_R_BINS = 87  
@@ -30,7 +30,7 @@ USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True 
 GGM_GRID_SCALE = 2.0
-CGM_CENTRAL_DENSITY = 0.5
+CGM_CENTRAL_DENSITY = 0.8
 CGM_BETA = 1.3*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores...
 
 
@@ -321,6 +321,11 @@ for gal in galaxies:
 
 def compute_galaxy_stats(galaxy_dict, best_P):
     stats = []
+    global_stats = {}
+    total_baryon_mass = 0.0 # all baryons, including CGM.
+    total_dm_mass = 0.0 # all dm calculated
+    dm_ratio_by_galaxy = 0.0 # this is the average of the ratios
+
     for name, g in galaxy_dict.items():
         tl = TL_dict.get(name, 0.0) * 1e9          # M_sun
         hi = HIMass_dict.get(name, 0.0) * 1e9      # M_sun
@@ -341,6 +346,10 @@ def compute_galaxy_stats(galaxy_dict, best_P):
         dm_gas_ratio = tot_dm_mass_msun / tot_gas_mass_msun if tot_gas_mass_msun > 0 else 0.0
         dm_allbaryons_ratio = tot_dm_mass_msun / (tot_gas_mass_msun + tl) if (tot_gas_mass_msun + tl) > 0 else 0.0
 
+        total_baryon_mass += tot_gas_mass_msun + tl # all baryons, including CGM.
+        total_dm_mass += tot_dm_mass_msun # all dm calculated
+        dm_ratio_by_galaxy += dm_allbaryons_ratio
+
         stats.append({
             'name': name,
             'M_b': m_b,
@@ -354,10 +363,17 @@ def compute_galaxy_stats(galaxy_dict, best_P):
             'DM_Gas_Ratio': dm_gas_ratio,
             'DM_AllBaryons_Ratio': dm_allbaryons_ratio
         })
-    return stats
+
+    global_stats = {
+        'Total_Baryon_Mass': total_baryon_mass,
+        'Total_DM_Mass': total_dm_mass,
+        'DM_AllBaryons_Ratio': dm_ratio_by_galaxy / len(galaxy_dict),
+        'Overall_DM_Ratio': total_dm_mass/total_baryon_mass
+    }
+    return stats, global_stats
 
 
-def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mond_lin_err, mond_lin, stats):
+def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mond_lin_err, mond_lin, global_stats, stats):
     log_filename = os.path.join(output_dir, "run_log.txt")
     duration_seconds = time.time() - start_time
     
@@ -392,6 +408,12 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write(f"  MOND Linear Total Error (Weighted): {mond_lin_err:.2f}\n")
         log_file.write(f"  MOND Linear Total Error (Unweighted): {mond_lin:.2f} km/s, per point: {mond_lin/number_of_points:.2f} km/s\n\n")
         
+        log_file.write("--- GLOBAL STATISTICAL BREAKDOWN ---\n")
+        log_file.write(f"  Total Baryon Mass: {global_stats['Total_Baryon_Mass']:.2e} M_sun\n")
+        log_file.write(f"  Total DM Mass: {global_stats['Total_DM_Mass']:.2e} M_sun\n")
+        log_file.write(f"  DM/AllBaryons Average Ratio: {global_stats['DM_AllBaryons_Ratio']:.2f}\n")
+        log_file.write(f"  Overall DM Ratio: {global_stats['Overall_DM_Ratio']:.2f}\n\n")
+
         log_file.write("--- GALAXY STATISTICAL BREAKDOWN ---\n")
         log_file.write("Column Legend:\n")
         log_file.write("  name: Galaxy identifier\n")
@@ -633,7 +655,7 @@ plt.close()
 # ---------------------------------------------------------
 print("\nComputing galaxy mass statistics, appending log file, and plotting mass comparisons...")
 
-galaxy_stats = compute_galaxy_stats(galaxies, best_global_P)
+galaxy_stats, global_stats = compute_galaxy_stats(galaxies, best_global_P)
 
 write_run_log(
     output_dir=output_dir,
@@ -644,6 +666,7 @@ write_run_log(
     mond_chi2=mond_chi2_total,
     mond_lin_err=mond_linear_total_err,
     mond_lin=mond_linear_total,
+    global_stats = global_stats,
     stats=galaxy_stats
 )
 
