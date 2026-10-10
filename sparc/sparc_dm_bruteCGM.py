@@ -23,17 +23,19 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 USE_LINEAR_ERROR = True
 
-NUM_BLOBS_THETA = 127 
-NUM_LAYERS_Z = 705 
-Z_HEIGHT = 130  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 77 
+NUM_LAYERS_Z = 315 
+Z_HEIGHT = 100  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 189
+NUM_R_BINS = 159
 USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True
 GGM_GRID_SCALE = 3.0 # If CGM is ON, then we blow out the max_r by a factor of GGM_GRID_SCALE. Make it 3 or 4 for max accuracy, but 2 works fine 
-CGM_CENTRAL_DENSITY = 1.0 # particles per cm^3. This is not just CGM gas, but also 'misssing' gas from the cores of most of the galaxies.
-CGM_BETA = 1.3*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores...
+CGM_CENTRAL_DENSITY = 1.2 # particles per cm^3. This is not just CGM gas, but also 'misssing' gas from the cores of most of the galaxies.
+CGM_BETA = 1.6*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores...
+ADD_REAL_CGM = True
+
 
 DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
 
@@ -202,15 +204,23 @@ for i, gal in enumerate(galaxies):
     Y_blob = R_grid_3d * np.sin(Theta_grid_3d)
     Z_blob = Z_grid_3d
 
+    # CGM- I use a CGM model to add gas to the core of each galaxy. It seems missing. 
+    # I also have the option of adding ADD_REAL_CGM which makes a DM halo (uses the proper beta and DM at core)
+    total_mass = TL_dict[gal] + HIMass_dict[gal] 
+    r_core_kpc = 2.0*(total_mass*1e9/1e11)**(1/3) # should export this or plot it on each plot, along with R_d
+    r_core_m = r_core_kpc*kpc_to_m
     if USE_CGM_MODEL:
-        total_mass = TL_dict[gal] + HIMass_dict[gal] 
-
-        r_core_kpc = 2.0*(total_mass*1e9/1e11)**(1/3)
-        r_core_m = r_core_kpc*kpc_to_m
         n_0_cgs = CGM_CENTRAL_DENSITY  
         n_0_m3 =  n_0_cgs * (100)**3
         exponent = -3.0*CGM_BETA/2.0
         gas_particle_density_grid += n_0_m3*(1 + (X_blob**2 + Y_blob**2 + Z_blob**2)/r_core_m**2)**exponent
+    if ADD_REAL_CGM:
+        n_0_cgs = 0.1  # 'canonical' CGM central density
+        n_0_m3 =  n_0_cgs * (100)**3
+        beta = 2.0/3.0
+        exponent = -3.0*beta/2.0
+        gas_particle_density_grid += n_0_m3*(1 + (X_blob**2 + Y_blob**2 + Z_blob**2)/r_core_m**2)**exponent
+
 
     # --- Store quantities needed for galaxy stats without keeping 3D grids ---
     g_data['R_grid_kpc'] = R_grid_kpc
