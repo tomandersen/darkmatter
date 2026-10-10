@@ -23,19 +23,19 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 USE_LINEAR_ERROR = True
 
-NUM_BLOBS_THETA = 77 
-NUM_LAYERS_Z = 315 
-Z_HEIGHT = 100  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 127 
+NUM_LAYERS_Z = 1115 
+Z_HEIGHT = 140  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 159
+NUM_R_BINS = 229
 USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True
-GGM_GRID_SCALE = 3.0 # If CGM is ON, then we blow out the max_r by a factor of GGM_GRID_SCALE. Make it 3 or 4 for max accuracy, but 2 works fine 
+GGM_GRID_SCALE = 4.0 # If CGM is ON, then we blow out the max_r by a factor of GGM_GRID_SCALE. Make it 3 or 4 for max accuracy, but 2 works fine 
 CGM_CENTRAL_DENSITY = 1.2 # particles per cm^3. This is not just CGM gas, but also 'misssing' gas from the cores of most of the galaxies.
 CGM_BETA = 1.6*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores...
-ADD_REAL_CGM = True
-
+ADD_REAL_CGM = 0.05 # central density of 'real' CGM - can be turned on even if CGM is off. (does not add extra space in r direction)
+ 
 
 DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
 
@@ -214,8 +214,8 @@ for i, gal in enumerate(galaxies):
         n_0_m3 =  n_0_cgs * (100)**3
         exponent = -3.0*CGM_BETA/2.0
         gas_particle_density_grid += n_0_m3*(1 + (X_blob**2 + Y_blob**2 + Z_blob**2)/r_core_m**2)**exponent
-    if ADD_REAL_CGM:
-        n_0_cgs = 0.1  # 'canonical' CGM central density
+    if ADD_REAL_CGM > 0.0:
+        n_0_cgs = ADD_REAL_CGM  # 'canonical' CGM central density
         n_0_m3 =  n_0_cgs * (100)**3
         beta = 2.0/3.0
         exponent = -3.0*beta/2.0
