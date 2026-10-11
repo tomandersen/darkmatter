@@ -23,27 +23,27 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 USE_LINEAR_ERROR = True
 
-NUM_BLOBS_THETA = 57 
-NUM_LAYERS_Z = 323 
-Z_HEIGHT = 50  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 137 
+NUM_LAYERS_Z = 1323 
+Z_HEIGHT = 140  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 107
+NUM_R_BINS = 229
 
 # grid scale in r direction: Needs to be 1 or more. (1 - 5) With higher numbers you are going to need more NUM_R_BINS
 # 1 is not ideal, but uses the data as given. Trouble is we don't have density out past the last R, so velocities can rise. 
-R_GRID_SCALE_FACTOR = 3.0 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
+R_GRID_SCALE_FACTOR = 4.0 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
 
 USE_EXPONENTIAL_DISK = True # you want this on. 
 
 ADD_CORE_GAS = True
-ADD_CORE_GAS_CENTRAL_DENSITY = 2 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
-ADD_CORE_GAS_BETA = 2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
+ADD_CORE_GAS_CENTRAL_DENSITY = 2.25 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
+ADD_CORE_GAS_BETA = 2.0 #2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
 
 # CGM - beta is set in the code
-ADD_REAL_CGM = 0.00 # central density of 'real' CGM - can be turned on even if CGM is off. (does not add extra space in r direction)
- 
+ADD_REAL_CGM = 0.02 # central density of 'real' CGM - in particles per cm^3.
 
-DO_HEATMAPS = False # controls output of heatmaps only, not a fitting parameter. 
+
+DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
