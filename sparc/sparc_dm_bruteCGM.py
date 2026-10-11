@@ -23,21 +23,21 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 USE_LINEAR_ERROR = True
 
-NUM_BLOBS_THETA = 127 
-NUM_LAYERS_Z = 1115 
-Z_HEIGHT = 140  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 57 
+NUM_LAYERS_Z = 323 
+Z_HEIGHT = 70  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 229
+NUM_R_BINS = 67
 USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True
 GGM_GRID_SCALE = 4.0 # If CGM is ON, then we blow out the max_r by a factor of GGM_GRID_SCALE. Make it 3 or 4 for max accuracy, but 2 works fine 
-CGM_CENTRAL_DENSITY = 1.0 # particles per cm^3. This is not just CGM gas, but also 'misssing' gas from the cores of most of the galaxies.
-CGM_BETA = 1.6*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores...
-ADD_REAL_CGM = 0.02 # central density of 'real' CGM - can be turned on even if CGM is off. (does not add extra space in r direction)
+CGM_CENTRAL_DENSITY = 2 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
+CGM_BETA = 2*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
+ADD_REAL_CGM = 0.00 # central density of 'real' CGM - can be turned on even if CGM is off. (does not add extra space in r direction)
  
 
-DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
+DO_HEATMAPS = False # controls output of heatmaps only, not a fitting parameter. 
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
@@ -226,6 +226,7 @@ for i, gal in enumerate(galaxies):
     g_data['R_grid_kpc'] = R_grid_kpc
     g_data['Z_grid_kpc'] = Z_m / kpc_to_m
     g_data['gas_density_slice_m3'] = gas_particle_density_grid[:, :, 0].copy()
+    g_data['r_core_kpc'] = r_core_kpc
     
     # Pre-calculate volume integrals needed for downstream stat functions
     g_data['sum_gas_mass_integral'] = np.sum(gas_particle_density_grid * dV)
