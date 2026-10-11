@@ -25,15 +25,21 @@ USE_LINEAR_ERROR = True
 
 NUM_BLOBS_THETA = 57 
 NUM_LAYERS_Z = 323 
-Z_HEIGHT = 70  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+Z_HEIGHT = 50  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 67
-USE_EXPONENTIAL_DISK = True
+NUM_R_BINS = 107
 
-USE_CGM_MODEL = True
-GGM_GRID_SCALE = 4.0 # If CGM is ON, then we blow out the max_r by a factor of GGM_GRID_SCALE. Make it 3 or 4 for max accuracy, but 2 works fine 
-CGM_CENTRAL_DENSITY = 2 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
-CGM_BETA = 2*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
+# grid scale in r direction: Needs to be 1 or more. (1 - 5) With higher numbers you are going to need more NUM_R_BINS
+# 1 is not ideal, but uses the data as given. Trouble is we don't have density out past the last R, so velocities can rise. 
+R_GRID_SCALE_FACTOR = 3.0 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
+
+USE_EXPONENTIAL_DISK = True # you want this on. 
+
+ADD_CORE_GAS = True
+ADD_CORE_GAS_CENTRAL_DENSITY = 2 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
+ADD_CORE_GAS_BETA = 2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
+
+# CGM - beta is set in the code
 ADD_REAL_CGM = 0.00 # central density of 'real' CGM - can be turned on even if CGM is off. (does not add extra space in r direction)
  
 
@@ -140,8 +146,8 @@ for i, gal in enumerate(galaxies):
     
     max_R_kpc = np.max(R_obs_kpc)
     grid_max = max_R_kpc
-    if USE_CGM_MODEL:
-        grid_max = GGM_GRID_SCALE * grid_max
+    if R_GRID_SCALE_FACTOR > 1.0:
+        grid_max = R_GRID_SCALE_FACTOR * grid_max
 
     R_grid_kpc = np.linspace(max_R_kpc / NUM_R_BINS, grid_max, NUM_R_BINS)
     R_grid_m = R_grid_kpc * kpc_to_m
@@ -153,10 +159,10 @@ for i, gal in enumerate(galaxies):
     g_data_Vbul = g_data['Vbul']
     g_data_Vgas = g_data['Vgas']
     
-    if USE_CGM_MODEL:
+    if R_GRID_SCALE_FACTOR > 1.0:
         # scale the gas density to zero halfway to grid max. Don't go all the way, we want the max r, z to be just CGM.
         last_x = g_data_r_obs_kpc[-1] + (grid_max - g_data_r_obs_kpc[-1])/2.0
-        rscale = 1.0/(GGM_GRID_SCALE * GGM_GRID_SCALE)
+        rscale = 1.0/(R_GRID_SCALE_FACTOR * R_GRID_SCALE_FACTOR)
         g_data_r_obs_kpc = np.append(g_data_r_obs_kpc, last_x)
         g_data_sigma_gas = np.append(g_data_sigma_gas, 0.0)
         g_data_Vdisk = np.append(g_data_Vdisk, rscale*g_data_Vdisk[-1])
@@ -209,15 +215,15 @@ for i, gal in enumerate(galaxies):
     total_mass = TL_dict[gal] + HIMass_dict[gal] 
     r_core_kpc = 2.0*(total_mass*1e9/1e11)**(1/3) # should export this or plot it on each plot, along with R_d
     r_core_m = r_core_kpc*kpc_to_m
-    if USE_CGM_MODEL:
-        n_0_cgs = CGM_CENTRAL_DENSITY  
+    if ADD_CORE_GAS:
+        n_0_cgs = ADD_CORE_GAS_CENTRAL_DENSITY  
         n_0_m3 =  n_0_cgs * (100)**3
-        exponent = -3.0*CGM_BETA/2.0
+        exponent = -ADD_CORE_GAS_BETA #NOTE - we use beta here directly, like a DM halo (not like CGM equation)
         gas_particle_density_grid += n_0_m3*(1 + (X_blob**2 + Y_blob**2 + Z_blob**2)/r_core_m**2)**exponent
     if ADD_REAL_CGM > 0.0:
         n_0_cgs = ADD_REAL_CGM  # 'canonical' CGM central density
         n_0_m3 =  n_0_cgs * (100)**3
-        beta = 2.0/3.0
+        beta = 0.5 # internet says about this value (lower for bigger galaxies)
         exponent = -3.0*beta/2.0
         gas_particle_density_grid += n_0_m3*(1 + (X_blob**2 + Y_blob**2 + Z_blob**2)/r_core_m**2)**exponent
 
@@ -287,7 +293,7 @@ def global_fit_err(P_test):
         V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
         
         gas_to_use = 'Vgas'
-        if USE_CGM_MODEL:
+        if ADD_CORE_GAS or ADD_REAL_CGM > 0.0:
             gas_to_use = 'Vgas_test'
 
         V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g[gas_to_use] * np.abs(g[gas_to_use]), 0, None) 
@@ -316,7 +322,7 @@ for gal in galaxies:
     g = galaxies[gal]
 
     gas_to_use = 'Vgas'
-    if USE_CGM_MODEL:
+    if ADD_CORE_GAS or ADD_REAL_CGM > 0.0:
         gas_to_use = 'Vgas_test'
 
     V_dm_final_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
@@ -378,7 +384,8 @@ def compute_galaxy_stats(galaxy_dict, best_P):
             'Total_DM_Mass': tot_dm_mass_msun,
             'DM_Mb_Ratio': dm_mb_ratio,
             'DM_Gas_Ratio': dm_gas_ratio,
-            'DM_AllBaryons_Ratio': dm_allbaryons_ratio
+            'DM_AllBaryons_Ratio': dm_allbaryons_ratio,
+            'r_core_kpc': g['r_core_kpc']
         })
 
     global_stats = {
@@ -391,10 +398,10 @@ def compute_galaxy_stats(galaxy_dict, best_P):
 
 
 def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mond_lin_err, mond_lin, global_stats, stats):
-    log_filename = os.path.join(output_dir, "run_log.txt")
+    log_filename = os.path.join(output_dir, "run.txt")
     duration_seconds = time.time() - start_time
     
-    with open(log_filename, "a") as log_file:
+    with open(log_filename, "w") as log_file:
         log_file.write("========================================================================================================\n")
         log_file.write(f"Run Date/Time: {start_datetime.strftime('%Y-%m-%d %H:%M:%S')}\n")
         log_file.write(f"Run Duration: {duration_seconds:.2f} seconds ({duration_seconds / 60:.2f} minutes)\n\n")
@@ -406,11 +413,11 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write(f"  NUM_R_BINS = {NUM_R_BINS}\n")
         log_file.write(f"  Total 3D grid points per galaxy = {NUM_R_BINS * NUM_BLOBS_THETA * NUM_LAYERS_Z/1e6:.2f} million\n")
         log_file.write(f"  Grid Points per disk thickness = {NUM_LAYERS_Z/Z_HEIGHT:.2f}\n")
+        log_file.write(f"  R_GRID_SCALE_FACTOR = {R_GRID_SCALE_FACTOR}\n")
         log_file.write(f"  USE_EXPONENTIAL_DISK = {USE_EXPONENTIAL_DISK}\n")
-        log_file.write(f"  USE_CGM_MODEL = {USE_CGM_MODEL}\n")
-        log_file.write(f"  GGM_GRID_SCALE = {GGM_GRID_SCALE}\n")
-        log_file.write(f"  CGM_CENTRAL_DENSITY = {CGM_CENTRAL_DENSITY}\n")
-        log_file.write(f"  CGM_BETA = {CGM_BETA}\n")
+        log_file.write(f"  ADD_CORE_GAS = {ADD_CORE_GAS}\n")
+        log_file.write(f"  ADD_CORE_GAS_CENTRAL_DENSITY = {ADD_CORE_GAS_CENTRAL_DENSITY}\n")
+        log_file.write(f"  ADD_CORE_GAS_BETA = {ADD_CORE_GAS_BETA}\n")
         log_file.write(f"  ADD_REAL_CGM = {ADD_REAL_CGM}\n")
         log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n")
         log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n\n")
@@ -449,7 +456,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write("  Total DM Mass/Total Gas: Ratio of Dark Mass to Integrated Gas Mass\n\n")
         log_file.write("  Total DM Mass/Total Baryons: Ratio of Dark Mass to all baryons\n\n")
         
-        header = f"{'name':<16} {'M_b (Msun)':<14} {'TL (Msun)':<14} {'HIMass (Msun)':<14} {'Total Gas (Msun)':<18} {'HI/TotGas':<12} {'Gas+TL (Msun)':<16} {'Total DM (Msun)':<16} {'DM/M_b':<12} {'DM/TotGas':<12} {'DM/AllBaryons':<12}\n"
+        header = f"{'name':<16} {'M_b (Msun)':<14} {'TL (Msun)':<14} {'HIMass (Msun)':<14} {'Total Gas (Msun)':<18} {'HI/TotGas':<12} {'Gas+TL (Msun)':<16} {'Total DM (Msun)':<16} {'DM/M_b':<12} {'DM/TotGas':<12} {'DM/AllBaryons':<12} {'r_core_kpc':<8}\n"
         log_file.write(header)
         log_file.write("-" * len(header) + "\n")
         
@@ -457,9 +464,14 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
             log_file.write(f"{row['name']:<16} {row['M_b']:<14.4e} {row['TL']:<14.4e} {row['HIMass']:<14.4e} "
                            f"{row['Total_Gas_Mass']:<18.4e} {row['HIMass_Total_Gas_Ratio']:<12.4f} "
                            f"{row['Gas_Plus_TL']:<16.4e} {row['Total_DM_Mass']:<16.4e} "
-                           f"{row['DM_Mb_Ratio']:<12.4f} {row['DM_Gas_Ratio']:<12.4f} {row['DM_AllBaryons_Ratio']:<12.4f}\n")
+                           f"{row['DM_Mb_Ratio']:<12.4f} {row['DM_Gas_Ratio']:<12.4f} {row['DM_AllBaryons_Ratio']:<12.4f} {row['r_core_kpc']:<8.4f}\n")
         
         log_file.write("========================================================================================================\n\n")
+
+    # Open destination in append mode and source in read mode
+    dest_filename = os.path.join(output_dir, "run_log.txt")
+    with open(dest_filename, "a", encoding="utf-8") as dest, open(log_filename, "r", encoding="utf-8") as src:
+        dest.write(src.read())
 
 
 def generate_mass_scatter_plots(output_dir, stats):
@@ -561,7 +573,7 @@ for gal in galaxies:
     g = galaxies[gal]
     
     gas_to_use = 'Vgas'
-    if USE_CGM_MODEL:
+    if ADD_CORE_GAS or ADD_REAL_CGM > 0.0:
         gas_to_use = 'Vgas_test'
 
     # make data for overall fit for all 3319 points of data. Use interpolations where needed. 
@@ -636,7 +648,7 @@ for gal in galaxies:
     valid = R_m > 0 
     
     gas_to_use = 'Vgas'
-    if USE_CGM_MODEL:
+    if ADD_CORE_GAS or ADD_REAL_CGM > 0.0:
         gas_to_use = 'Vgas_test'
 
     V_dm_final_sq = best_global_P * g['V_dm_sq_base_kms']
