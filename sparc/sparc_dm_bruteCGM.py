@@ -32,9 +32,9 @@ USE_EXPONENTIAL_DISK = True
 
 USE_CGM_MODEL = True
 GGM_GRID_SCALE = 4.0 # If CGM is ON, then we blow out the max_r by a factor of GGM_GRID_SCALE. Make it 3 or 4 for max accuracy, but 2 works fine 
-CGM_CENTRAL_DENSITY = 1.2 # particles per cm^3. This is not just CGM gas, but also 'misssing' gas from the cores of most of the galaxies.
+CGM_CENTRAL_DENSITY = 1.0 # particles per cm^3. This is not just CGM gas, but also 'misssing' gas from the cores of most of the galaxies.
 CGM_BETA = 1.6*(2.0/3.0) # 2/3 is the cannonical beta, but I am adding mass to galaxy cores...
-ADD_REAL_CGM = 0.05 # central density of 'real' CGM - can be turned on even if CGM is off. (does not add extra space in r direction)
+ADD_REAL_CGM = 0.02 # central density of 'real' CGM - can be turned on even if CGM is off. (does not add extra space in r direction)
  
 
 DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
@@ -410,6 +410,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write(f"  GGM_GRID_SCALE = {GGM_GRID_SCALE}\n")
         log_file.write(f"  CGM_CENTRAL_DENSITY = {CGM_CENTRAL_DENSITY}\n")
         log_file.write(f"  CGM_BETA = {CGM_BETA}\n")
+        log_file.write(f"  ADD_REAL_CGM = {ADD_REAL_CGM}\n")
         log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n")
         log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n\n")
 
