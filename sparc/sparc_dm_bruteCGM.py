@@ -23,21 +23,21 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 USE_LINEAR_ERROR = True
 
-NUM_BLOBS_THETA = 67 
-NUM_LAYERS_Z = 801 
-Z_HEIGHT = 110  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 147 
+NUM_LAYERS_Z = 1201 
+Z_HEIGHT = 150  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 99
+NUM_R_BINS = 199
 
 # grid scale in r direction: Needs to be 1 or more. (1 - 5) With higher numbers you are going to need more NUM_R_BINS
 # 1 is not ideal, but uses the data as given. Trouble is we don't have density out past the last R, so velocities can rise. 
-R_GRID_SCALE_FACTOR = 2.0 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
+R_GRID_SCALE_FACTOR = 2.5 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
 
 USE_EXPONENTIAL_DISK = True # you want this on. 
 
 ADD_CORE_GAS = True
-ADD_CORE_GAS_CENTRAL_DENSITY = 3 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
-ADD_CORE_GAS_BETA = 1.4 #2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
+ADD_CORE_GAS_CENTRAL_DENSITY = 2 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
+ADD_CORE_GAS_BETA = 1.6 #2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
 
 # CGM - beta is set in the code
 ADD_REAL_CGM = 0.01 # central density of 'real' CGM - in particles per cm^3.
@@ -233,7 +233,6 @@ for i, gal in enumerate(galaxies):
     # --- Store quantities needed for galaxy stats without keeping 3D grids ---
     g_data['R_grid_kpc'] = R_grid_kpc
     g_data['Z_grid_kpc'] = Z_m / kpc_to_m
-    g_data['gas_density_slice_m3'] = gas_particle_density_grid[:, :, 0].copy()
     g_data['r_core_kpc'] = r_core_kpc
     
     
@@ -247,6 +246,7 @@ for i, gal in enumerate(galaxies):
     # dm is only created when the density of the gas is > n_min_m3 
     n_min_m3 = MIN_DENSITY_FOR_POWER*(100)**3 # min density - after this the Power factor dissappears. 
     dm_mask = gas_particle_density_grid >= n_min_m3
+    g_data['gas_density_slice_m3'] = gas_particle_density_grid[:, :, 0].copy()  # theta=0 slice, masked to DM-producing regions
     g_data['sum_dm_mass_integral'] = np.sum((gas_particle_density_grid[dm_mask]**(2.0/3.0)) * dV[dm_mask])
     dm_base_dm = np.zeros_like(gas_particle_density_grid)
     dm_base_dm[dm_mask] = (1/c**3) * gas_particle_density_grid[dm_mask]**(2/3) * dV[dm_mask]
@@ -539,7 +539,9 @@ def generate_density_heatmaps(galaxy_dict, best_P):
         gas_density_m3 = g['gas_density_slice_m3']
         
         gas_density_cm3 = gas_density_m3 / 1e6
-        dm_density_kg_m3 = best_P * (1/c**3) * (gas_density_m3**(2/3))
+        n_min_m3 = MIN_DENSITY_FOR_POWER*(100)**3 # min density - after this the Power factor dissappears. 
+        dm_mask = gas_density_m3 >= n_min_m3
+        dm_density_kg_m3 = np.where(dm_mask, best_P * (1/c**3) * (gas_density_m3**(2/3)), 0.0)
         dm_density_cm3 = dm_density_kg_m3 / (m_p * 1e6)
         
         R_mesh, Z_mesh = np.meshgrid(R_kpc, Z_kpc, indexing='ij')
