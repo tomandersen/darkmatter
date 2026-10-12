@@ -215,24 +215,19 @@ for i, gal in enumerate(galaxies):
     total_mass = TL_dict[gal] + HIMass_dict[gal] 
     r_core_kpc = 2.0*(total_mass*1e9/1e11)**(1/3) # should export this or plot it on each plot, along with R_d
     r_core_m = r_core_kpc*kpc_to_m
-    n_min_m3 = MIN_DENSITY_FOR_POWER*(100)**3 # min density - after this the Power factor dissappears. 
     r_squared = X_blob**2 + Y_blob**2 + Z_blob**2 
     if ADD_CORE_GAS:
         n_0_cgs = ADD_CORE_GAS_CENTRAL_DENSITY  
         n_0_m3 =  n_0_cgs * (100)**3
         exponent = -ADD_CORE_GAS_BETA #NOTE - we use beta here directly, like a DM halo (not like CGM equation)
-        r_squared_threshold = r_core_m**2 * ((n_min_m3 / n_0_m3)**(1 / exponent) - 1)
-        mask = r_squared <= r_squared_threshold
-        gas_particle_density_grid[mask] += n_0_m3 * (1 + r_squared[mask] / r_core_m**2)**exponent
+        gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_m**2)**exponent
     if ADD_REAL_CGM > 0.0:
         n_0_cgs = ADD_REAL_CGM  # 'canonical' CGM central density
         n_0_m3 =  n_0_cgs * (100)**3
         beta = 0.5 # internet says about this value (lower for bigger galaxies)
         exponent = -3.0*beta/2.0
-        r_squared_threshold = r_core_m**2 * ((n_min_m3 / n_0_m3)**(1 / exponent) - 1)
-        mask = r_squared <= r_squared_threshold
         # any gas thinner than n_min_m3 will not produce the DM. (this is when gas moves from a gas to more of freely transiting pariticles)
-        gas_particle_density_grid[mask] += n_0_m3 * (1 + r_squared[mask] / r_core_m**2)**exponent
+        gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_m**2)**exponent
 
  
     # --- Store quantities needed for galaxy stats without keeping 3D grids ---
@@ -241,13 +236,20 @@ for i, gal in enumerate(galaxies):
     g_data['gas_density_slice_m3'] = gas_particle_density_grid[:, :, 0].copy()
     g_data['r_core_kpc'] = r_core_kpc
     
-    # Pre-calculate volume integrals needed for downstream stat functions
-    g_data['sum_gas_mass_integral'] = np.sum(gas_particle_density_grid * dV)
-    g_data['sum_dm_mass_integral'] = np.sum((gas_particle_density_grid**(2.0/3.0)) * dV)
+    
 
+    # Pre-calculate volume integrals needed for downstream stat functions
     gas_particle_mass_He_factor = 1.33  
     dm_gas = gas_particle_density_grid * m_p * gas_particle_mass_He_factor * dV
-    dm_base_dm = (1/c**3) * gas_particle_density_grid**(2/3) * dV 
+    g_data['sum_gas_mass_integral'] = np.sum(gas_particle_density_grid * dV)
+   
+
+    # dm is only created when the density of the gas is > n_min_m3 
+    n_min_m3 = MIN_DENSITY_FOR_POWER*(100)**3 # min density - after this the Power factor dissappears. 
+    dm_mask = gas_particle_density_grid >= n_min_m3
+    g_data['sum_dm_mass_integral'] = np.sum((gas_particle_density_grid[dm_mask]**(2.0/3.0)) * dV[dm_mask])
+    dm_base_dm = np.zeros_like(gas_particle_density_grid)
+    dm_base_dm[dm_mask] = (1/c**3) * gas_particle_density_grid[dm_mask]**(2/3) * dV[dm_mask]
 
     V_gas_sq_grid = np.zeros_like(R_grid_m)
     V_dm_sq_base_grid = np.zeros_like(R_grid_m)
