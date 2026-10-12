@@ -23,25 +23,25 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 USE_LINEAR_ERROR = True
 
-NUM_BLOBS_THETA = 137 
-NUM_LAYERS_Z = 1323 
-Z_HEIGHT = 140  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 67 
+NUM_LAYERS_Z = 801 
+Z_HEIGHT = 110  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 229
+NUM_R_BINS = 99
 
 # grid scale in r direction: Needs to be 1 or more. (1 - 5) With higher numbers you are going to need more NUM_R_BINS
 # 1 is not ideal, but uses the data as given. Trouble is we don't have density out past the last R, so velocities can rise. 
-R_GRID_SCALE_FACTOR = 4.0 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
+R_GRID_SCALE_FACTOR = 2.0 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
 
 USE_EXPONENTIAL_DISK = True # you want this on. 
 
 ADD_CORE_GAS = True
-ADD_CORE_GAS_CENTRAL_DENSITY = 2.25 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
-ADD_CORE_GAS_BETA = 2.0 #2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
+ADD_CORE_GAS_CENTRAL_DENSITY = 3 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
+ADD_CORE_GAS_BETA = 1.4 #2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
 
 # CGM - beta is set in the code
 ADD_REAL_CGM = 0.01 # central density of 'real' CGM - in particles per cm^3.
-
+MIN_DENSITY_FOR_POWER = 0.0001 # lowest density that effect still works at. 
 
 DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
 
@@ -215,26 +215,26 @@ for i, gal in enumerate(galaxies):
     total_mass = TL_dict[gal] + HIMass_dict[gal] 
     r_core_kpc = 2.0*(total_mass*1e9/1e11)**(1/3) # should export this or plot it on each plot, along with R_d
     r_core_m = r_core_kpc*kpc_to_m
+    n_min_m3 = MIN_DENSITY_FOR_POWER*(100)**3 # min density - after this the Power factor dissappears. 
+    r_squared = X_blob**2 + Y_blob**2 + Z_blob**2 
     if ADD_CORE_GAS:
         n_0_cgs = ADD_CORE_GAS_CENTRAL_DENSITY  
         n_0_m3 =  n_0_cgs * (100)**3
         exponent = -ADD_CORE_GAS_BETA #NOTE - we use beta here directly, like a DM halo (not like CGM equation)
-        gas_particle_density_grid += n_0_m3*(1 + (X_blob**2 + Y_blob**2 + Z_blob**2)/r_core_m**2)**exponent
+        r_squared_threshold = r_core_m**2 * ((n_min_m3 / n_0_m3)**(1 / exponent) - 1)
+        mask = r_squared <= r_squared_threshold
+        gas_particle_density_grid[mask] += n_0_m3 * (1 + r_squared[mask] / r_core_m**2)**exponent
     if ADD_REAL_CGM > 0.0:
         n_0_cgs = ADD_REAL_CGM  # 'canonical' CGM central density
         n_0_m3 =  n_0_cgs * (100)**3
         beta = 0.5 # internet says about this value (lower for bigger galaxies)
         exponent = -3.0*beta/2.0
-        n_min_m3 = 0.0001*(100)**3 # min density - after this the Power factor dissappears. 
-        
-        # any gas thinner than n_min_m3 will not produce the DM. (this is when gas moves from a gas to more of freely transiting pariticles)
         r_squared_threshold = r_core_m**2 * ((n_min_m3 / n_0_m3)**(1 / exponent) - 1)
-        r_squared = X_blob**2 + Y_blob**2 + Z_blob**2
         mask = r_squared <= r_squared_threshold
+        # any gas thinner than n_min_m3 will not produce the DM. (this is when gas moves from a gas to more of freely transiting pariticles)
         gas_particle_density_grid[mask] += n_0_m3 * (1 + r_squared[mask] / r_core_m**2)**exponent
-        #gas_particle_density_grid += n_0_m3*(1 + /r_core_m**2)**exponent
 
-
+ 
     # --- Store quantities needed for galaxy stats without keeping 3D grids ---
     g_data['R_grid_kpc'] = R_grid_kpc
     g_data['Z_grid_kpc'] = Z_m / kpc_to_m
@@ -426,6 +426,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write(f"  ADD_CORE_GAS_CENTRAL_DENSITY = {ADD_CORE_GAS_CENTRAL_DENSITY}\n")
         log_file.write(f"  ADD_CORE_GAS_BETA = {ADD_CORE_GAS_BETA}\n")
         log_file.write(f"  ADD_REAL_CGM = {ADD_REAL_CGM}\n")
+        log_file.write(f"  MIN_DENSITY_FOR_POWER = {MIN_DENSITY_FOR_POWER}\n")
         log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n")
         log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n\n")
 
