@@ -40,7 +40,7 @@ ADD_CORE_GAS_CENTRAL_DENSITY = 2.25 # particles per cm^3. This is  'misssing' ga
 ADD_CORE_GAS_BETA = 2.0 #2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
 
 # CGM - beta is set in the code
-ADD_REAL_CGM = 0.02 # central density of 'real' CGM - in particles per cm^3.
+ADD_REAL_CGM = 0.01 # central density of 'real' CGM - in particles per cm^3.
 
 
 DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
@@ -225,7 +225,14 @@ for i, gal in enumerate(galaxies):
         n_0_m3 =  n_0_cgs * (100)**3
         beta = 0.5 # internet says about this value (lower for bigger galaxies)
         exponent = -3.0*beta/2.0
-        gas_particle_density_grid += n_0_m3*(1 + (X_blob**2 + Y_blob**2 + Z_blob**2)/r_core_m**2)**exponent
+        n_min_m3 = 0.0001*(100)**3 # min density - after this the Power factor dissappears. 
+        
+        # any gas thinner than n_min_m3 will not produce the DM. (this is when gas moves from a gas to more of freely transiting pariticles)
+        r_squared_threshold = r_core_m**2 * ((n_min_m3 / n_0_m3)**(1 / exponent) - 1)
+        r_squared = X_blob**2 + Y_blob**2 + Z_blob**2
+        mask = r_squared <= r_squared_threshold
+        gas_particle_density_grid[mask] += n_0_m3 * (1 + r_squared[mask] / r_core_m**2)**exponent
+        #gas_particle_density_grid += n_0_m3*(1 + /r_core_m**2)**exponent
 
 
     # --- Store quantities needed for galaxy stats without keeping 3D grids ---
