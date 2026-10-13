@@ -31,7 +31,7 @@ NUM_R_BINS = 99
 
 # grid scale in r direction: Needs to be 1 or more. (1 - 5) With higher numbers you are going to need more NUM_R_BINS
 # 1 is not ideal, but uses the data as given. Trouble is we don't have density out past the last R, so velocities can rise. 
-R_GRID_SCALE_FACTOR = 2.0 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
+R_GRID_SCALE_FACTOR = 2.5 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
 
 USE_EXPONENTIAL_DISK = True # you want this on. 
 
@@ -210,11 +210,34 @@ for i, gal in enumerate(galaxies):
     Y_blob = R_grid_3d * np.sin(Theta_grid_3d)
     Z_blob = Z_grid_3d
 
-    # CGM- I use a CGM model to add gas to the core of each galaxy. It seems missing. 
-    # I also have the option of adding ADD_REAL_CGM which makes a DM halo (uses the proper beta and DM at core)
-    total_mass = TL_dict[gal] + HIMass_dict[gal] 
-    r_core_kpc = 2.0*(total_mass*1e9/1e11)**(1/3) # should export this or plot it on each plot, along with R_d
-    r_core_m = r_core_kpc*kpc_to_m
+    # CGM gas - The Surface Density Rule: In 2009 $$\rho_0 \times r_c \approx 140 \text{ M}_\odot / \text{pc}^2$$
+    # rho * r_c = approx 140 * M_sun/pc^2 = 140 * 6.7e30 / (pi * 3.086e16)**2 = 2.2e4 kg/m2
+
+    # and we have a statement like $$r_c \approx R_d \text{ to } 2R_d$$
+    # r_c = approx R_d to 2*R_d, where R_d is my R_eff from SPARC_Lelli2016c.mrt 
+    #$r_c \approx 2.6 R_d$ 
+    r_core_burk_kpc = 2.6 * R_d
+    r_core_m = r_core_burk_kpc*kpc_to_m
+    rho_dm_core_Msun_per_pc3 = 140.0/(1000.0*r_core_burk_kpc)
+    print(f"{gal}: Burket core mass density (Msun/pc^3): {rho_dm_core_Msun_per_pc3:.6e}")
+
+    rho_dm_core_kg_m3 =rho_dm_core_Msun_per_pc3 * M_sun / (pc_to_m * pc_to_m * pc_to_m)  
+    print(f"{gal}: Burket core mass density (kg/m^3): {rho_dm_core_kg_m3:.6e}")
+    # we need particles of mass m_p per cm^3
+    rho_dm_core_particles_per_cm3 = rho_dm_core_kg_m3 / (m_p * 100**3) 
+    print(f"{gal}: Burket core radius (kpc): {r_core_burk_kpc:.6e}")
+    print(f"{gal}: Burket central density (particles per cm^3): {rho_dm_core_particles_per_cm3:.6e}") 
+
+    Power_k = 10 # watts
+    # now work out the gas density we need in particles per cm^3
+    dm_core_mp_cm3 = rho_dm_core_particles_per_cm3*m_p 
+    # dm_core_mp_cm3 = (Power_k)/c^3(n^(2/3)
+    n_gas_cm3 = (c**3*dm_core_mp_cm3/Power_k)**(3/2) 
+    print(f"{gal}: Required central gas density (particles per cm^3): {n_gas_cm3:.6e}") 
+    print(f"---------")
+    # now, I want to get the density of GAS to start with. With my formula, I need the fitted POWER in watts to calculate the core gas density 
+    # to start out at. A classic chicken and egg problem. My solution is to simply use a Power of 10 watts, (don't forget overall power will adjust this to first order anyways. 
+
     r_squared = X_blob**2 + Y_blob**2 + Z_blob**2 
     if ADD_CORE_GAS:
         n_0_cgs = ADD_CORE_GAS_CENTRAL_DENSITY  
@@ -233,7 +256,7 @@ for i, gal in enumerate(galaxies):
     # --- Store quantities needed for galaxy stats without keeping 3D grids ---
     g_data['R_grid_kpc'] = R_grid_kpc
     g_data['Z_grid_kpc'] = Z_m / kpc_to_m
-    g_data['r_core_kpc'] = r_core_kpc
+    g_data['r_core_burk_kpc'] = r_core_burk_kpc
     
     
 
@@ -394,7 +417,7 @@ def compute_galaxy_stats(galaxy_dict, best_P):
             'DM_Mb_Ratio': dm_mb_ratio,
             'DM_Gas_Ratio': dm_gas_ratio,
             'DM_AllBaryons_Ratio': dm_allbaryons_ratio,
-            'r_core_kpc': g['r_core_kpc']
+            'r_core_burk_kpc': g['r_core_burk_kpc']
         })
 
     global_stats = {
@@ -466,7 +489,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
         log_file.write("  Total DM Mass/Total Gas: Ratio of Dark Mass to Integrated Gas Mass\n\n")
         log_file.write("  Total DM Mass/Total Baryons: Ratio of Dark Mass to all baryons\n\n")
         
-        header = f"{'name':<16} {'M_b (Msun)':<14} {'TL (Msun)':<14} {'HIMass (Msun)':<14} {'Total Gas (Msun)':<18} {'HI/TotGas':<12} {'Gas+TL (Msun)':<16} {'Total DM (Msun)':<16} {'DM/M_b':<12} {'DM/TotGas':<12} {'DM/AllBaryons':<12} {'r_core_kpc':<8}\n"
+        header = f"{'name':<16} {'M_b (Msun)':<14} {'TL (Msun)':<14} {'HIMass (Msun)':<14} {'Total Gas (Msun)':<18} {'HI/TotGas':<12} {'Gas+TL (Msun)':<16} {'Total DM (Msun)':<16} {'DM/M_b':<12} {'DM/TotGas':<12} {'DM/AllBaryons':<12} {'r_core_burk_kpc':<8}\n"
         log_file.write(header)
         log_file.write("-" * len(header) + "\n")
         
@@ -474,7 +497,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, mond_chi2, mo
             log_file.write(f"{row['name']:<16} {row['M_b']:<14.4e} {row['TL']:<14.4e} {row['HIMass']:<14.4e} "
                            f"{row['Total_Gas_Mass']:<18.4e} {row['HIMass_Total_Gas_Ratio']:<12.4f} "
                            f"{row['Gas_Plus_TL']:<16.4e} {row['Total_DM_Mass']:<16.4e} "
-                           f"{row['DM_Mb_Ratio']:<12.4f} {row['DM_Gas_Ratio']:<12.4f} {row['DM_AllBaryons_Ratio']:<12.4f} {row['r_core_kpc']:<8.4f}\n")
+                           f"{row['DM_Mb_Ratio']:<12.4f} {row['DM_Gas_Ratio']:<12.4f} {row['DM_AllBaryons_Ratio']:<12.4f} {row['r_core_burk_kpc']:<8.4f}\n")
         
         log_file.write("========================================================================================================\n\n")
 
