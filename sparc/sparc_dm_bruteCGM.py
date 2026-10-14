@@ -36,8 +36,8 @@ R_GRID_SCALE_FACTOR = 2.0 # we blow out the max_r by a factor of R_GRID_SCALE_FA
 USE_EXPONENTIAL_DISK = True # you want this on. 
 
 ADD_CORE_GAS = True
-ADD_CORE_GAS_CENTRAL_DENSITY = 2.25 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
-ADD_CORE_GAS_BETA = 1.4 #2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
+ADD_CORE_GAS_CENTRAL_DENSITY = 2.00 # particles per cm^3. This is  'misssing' gas from the cores of most of the galaxies.
+ADD_CORE_GAS_BETA = 1.85 #2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
 
 # CGM - beta is set in the code
 ADD_REAL_CGM = 0.0 # central density of 'real' CGM - in particles per cm^3.
