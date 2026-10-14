@@ -23,15 +23,15 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
 USE_LINEAR_ERROR = True
 
-NUM_BLOBS_THETA = 77 
-NUM_LAYERS_Z = 400 
-Z_HEIGHT = 70  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
+NUM_BLOBS_THETA = 79 
+NUM_LAYERS_Z = 391 
+Z_HEIGHT = 90  # number of scale heights in NUM_LAYERS_Z/2 - so make sure NUM_LAYERS_Z is odd and NUM_LAYERS_Z/Z_HEIGHT > 2
 
-NUM_R_BINS = 99
+NUM_R_BINS = 101
 
 # grid scale in r direction: Needs to be 1 or more. (1 - 5) With higher numbers you are going to need more NUM_R_BINS
 # 1 is not ideal, but uses the data as given. Trouble is we don't have density out past the last R, so velocities can rise. 
-R_GRID_SCALE_FACTOR = 2.5 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
+R_GRID_SCALE_FACTOR = 2.0 # we blow out the max_r by a factor of R_GRID_SCALE_FACTOR. Make it 3 or 4 for max accuracy, but 2 works fine 
 
 USE_EXPONENTIAL_DISK = True # you want this on. 
 
@@ -40,7 +40,7 @@ ADD_CORE_GAS_CENTRAL_DENSITY = 2.25 # particles per cm^3. This is  'misssing' ga
 ADD_CORE_GAS_BETA = 1.4 #2 # 2/3 is the cannonical beta, but I am adding mass to galaxy cores... a value of 2 converges
 
 # CGM - beta is set in the code
-ADD_REAL_CGM = 0.015 # central density of 'real' CGM - in particles per cm^3.
+ADD_REAL_CGM = 0.0 # central density of 'real' CGM - in particles per cm^3.
 MIN_DENSITY_FOR_POWER = 0.0001 # lowest density that effect still works at. 
 
 DO_HEATMAPS = True # controls output of heatmaps only, not a fitting parameter. 
@@ -216,25 +216,26 @@ for i, gal in enumerate(galaxies):
     # and we have a statement like $$r_c \approx R_d \text{ to } 2R_d$$
     # r_c = approx R_d to 2*R_d, where R_d is my R_eff from SPARC_Lelli2016c.mrt 
     #$r_c \approx 2.6 R_d$ 
-    r_core_burk_kpc = 2.6 * R_d
+    r_core_burk_kpc = 2 * R_d # 2.6 is bandied about as a number, but seems to large
     r_core_m = r_core_burk_kpc*kpc_to_m
     rho_dm_core_Msun_per_pc3 = 140.0/(1000.0*r_core_burk_kpc)
     print(f"{gal}: Burket core mass density (Msun/pc^3): {rho_dm_core_Msun_per_pc3:.6e}")
 
     rho_dm_core_kg_m3 =rho_dm_core_Msun_per_pc3 * M_sun / (pc_to_m * pc_to_m * pc_to_m)  
-    print(f"{gal}: Burket core mass density (kg/m^3): {rho_dm_core_kg_m3:.6e}")
+    #print(f"{gal}: Burket core mass density (kg/m^3): {rho_dm_core_kg_m3:.6e}")
     # we need particles of mass m_p per cm^3
     rho_dm_core_particles_per_cm3 = rho_dm_core_kg_m3 / (m_p * 100**3) 
-    print(f"{gal}: Burket core radius (kpc): {r_core_burk_kpc:.6e}")
-    print(f"{gal}: Burket central density (particles per cm^3): {rho_dm_core_particles_per_cm3:.6e}") 
+    #print(f"{gal}: Burket core radius (kpc): {r_core_burk_kpc:.6e}")
+    print(f"{gal}: Burket central density (dm m_p particles per cm^3): {rho_dm_core_particles_per_cm3:.6e}") 
 
     Power_k = 10 # watts
     # now work out the gas density we need in particles per cm^3
-    dm_core_mp_cm3 = rho_dm_core_particles_per_cm3*m_p 
-    # dm_core_mp_cm3 = (Power_k)/c^3(n^(2/3)
-    n_gas_cm3 = (c**3*dm_core_mp_cm3/Power_k)**(3/2) 
+    dm_core_mp_cm3 = rho_dm_core_particles_per_cm3*m_p
+    dm_core_mp_m3 =  dm_core_mp_cm3*(100)**3
+    # dm_core_mp_cm3 = (Power_k)/c^3(n^(2/3), invert this to get central density.
+    n_gas_cm3 = ((c**3*dm_core_mp_m3/Power_k)**(3/2))/(100)**3
     print(f"{gal}: Required central gas density (particles per cm^3): {n_gas_cm3:.6e}") 
-    print(f"---------")
+    #print(f"---------")
     # now, I want to get the density of GAS to start with. With my formula, I need the fitted POWER in watts to calculate the core gas density 
     # to start out at. A classic chicken and egg problem. My solution is to simply use a Power of 10 watts, (don't forget overall power will adjust this to first order anyways. 
 
@@ -242,12 +243,15 @@ for i, gal in enumerate(galaxies):
     if ADD_CORE_GAS:
         n_0_cgs = ADD_CORE_GAS_CENTRAL_DENSITY  
         n_0_m3 =  n_0_cgs * (100)**3
+        r_core_m = r_core_m/10.0
         exponent = -ADD_CORE_GAS_BETA #NOTE - we use beta here directly, like a DM halo (not like CGM equation)
         gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_m**2)**exponent
     if ADD_REAL_CGM > 0.0:
-        n_0_cgs = ADD_REAL_CGM  # 'canonical' CGM central density
+        stupidFactor = 0.01 #trying to figure out why i get bad fits this way
+        n_0_cgs = stupidFactor*n_gas_cm3  # 'canonical' CGM central density
         n_0_m3 =  n_0_cgs * (100)**3
-        beta = 0.5 # internet says about this value (lower for bigger galaxies)
+        #beta = 0.5 # internet says about this value (lower for bigger galaxies)
+        beta = 1.0 # beta 1 is some balance point
         exponent = -3.0*beta/2.0
         # any gas thinner than n_min_m3 will not produce the DM. (this is when gas moves from a gas to more of freely transiting pariticles)
         gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_m**2)**exponent
@@ -339,7 +343,7 @@ def global_fit_err(P_test):
   
     return total_err
 
-result = minimize_scalar(global_fit_err, bounds=(2.0, 100.0), method='bounded')
+result = minimize_scalar(global_fit_err, bounds=(0.1, 100.0), method='bounded')
 best_global_P = result.x
 min_found_err = result.fun
     
