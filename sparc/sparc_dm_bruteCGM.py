@@ -17,7 +17,7 @@ start_datetime = datetime.now()
 warnings.filterwarnings("ignore")
 
 Upsilon_disk = 0.5   
-Upsilon_bulge = 0.7  
+Upsilon_bulge = 0.6  
 
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
@@ -25,14 +25,14 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 USE_LINEAR_ERROR = True
 USE_INTERPOLATED_FIT = True # Added boolean to switch between fits
 
-NUM_BLOBS_THETA = 127 
+NUM_BLOBS_THETA = 137 
 NUM_LAYERS_Z = 901 
-Z_HEIGHT = 80  
+Z_HEIGHT = 200  
 
-NUM_R_BINS = 139
+NUM_R_BINS = 159
 
 R_GRID_SCALE_FACTOR = 2.0 
-
+ 
 USE_EXPONENTIAL_DISK = True 
 
 ADD_CORE_GAS = True
@@ -41,9 +41,9 @@ ADD_CORE_GAS_BETA = 1.4
 
 # CGM - beta is set in the code
 ADD_REAL_CGM = 0.015 
-MIN_DENSITY_FOR_POWER = 0.00003 
+MIN_DENSITY_FOR_POWER = 0.00003
 
-DO_HEATMAPS = False 
+DO_HEATMAPS = False
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
@@ -421,7 +421,9 @@ def compute_galaxy_stats(galaxy_dict, best_P):
             'totR200_gas': g['totR200_gas'],
             'totR200_dm': g['totR200_dm'],
             'totRMax_gas': g['totRMax_gas'],
-            'totRMax_dm': g['totRMax_dm']
+            'totRMax_dm': g['totRMax_dm'],
+            'r_200': g['r_200'],
+            'r_max': g['r_max']
         })
 
     global_stats = {
@@ -475,6 +477,8 @@ def calc_halo_properties(name, g, best_P):
     g['totR200_dm'] = totR200_dm*m_p/M_sun
     g['totRMax_gas'] = totRMax_gas*m_p/M_sun
     g['totRMax_dm'] = totRMax_dm*m_p/M_sun
+    g['r_200'] = r_200
+    g['r_max'] = R2/kpc_to_m
 
 
 
@@ -551,7 +555,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2,
         log_file.write("  analytic:  halo dm mass added (truncated at R_max)\n\n")
         
         
-        header = f"{'name':<16} {'M_b(sol)':<11} {'TL(sol)':<11} {'HIMass(sol)':<11} {'TotGas(sol)':<11} {'HI/TotGas':<11} {'Gas+TL(sol)':<11} {'TotDM(sol)':<11} {'DM/M_b':<11} {'DM/TotGas':<11} {'DM/AllBar':<11} {'r_core_kpc':<11} {'gas(r_200)':<11} {'dm(r_200)':<11} {'gas(R_max)':<11} {'dm(R_max)':<11}\n"
+        header = f"{'name':<16} {'M_b(sol)':<11} {'TL(sol)':<11} {'HIMass(sol)':<11} {'TotGas(sol)':<11} {'HI/TotGas':<11} {'Gas+TL(sol)':<11} {'TotDM(sol)':<11} {'DM/M_b':<11} {'DM/TotGas':<11} {'DM/AllBar':<11} {'r_core_kpc':<11} {'gas(r_200)':<11} {'dm(r_200)':<11} {'gas(R_max)':<11} {'dm(R_max)':<11} {'r_200':<11} {'r_max':<11}\n"
         log_file.write(header)
         log_file.write("-" * len(header) + "\n")
         
@@ -560,7 +564,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2,
                            f"{row['Total_Gas_Mass']:<11.2e} {row['HIMass_Total_Gas_Ratio']:<11.4f} "
                            f"{row['Gas_Plus_TL']:<11.2e} {row['Total_DM_Mass']:<11.2e} "
                            f"{row['DM_Mb_Ratio']:<11.4f} {row['DM_Gas_Ratio']:<11.4f} {row['DM_AllBaryons_Ratio']:<11.4f} {row['r_core_kpc']:<11.4f} "
-                           f"{row['totR200_gas']:<11.2e} {row['totR200_dm']:<11.2e} {row['totRMax_gas']:<11.2e} {row['totRMax_dm']:<11.2e}\n")
+                           f"{row['totR200_gas']:<11.2e} {row['totR200_dm']:<11.2e} {row['totRMax_gas']:<11.2e} {row['totRMax_dm']:<11.2e} {row['r_200']:<11.0f} {row['r_max']:<11.1f}\n")
         
         log_file.write("========================================================================================================\n\n")
 
