@@ -16,7 +16,7 @@ start_datetime = datetime.now()
 warnings.filterwarnings("ignore")
 
 Upsilon_disk = 0.5   
-Upsilon_bulge = 0.7  
+Upsilon_bulge = 0.6  
 
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
@@ -24,18 +24,18 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 USE_LINEAR_ERROR = True
 USE_INTERPOLATED_FIT = True # Added boolean to switch between fits
 
-NUM_BLOBS_THETA = 77 
-NUM_LAYERS_Z = 400 
-Z_HEIGHT = 70  
+NUM_BLOBS_THETA = 117 
+NUM_LAYERS_Z = 901 
+Z_HEIGHT = 120  
 
-NUM_R_BINS = 99
+NUM_R_BINS = 129
 
 R_GRID_SCALE_FACTOR = 2.0 
 
 USE_EXPONENTIAL_DISK = True 
 
 ADD_CORE_GAS = True
-ADD_CORE_GAS_CENTRAL_DENSITY = 2.25 
+ADD_CORE_GAS_CENTRAL_DENSITY = 2.10 
 ADD_CORE_GAS_BETA = 1.4 
 
 # CGM - beta is set in the code
