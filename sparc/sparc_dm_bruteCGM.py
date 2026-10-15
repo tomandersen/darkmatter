@@ -1,3 +1,4 @@
+from cgm_integral import evaluate_dm_mass_integral
 import numpy as np
 import os
 import time
@@ -16,7 +17,7 @@ start_datetime = datetime.now()
 warnings.filterwarnings("ignore")
 
 Upsilon_disk = 0.5   
-Upsilon_bulge = 0.6  
+Upsilon_bulge = 0.7  
 
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
@@ -24,11 +25,11 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 USE_LINEAR_ERROR = True
 USE_INTERPOLATED_FIT = True # Added boolean to switch between fits
 
-NUM_BLOBS_THETA = 117 
+NUM_BLOBS_THETA = 127 
 NUM_LAYERS_Z = 901 
-Z_HEIGHT = 120  
+Z_HEIGHT = 80  
 
-NUM_R_BINS = 129
+NUM_R_BINS = 139
 
 R_GRID_SCALE_FACTOR = 2.0 
 
@@ -40,9 +41,9 @@ ADD_CORE_GAS_BETA = 1.4
 
 # CGM - beta is set in the code
 ADD_REAL_CGM = 0.015 
-MIN_DENSITY_FOR_POWER = 0.0001 
+MIN_DENSITY_FOR_POWER = 0.00003 
 
-DO_HEATMAPS = True 
+DO_HEATMAPS = False 
 
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
@@ -122,8 +123,8 @@ for gal in galaxies:
         galaxies[gal][key] = np.array(galaxies[gal][key])
 
 # 2. Physics Constants
-G = 6.67430e-11        
-c = 2.9979e8           
+G_SI = 6.67430e-11        
+c_SI = 2.9979e8           
 m_p = 1.67262e-27      
 pc_to_m = 3.086e16     
 kpc_to_m = pc_to_m * 1000
@@ -243,7 +244,7 @@ for i, gal in enumerate(galaxies):
     g_data['gas_density_slice_m3'] = gas_particle_density_grid[:, :, 0].copy()  
     g_data['sum_dm_mass_integral'] = np.sum((gas_particle_density_grid[dm_mask]**(2.0/3.0)) * dV[dm_mask])
     dm_base_dm = np.zeros_like(gas_particle_density_grid)
-    dm_base_dm[dm_mask] = (1/c**3) * gas_particle_density_grid[dm_mask]**(2/3) * dV[dm_mask]
+    dm_base_dm[dm_mask] = (1/c_SI**3) * gas_particle_density_grid[dm_mask]**(2/3) * dV[dm_mask]
 
     V_gas_sq_grid = np.zeros_like(R_grid_m)
     V_dm_sq_base_grid = np.zeros_like(R_grid_m)
@@ -258,7 +259,7 @@ for i, gal in enumerate(galaxies):
         dist_sq = dx**2 + dy**2 + dz**2 + softening_sq
         dist = np.sqrt(dist_sq)
         
-        da_x_factor = G * dx / (dist_sq * dist)
+        da_x_factor = G_SI * dx / (dist_sq * dist)
         
         a_x_gas = np.sum(da_x_factor * dm_gas)
         a_x_dm = np.sum(da_x_factor * dm_base_dm)
@@ -323,6 +324,8 @@ def global_fit_err(P_test):
     return total_err
 
 result = minimize_scalar(global_fit_err, bounds=(2.0, 100.0), method='bounded')
+print(f"Found best power: {result.x:.3f} (± {result.fun:.3e})")
+
 best_global_P = result.x
 min_found_err = result.fun
     
@@ -381,14 +384,15 @@ def compute_galaxy_stats(galaxy_dict, best_P):
         tl = TL_dict.get(name, 0.0) * 1e9          
         hi = HIMass_dict.get(name, 0.0) * 1e9      
         m_b = tl + hi                             
-        
+        g['gas_plus_tl'] = m_b
+
         tot_gas_mass_kg = g['sum_gas_mass_integral'] * m_p * 1.33
         tot_gas_mass_msun = tot_gas_mass_kg / M_sun
         
         hi_gas_ratio = hi / tot_gas_mass_msun if tot_gas_mass_msun > 0 else 0.0
         gas_plus_tl = tot_gas_mass_msun + tl
         
-        tot_dm_mass_kg = best_P * (1.0 / c**3) * g['sum_dm_mass_integral']
+        tot_dm_mass_kg = best_P * (1.0 / c_SI**3) * g['sum_dm_mass_integral']
         tot_dm_mass_msun = tot_dm_mass_kg / M_sun
         
         dm_mb_ratio = tot_dm_mass_msun / m_b if m_b > 0 else 0.0
@@ -398,6 +402,8 @@ def compute_galaxy_stats(galaxy_dict, best_P):
         total_baryon_mass += tot_gas_mass_msun + tl 
         total_dm_mass += tot_dm_mass_msun 
         dm_ratio_by_galaxy += dm_allbaryons_ratio
+
+        calc_halo_properties(name, g, best_P)
 
         stats.append({
             'name': name,
@@ -411,7 +417,11 @@ def compute_galaxy_stats(galaxy_dict, best_P):
             'DM_Mb_Ratio': dm_mb_ratio,
             'DM_Gas_Ratio': dm_gas_ratio,
             'DM_AllBaryons_Ratio': dm_allbaryons_ratio,
-            'r_core_kpc': g['r_core_kpc']
+            'r_core_kpc': g['r_core_kpc'],
+            'totR200_gas': g['totR200_gas'],
+            'totR200_dm': g['totR200_dm'],
+            'totRMax_gas': g['totRMax_gas'],
+            'totRMax_dm': g['totRMax_dm']
         })
 
     global_stats = {
@@ -421,6 +431,51 @@ def compute_galaxy_stats(galaxy_dict, best_P):
         'Overall_DM_Ratio': total_dm_mass/total_baryon_mass
     }
     return stats, global_stats
+
+def calc_halo_properties(name, g, best_P):
+    # I want to get the analytic numbers for the total halo mass we calculate here:
+    # there are two integrals, done until r_200
+    v_last_observed = g['Vobs'][-1]
+    hubble_const = 71.0
+    to_kpc_200 = 100.0
+    r_200 = to_kpc_200 *  v_last_observed/ hubble_const
+    g['r_200'] = r_200
+    r_200_m = r_200 * kpc_to_m
+    r_core_m = g['r_core_kpc'] * kpc_to_m
+    # ok, now integrate the functions
+    n_0_m3 = 0
+    if ADD_CORE_GAS:
+        n_0_1_cgs = ADD_CORE_GAS_CENTRAL_DENSITY  
+        n_0_1_m3 =  n_0_1_cgs * (100)**3
+        exponent1 = -ADD_CORE_GAS_BETA 
+    
+    if ADD_REAL_CGM > 0.0:
+        n_0_2_cgs = ADD_REAL_CGM  
+        n_0_2_m3 =  n_0_2_cgs * (100)**3
+        beta = 0.5 
+        exponent2 = -3.0*beta/2.0
+    
+    min_gas_for_dm = MIN_DENSITY_FOR_POWER*(100)**3
+
+    totR200_gas, err_gas = evaluate_dm_mass_integral(0, r_200_m, True, best_P, c_SI, r_core_m, n_0_1_m3, exponent1, r_core_m, n_0_2_m3, exponent2, min_gas_for_dm)
+    totR200_dm, err_dm = evaluate_dm_mass_integral(0, r_200_m, False, best_P, c_SI, r_core_m, n_0_1_m3, exponent1, r_core_m, n_0_2_m3, exponent2, min_gas_for_dm)
+  
+    # do the same integrals out to R_max
+    R2 = g['R'][-1] * kpc_to_m
+    totRMax_gas, err_gas = evaluate_dm_mass_integral(0, R2, True, best_P, c_SI, r_core_m, n_0_1_m3, exponent1, r_core_m, n_0_2_m3, exponent2, min_gas_for_dm)
+    totRMax_dm, err_dm = evaluate_dm_mass_integral(0, R2, False, best_P, c_SI, r_core_m, n_0_1_m3, exponent1, r_core_m, n_0_2_m3, exponent2, min_gas_for_dm)
+    
+    # print(f"{name}:")
+    # print(f"    total gas baryons R200 {totR200_gas:.2e}, total solar masses {totR200_gas*m_p/M_sun:.2e}, ratio {(totR200_gas*m_p/M_sun)/g['gas_plus_tl']:.2e}")
+    # print(f"    total gas baryons rMax {totRMax_gas:.2e}, total solar masses {totRMax_gas*m_p/M_sun:.2e}, ratio {(totRMax_gas*m_p/M_sun)/g['gas_plus_tl']:.2e}")
+    # print(f"    total dark mass   R200 {totR200_dm:.2e}, total solar masses {totR200_dm*m_p/M_sun:.2e}, ratio {(totR200_dm*m_p/M_sun)/g['gas_plus_tl']:.2e}")
+    # print(f"    total dark mass   rMax {totRMax_dm:.2e}, total solar masses {totRMax_dm*m_p/M_sun:.2e}, ratio {(totRMax_dm*m_p/M_sun)/g['gas_plus_tl']:.2e}")
+
+    g['totR200_gas'] = totR200_gas*m_p/M_sun
+    g['totR200_dm'] = totR200_dm*m_p/M_sun
+    g['totRMax_gas'] = totRMax_gas*m_p/M_sun
+    g['totRMax_dm'] = totRMax_dm*m_p/M_sun
+
 
 
 def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2, dm_grid_lin, mond_chi2, mond_lin_err, mond_lin, mond_lin_grid, global_stats, stats):
@@ -485,21 +540,27 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2,
         log_file.write("  HIMass: Neutral Hydrogen mass from literature [M_sun]\n")
         log_file.write("  Total Gas Mass: Integrated gas disk mass from 3D density grid * 1.33 [M_sun]\n")
         log_file.write("  HIMass/Total Gas Mass: Ratio of tabular HI mass to integrated gas mass\n")
-        log_file.write("  Total Gas Mass + TL mass: Combined integrated gas and stellar mass [M_sun]\n")
-        log_file.write("  Total DM Mass: Integrated Dark Mass via theory formula [M_sun]\n")
-        log_file.write("  Total DM Mass/M_b: Ratio of Dark Mass to Total Baryons\n")
-        log_file.write("  Total DM Mass/Total Gas: Ratio of Dark Mass to Integrated Gas Mass\n\n")
-        log_file.write("  Total DM Mass/Total Baryons: Ratio of Dark Mass to all baryons\n\n")
+        log_file.write("  grid:Total Gas Mass + TL mass: Combined integrated gas and stellar mass [M_sun]\n")
+        log_file.write("  grid:Total DM Mass: Integrated Dark Mass via theory formula [M_sun]\n")
+        log_file.write("  grid:Total DM Mass/M_b: Ratio of Dark Mass to Total Baryons\n")
+        log_file.write("  grid:Total DM Mass/Total Gas: Ratio of Dark Mass to Integrated Gas Mass\n")
+        log_file.write("  grid:Total DM Mass/Total Baryons: Ratio of Dark Mass to all baryons\n")
+        log_file.write("  analytic:  halo gas added to the baryons in DM calculation, to R_200\n")
+        log_file.write("  analytic:  halo dm mass added (no truncation, to R_200)\n")
+        log_file.write("  analytic:  halo gas mass added (truncated at R_max)\n")
+        log_file.write("  analytic:  halo dm mass added (truncated at R_max)\n\n")
         
-        header = f"{'name':<16} {'M_b (Msun)':<14} {'TL (Msun)':<14} {'HIMass (Msun)':<14} {'Total Gas (Msun)':<18} {'HI/TotGas':<12} {'Gas+TL (Msun)':<16} {'Total DM (Msun)':<16} {'DM/M_b':<12} {'DM/TotGas':<12} {'DM/AllBaryons':<12} {'r_core_kpc':<8}\n"
+        
+        header = f"{'name':<16} {'M_b(sol)':<11} {'TL(sol)':<11} {'HIMass(sol)':<11} {'TotGas(sol)':<11} {'HI/TotGas':<11} {'Gas+TL(sol)':<11} {'TotDM(sol)':<11} {'DM/M_b':<11} {'DM/TotGas':<11} {'DM/AllBar':<11} {'r_core_kpc':<11} {'gas(r_200)':<11} {'dm(r_200)':<11} {'gas(R_max)':<11} {'dm(R_max)':<11}\n"
         log_file.write(header)
         log_file.write("-" * len(header) + "\n")
         
         for row in stats:
-            log_file.write(f"{row['name']:<16} {row['M_b']:<14.4e} {row['TL']:<14.4e} {row['HIMass']:<14.4e} "
-                           f"{row['Total_Gas_Mass']:<18.4e} {row['HIMass_Total_Gas_Ratio']:<12.4f} "
-                           f"{row['Gas_Plus_TL']:<16.4e} {row['Total_DM_Mass']:<16.4e} "
-                           f"{row['DM_Mb_Ratio']:<12.4f} {row['DM_Gas_Ratio']:<12.4f} {row['DM_AllBaryons_Ratio']:<12.4f} {row['r_core_kpc']:<8.4f}\n")
+            log_file.write(f"{row['name']:<16} {row['M_b']:<11.2e} {row['TL']:<11.2e} {row['HIMass']:<11.2e} "
+                           f"{row['Total_Gas_Mass']:<11.2e} {row['HIMass_Total_Gas_Ratio']:<11.4f} "
+                           f"{row['Gas_Plus_TL']:<11.2e} {row['Total_DM_Mass']:<11.2e} "
+                           f"{row['DM_Mb_Ratio']:<11.4f} {row['DM_Gas_Ratio']:<11.4f} {row['DM_AllBaryons_Ratio']:<11.4f} {row['r_core_kpc']:<11.4f} "
+                           f"{row['totR200_gas']:<11.2e} {row['totR200_dm']:<11.2e} {row['totRMax_gas']:<11.2e} {row['totRMax_dm']:<11.2e}\n")
         
         log_file.write("========================================================================================================\n\n")
 
@@ -562,7 +623,7 @@ def generate_density_heatmaps(galaxy_dict, best_P):
         gas_density_cm3 = gas_density_m3 / 1e6
         n_min_m3 = MIN_DENSITY_FOR_POWER*(100)**3 
         dm_mask = gas_density_m3 >= n_min_m3
-        dm_density_kg_m3 = np.where(dm_mask, best_P * (1/c**3) * (gas_density_m3**(2/3)), 0.0)
+        dm_density_kg_m3 = np.where(dm_mask, best_P * (1/c_SI**3) * (gas_density_m3**(2/3)), 0.0)
         dm_density_cm3 = dm_density_kg_m3 / (m_p * 1e6)
         
         R_mesh, Z_mesh = np.meshgrid(R_kpc, Z_kpc, indexing='ij')
@@ -593,6 +654,14 @@ def generate_density_heatmaps(galaxy_dict, best_P):
 
 if DO_HEATMAPS:
     generate_density_heatmaps(galaxies, best_global_P)
+
+# ---------------------------------------------------------
+# RUN STATS COMPUTATION, LOGGING, AND SCATTER PLOTS
+# ---------------------------------------------------------
+print("\nComputing galaxy mass statistics, appending log file, and plotting mass comparisons...")
+
+galaxy_stats, global_stats = compute_galaxy_stats(galaxies, best_global_P)
+
 
 # 5. Generate Output Plots
 print("\nGenerating individual galaxy plots and master summary...")
@@ -714,12 +783,6 @@ plt.grid(True, which="both", ls="--", alpha=0.5)
 plt.savefig(os.path.join(output_dir, "global_predicted_accel_vs_obs.png"), bbox_inches='tight', dpi=200)
 plt.close()
 
-# ---------------------------------------------------------
-# RUN STATS COMPUTATION, LOGGING, AND SCATTER PLOTS
-# ---------------------------------------------------------
-print("\nComputing galaxy mass statistics, appending log file, and plotting mass comparisons...")
-
-galaxy_stats, global_stats = compute_galaxy_stats(galaxies, best_global_P)
 
 write_run_log(
     output_dir=output_dir,
