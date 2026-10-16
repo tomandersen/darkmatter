@@ -29,13 +29,14 @@ USE_INTERPOLATED_FIT = True # Added boolean to switch between fits
 NUM_MINUTES = 5 # how long you are willing to wait for results. Make at least 2 minutes
 num_points = int(NUM_MINUTES*3e5) 
 base_points = int(num_points**(1/3.0))
-NUM_BLOBS_THETA = int(base_points/2) | 1 # the | 1 makes the integer odd, odd is better, as it puts blobs on the central plane, etc.
-NUM_LAYERS_Z = int(2.5*base_points) | 1
+NUM_BLOBS_THETA = int(base_points/1.5) | 1 # the | 1 makes the integer odd, odd is better, as it puts blobs on the central plane, etc.
+NUM_LAYERS_Z = int(2*base_points) | 1
 NUM_R_BINS = int(base_points) | 1 
 
 
 R_GRID_SCALE_FACTOR = 1.2 # How far to go past the last R data point. should be 1.1 or 1.2 or 1.3 
-# after 1.3, points at R_max observed should not feel any force from mass beyond 1.3 R_max observed     
+# after R_GRID_SCALE_FACTOR, points at R_max observed should not feel any force from mass beyond R_GRID_SCALE_FACTOR
+# Need to go past R_max as Newton's Shell Theorem does not hold in a thin disk. (And no Jeans stuff is not good either)     
  
 USE_EXPONENTIAL_DISK = True  # without this on, disk is just hard cut at +/- h_z
 
@@ -253,12 +254,17 @@ for i, gal in enumerate(galaxies):
     
     gas_particle_mass_He_factor = 1.33  
     dm_gas = gas_particle_density_grid * m_p * gas_particle_mass_He_factor * dV
-    g_data['sum_gas_mass_integral'] = np.sum(gas_particle_density_grid * dV)
+
+    # only want the sum of gas inside r_max
+    r_max_m = max_R_kpc * kpc_to_m
+    r_max_mask = r_squared < r_max_m**2
+    g_data['sum_all_gas_particles'] = np.sum(gas_particle_density_grid[r_max_mask] * dV[r_max_mask])
    
     n_min_m3 = MIN_DENSITY_FOR_POWER*(100)**3 
     dm_mask = gas_particle_density_grid >= n_min_m3
-    g_data['gas_density_slice_m3'] = gas_particle_density_grid[:, :, 0].copy()  
-    g_data['sum_dm_mass_integral'] = np.sum((gas_particle_density_grid[dm_mask]**(2.0/3.0)) * dV[dm_mask])
+    dm_stat_mask = dm_mask & r_max_mask # for display and output stats only get dm until r_max
+    g_data['gas_density_slice_m3'] = np.where(dm_stat_mask[:, :, 0], gas_particle_density_grid[:, :, 0], 0.0)
+    g_data['sum_dm_mass_integral'] = np.sum((gas_particle_density_grid[dm_stat_mask]**(2.0/3.0)) * dV[dm_stat_mask])
     dm_base_dm = np.zeros_like(gas_particle_density_grid)
     dm_base_dm[dm_mask] = (1/c_SI**3) * gas_particle_density_grid[dm_mask]**(2/3) * dV[dm_mask]
 
@@ -407,7 +413,7 @@ def compute_galaxy_stats(galaxy_dict, best_P):
         m_b = tl + hi                             
         g['gas_plus_tl'] = m_b
 
-        tot_gas_mass_kg = g['sum_gas_mass_integral'] * m_p * 1.33
+        tot_gas_mass_kg = g['sum_all_gas_particles'] * m_p * 1.33
         tot_gas_mass_msun = tot_gas_mass_kg / M_sun
         
         hi_gas_ratio = hi / tot_gas_mass_msun if tot_gas_mass_msun > 0 else 0.0
@@ -429,12 +435,12 @@ def compute_galaxy_stats(galaxy_dict, best_P):
         stats.append({
             'name': name,
             'M_b': m_b,
-            'TL': tl,
-            'HIMass': hi,
-            'Total_Gas_Mass': tot_gas_mass_msun,
+            'TL': tl/m_b,
+            'HIMass': hi/m_b,
+            'R_max_Gas_Mass': tot_gas_mass_msun/m_b,
             'HIMass_Total_Gas_Ratio': hi_gas_ratio,
-            'Gas_Plus_TL': gas_plus_tl,
-            'Total_DM_Mass': tot_dm_mass_msun,
+            'Gas_Plus_TL': gas_plus_tl/m_b,
+            'R_max_DM_Mass': tot_dm_mass_msun,
             'DM_Mb_Ratio': dm_mb_ratio,
             'DM_Gas_Ratio': dm_gas_ratio,
             'DM_AllBaryons_Ratio': dm_allbaryons_ratio,
@@ -448,10 +454,10 @@ def compute_galaxy_stats(galaxy_dict, best_P):
         })
 
     global_stats = {
-        'Total_Baryon_Mass': total_baryon_mass,
-        'Total_DM_Mass': total_dm_mass,
+        'Global_R_max_Baryon_Mass': total_baryon_mass,
+        'Global_R_max_DM_Mass': total_dm_mass,
         'DM_AllBaryons_Ratio': dm_ratio_by_galaxy / len(galaxy_dict),
-        'Overall_DM_Ratio': total_dm_mass/total_baryon_mass
+        'Overall_R_max_DM_Ratio': total_dm_mass/total_baryon_mass
     }
     return stats, global_stats
 
@@ -556,40 +562,38 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2,
         log_file.write(f"  MOND Linear Total Error via grid (Unweighted): {mond_lin_grid:.2f} km/s, per point: {mond_lin_grid/number_of_grid_points:.2f} km/s\n\n")
         
         log_file.write("--- GLOBAL STATISTICAL BREAKDOWN ---\n")
-        log_file.write(f"  Total Baryon Mass: {global_stats['Total_Baryon_Mass']:.2e} M_sun\n")
-        log_file.write(f"  Total DM Mass: {global_stats['Total_DM_Mass']:.2e} M_sun\n")
-        log_file.write(f"  DM/AllBaryons Average Ratio: {global_stats['DM_AllBaryons_Ratio']:.2f}\n")
-        log_file.write(f"  Overall DM Ratio: {global_stats['Overall_DM_Ratio']:.2f}\n\n")
+        log_file.write(f"  Sum Baryon Mass to R_max: {global_stats['Global_R_max_Baryon_Mass']:.2e} M_sun\n")
+        log_file.write(f"  Sum DM to R_max: {global_stats['Global_R_max_DM_Mass']:.2e} M_sun\n")
+        log_file.write(f"  Average (Sum DM / Sum Baryons): {global_stats['DM_AllBaryons_Ratio']:.2f}\n")
+        log_file.write(f"  Overall DM Ratio: {global_stats['Overall_R_max_DM_Ratio']:.2f}\n\n")
 
         log_file.write("--- GALAXY STATISTICAL BREAKDOWN ---\n")
         log_file.write("Column Legend:\n")
         log_file.write("  name: Galaxy identifier\n")
         log_file.write("  M_b: Total baryon mass [M_sun] (TL + HIMass, assuming Upsilon = 1 - Lelli 2016 data)\n")
-        log_file.write("  TL: Stellar luminosity-derived mass [M_sun]\n")
-        log_file.write("  HIMass: Neutral Hydrogen mass from literature [M_sun]\n")
-        log_file.write("  Total Gas Mass: Integrated gas disk mass from 3D density grid * 1.33 [M_sun]\n")
-        log_file.write("  HIMass/Total Gas Mass: Ratio of tabular HI mass to integrated gas mass\n")
-        log_file.write("  grid:Total Gas Mass + TL mass: Combined integrated gas and stellar mass [M_sun]\n")
-        log_file.write("  grid:Total DM Mass: Integrated Dark Mass via theory formula [M_sun]\n")
-        log_file.write("  grid:Total DM Mass/M_b: Ratio of Dark Mass to Total Baryons\n")
-        log_file.write("  grid:Total DM Mass/Total Gas: Ratio of Dark Mass to Integrated Gas Mass\n")
-        log_file.write("  grid:Total DM Mass/Total Baryons: Ratio of Dark Mass to all baryons\n")
-        log_file.write("  analytic:  halo gas added to the baryons in DM calculation, to R_200\n")
-        log_file.write("  analytic:  halo dm mass added (no truncation, to R_200)\n")
-        log_file.write("  analytic:  halo gas mass added (truncated at R_max)\n")
-        log_file.write("  analytic:  halo dm mass added (truncated at R_max)\n\n")
+        log_file.write("  TL: Stellar luminosity-derived mass [fraction of M_b]\n")
+        log_file.write("  HIMass: Ne utral Hydrogen mass from literature [fraction of M_b]\n")
+        log_file.write("  R_max Gas Mass: Integrated gas disk mass from 3D density grid * 1.33 [fraction of M_b]\n")
+        log_file.write("  R_max:Total Gas Mass + TL mass: Combined integrated gas and stellar mass [fraction of M_b]\n")
+        log_file.write("  R_max: DM Mass: Integrated Dark Mass via theory formula [fraction of M_b]\n")
+        log_file.write("  R_max: DM Mass/M_b: Ratio of Dark Mass to Total Baryons\n")
+        log_file.write("  R_max: DM Mass/Total Gas: Ratio of Dark Mass to Integrated Gas Mass\n")
+        log_file.write("  R_max: DM Mass/Total Baryons: Ratio of Dark Mass to all baryons\n")
+        log_file.write("  analytic:  halo gas added to the baryons in DM calculation, to R_200 [M_sun]\n")
+        log_file.write("  analytic:  halo dm mass added (no truncation, to R_200 [M_sun])\n")
+        log_file.write("  analytic:  halo gas mass added (truncated at R_max [M_sun])\n")
+        log_file.write("  analytic:  halo dm mass added (truncated at R_max [M_sun])\n\n")
         
         
-        header = f"{'name':<16} {'M_b(sol)':<11} {'TL(sol)':<11} {'HIMass(sol)':<11} {'TotGas(sol)':<11} {'HI/TotGas':<11} {'Gas+TL(sol)':<11} {'TotDM(sol)':<11} {'DM/M_b':<11} {'DM/TotGas':<11} {'DM/AllBar':<11} {'r_core_kpc':<11} {'gas(r_200)':<11} {'dm(r_200)':<11} {'gas(R_max)':<11} {'dm(R_max)':<11} {'r_200':<11} {'r_max':<11}\n"
+        header = f"{'name':<14} {'M_b(sol)':<11} {'TL(f)':<9} {'HIMass(f)':<9} {'RMaxGas(f)':<9} {'DM/M_b':<9} {'DM/RMaxGs':<9} {'DM/RMaxB':<9} {'r_core_kpc':<9} {'gas(r_200)':<11} {'dm(r_200)':<11} {'gas(R_max)':<11} {'dm(R_max)':<11} {'r_200':<9} {'r_max':<9}\n"
         log_file.write(header)
         log_file.write("-" * len(header) + "\n")
         
         for row in stats:
-            log_file.write(f"{row['name']:<16} {row['M_b']:<11.2e} {row['TL']:<11.2e} {row['HIMass']:<11.2e} "
-                           f"{row['Total_Gas_Mass']:<11.2e} {row['HIMass_Total_Gas_Ratio']:<11.4f} "
-                           f"{row['Gas_Plus_TL']:<11.2e} {row['Total_DM_Mass']:<11.2e} "
-                           f"{row['DM_Mb_Ratio']:<11.4f} {row['DM_Gas_Ratio']:<11.4f} {row['DM_AllBaryons_Ratio']:<11.4f} {row['r_core_kpc']:<11.4f} "
-                           f"{row['totR200_gas']:<11.2e} {row['totR200_dm']:<11.2e} {row['totRMax_gas']:<11.2e} {row['totRMax_dm']:<11.2e} {row['r_200']:<11.0f} {row['r_max']:<11.1f}\n")
+            log_file.write(f"{row['name']:<14} {row['M_b']:<11.2e} {row['TL']:<9.3f} {row['HIMass']:<9.3f} "
+                           f"{row['R_max_Gas_Mass']:<9.3f}  "
+                           f"{row['DM_Mb_Ratio']:<9.3f} {row['DM_Gas_Ratio']:<9.3f} {row['DM_AllBaryons_Ratio']:<9.3f} {row['r_core_kpc']:<9.3f} "
+                           f"{row['totR200_gas']:<11.2e} {row['totR200_dm']:<11.2e} {row['totRMax_gas']:<11.2e} {row['totRMax_dm']:<11.2e} {row['r_200']:<9.0f} {row['r_max']:<9.1f}\n")
         
         log_file.write("========================================================================================================\n\n")
 
@@ -601,8 +605,8 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2,
 def generate_mass_scatter_plots(output_dir, stats):
     m_b = np.array([s['M_b'] for s in stats])
     gas_plus_tl = np.array([s['Gas_Plus_TL'] for s in stats])
-    tot_gas = np.array([s['Total_Gas_Mass'] for s in stats])
-    dm_mass = np.array([s['Total_DM_Mass'] for s in stats])
+    tot_gas = np.array([s['R_max_Gas_Mass'] for s in stats])
+    dm_mass = np.array([s['R_max_DM_Mass'] for s in stats])
     
     plt.figure(figsize=(8, 6))
     valid = (m_b > 0) & (dm_mass > 0)
@@ -613,7 +617,7 @@ def generate_mass_scatter_plots(output_dir, stats):
     plt.ylabel('Total Dark Mass [$M_{\\odot}$]', fontsize=11)
     plt.title('Baryon Mass $M_b$ vs Total Dark Mass', fontsize=12)
     plt.grid(True, which="both", ls="--", alpha=0.5)
-    plt.savefig(os.path.join(output_dir, "mb_vs_total_dm_mass.png"), bbox_inches='tight', dpi=200)
+    plt.savefig(os.path.join(output_dir, "mb_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=200)
     plt.close()
     
     plt.figure(figsize=(8, 6))
@@ -625,7 +629,7 @@ def generate_mass_scatter_plots(output_dir, stats):
     plt.ylabel('Total Dark Mass [$M_{\\odot}$]', fontsize=11)
     plt.title('Gas + Stellar Mass vs Total Dark Mass', fontsize=12)
     plt.grid(True, which="both", ls="--", alpha=0.5)
-    plt.savefig(os.path.join(output_dir, "gas_plus_tl_vs_total_dm_mass.png"), bbox_inches='tight', dpi=200)
+    plt.savefig(os.path.join(output_dir, "gas_plus_tl_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=200)
     plt.close()
     
     plt.figure(figsize=(8, 6))
@@ -637,7 +641,7 @@ def generate_mass_scatter_plots(output_dir, stats):
     plt.ylabel('Total Dark Mass [$M_{\\odot}$]', fontsize=11)
     plt.title('Total Gas Mass vs Total Dark Mass', fontsize=12)
     plt.grid(True, which="both", ls="--", alpha=0.5)
-    plt.savefig(os.path.join(output_dir, "gas_mass_vs_total_dm_mass.png"), bbox_inches='tight', dpi=200)
+    plt.savefig(os.path.join(output_dir, "gas_mass_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=200)
     plt.close()
 
 
@@ -657,7 +661,7 @@ def generate_density_heatmaps(galaxy_dict, best_P):
         
         R_mesh, Z_mesh = np.meshgrid(R_kpc, Z_kpc, indexing='ij')
 
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(6, 10))
         vmin = max(gas_density_cm3.max() * 1e-4, 1e-6)
         pcm = plt.pcolormesh(R_mesh, Z_mesh, gas_density_cm3, 
                              shading='auto', cmap='viridis', 
@@ -669,7 +673,7 @@ def generate_density_heatmaps(galaxy_dict, best_P):
         plt.savefig(os.path.join(output_gas_heatmaps, f"{gal}_gas_heatmap.png"), bbox_inches='tight', dpi=200)
         plt.close()
 
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(6, 10))
         vmin_dm = max(dm_density_cm3.max() * 1e-4, 1e-6)
         pcm = plt.pcolormesh(R_mesh, Z_mesh, dm_density_cm3, 
                              shading='auto', cmap='plasma', 
