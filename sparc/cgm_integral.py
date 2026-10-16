@@ -68,7 +68,7 @@ if __name__ == "__main__":
     rc2=100000.0
     n0_2=1
     exponent2=beta_val
-    min_gas_for_dm = 0.0000000001
+    min_gas_for_dm = 0.00003
 
     result, error = evaluate_dm_mass_integral(R1, R2, gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, exponent2, min_gas_for_dm)
     

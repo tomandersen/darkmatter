@@ -25,26 +25,27 @@ sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 USE_LINEAR_ERROR = True
 USE_INTERPOLATED_FIT = True # Added boolean to switch between fits
 
-NUM_BLOBS_THETA = 137 
-NUM_LAYERS_Z = 901 
-Z_HEIGHT = 200  
-
-NUM_R_BINS = 159
-
-R_GRID_SCALE_FACTOR = 2.0 
+# control the length of time it takes to calculate everything. 
+NUM_BLOBS_THETA = 67  # angular resolution (number of blobs around the disk) - each blob represents an equal area of the disk as the others.
+NUM_LAYERS_Z = 501 # z resolution (number of layers) - each layer has thickness 
+Z_HEIGHT = 120  # entire z height, so layers are thickness  2*Z_HEIGHT / NUM_LAYERS_Z (from -Z_HEIGHT to +Z_HEIGHT)
+NUM_R_BINS = 87 
+R_GRID_SCALE_FACTOR = 1.3 # How far to go past the last R data point. Need to go to around 2 to get accurate V_predictions. Go to 8R to capture the entire CGM and halo    
  
-USE_EXPONENTIAL_DISK = True 
+USE_EXPONENTIAL_DISK = True  # without this on, disk is just hard cut at +/- h_z
 
-ADD_CORE_GAS = True
+# gas shell # 1, I use this for the 'missing gas' in the core area of galaxies, typical values are 2.1 per cm^3 and a (large)  beta of 1.4. 
 ADD_CORE_GAS_CENTRAL_DENSITY = 2.10 
 ADD_CORE_GAS_BETA = 1.4 
 
-# CGM - beta is set in the code
-ADD_REAL_CGM = 0.015 
-MIN_DENSITY_FOR_POWER = 0.00003
+# CGM - beta is set in the code - 0.5 
+ADD_REAL_CGM_CENTRAL_DENSITY = 0.015 
+MIN_DENSITY_FOR_POWER = 3e-5
 
-DO_HEATMAPS = False
+# to speed it up, maybe dont bother with heatmaps
+DO_HEATMAPS = True
 
+# as per the litrature, I think Lelli 2016 uses this
 def get_sparc_galaxy_scale_height(radius_kpc, R_d):
     """Calculates the vertical disk scale height (thickness) of a SPARC galaxy."""
     z_d = 0.196 * (R_d ** 0.633)
@@ -52,7 +53,7 @@ def get_sparc_galaxy_scale_height(radius_kpc, R_d):
 
 # 1. Setup and Parse the Data
 properties_file = "./sparc/SPARC_Lelli2016c.mrt.txt"
-kinematics_file = "./sparc/MassModels_Lelli2016_SigmaGas.mrt"
+kinematics_file = "./sparc/MassModels_Lelli2016_SigmaGas.mrt" # i needed to use gas density at each radius, so a seperate python file did that.
 output_galaxies = "./sparc/dm_mass/galaxies"
 output_dir = "./sparc/dm_mass"
 output_gas_heatmaps = "./sparc/dm_mass/gas_heatmaps"
@@ -161,8 +162,14 @@ for i, gal in enumerate(galaxies):
     g_data_Vobs = g_data['Vobs'] 
     g_data_eVobs = g_data['eVobs'] 
     
+    # if we are extending the grid past the max r, we add data in, with the values adjusted to fall off
     if R_GRID_SCALE_FACTOR > 1.0:
+        # grid_max - where the simulation stops.
+        # pick a point where the data grinds out. Not too far out!
         last_r = g_data_r_obs_kpc[-1] + (grid_max - g_data_r_obs_kpc[-1])/2.0
+        # average_interval = max_R_kpc/len(R_obs_kpc) 
+        # last_r = g_data_r_obs_kpc[-1] + 3*average_interval
+
         rscale = 1.0/(R_GRID_SCALE_FACTOR * R_GRID_SCALE_FACTOR)
         g_data_r_obs_kpc = np.append(g_data_r_obs_kpc, last_r)
         g_data_sigma_gas = np.append(g_data_sigma_gas, 0.0)
@@ -219,13 +226,13 @@ for i, gal in enumerate(galaxies):
     r_core_kpc = 2.0*(total_mass*1e9/1e11)**(1/3) 
     r_core_m = r_core_kpc*kpc_to_m
     r_squared = X_blob**2 + Y_blob**2 + Z_blob**2 
-    if ADD_CORE_GAS:
+    if ADD_CORE_GAS_CENTRAL_DENSITY > 0.0:
         n_0_cgs = ADD_CORE_GAS_CENTRAL_DENSITY  
         n_0_m3 =  n_0_cgs * (100)**3
         exponent = -ADD_CORE_GAS_BETA 
         gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_m**2)**exponent
-    if ADD_REAL_CGM > 0.0:
-        n_0_cgs = ADD_REAL_CGM  
+    if ADD_REAL_CGM_CENTRAL_DENSITY > 0.0:
+        n_0_cgs = ADD_REAL_CGM_CENTRAL_DENSITY  
         n_0_m3 =  n_0_cgs * (100)**3
         beta = 0.5 
         exponent = -3.0*beta/2.0
@@ -308,7 +315,7 @@ def global_fit_err(P_test):
             V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
             
             gas_to_use = 'Vgas'
-            if ADD_CORE_GAS or ADD_REAL_CGM > 0.0:
+            if ADD_CORE_GAS_CENTRAL_DENSITY > 0.0 or ADD_REAL_CGM_CENTRAL_DENSITY > 0.0:
                 gas_to_use = 'Vgas_test'
 
             V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g[gas_to_use] * np.abs(g[gas_to_use]), 0, None) 
@@ -343,7 +350,7 @@ for gal in galaxies:
     g = galaxies[gal]
 
     gas_to_use = 'Vgas'
-    if ADD_CORE_GAS or ADD_REAL_CGM > 0.0:
+    if ADD_CORE_GAS_CENTRAL_DENSITY > 0.0 or ADD_REAL_CGM_CENTRAL_DENSITY > 0.0:
         gas_to_use = 'Vgas_test'
 
     V_dm_final_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
@@ -445,19 +452,26 @@ def calc_halo_properties(name, g, best_P):
     r_200_m = r_200 * kpc_to_m
     r_core_m = g['r_core_kpc'] * kpc_to_m
     # ok, now integrate the functions
+
+    n_0_1_m3 = 0
+    exponent1 = -2.0
+    n_0_2_m3 = 0
+    exponent2 = -2.0
+    min_gas_for_dm = MIN_DENSITY_FOR_POWER*(100)**3
+
+
     n_0_m3 = 0
-    if ADD_CORE_GAS:
+    if ADD_CORE_GAS_CENTRAL_DENSITY > 0.0:
         n_0_1_cgs = ADD_CORE_GAS_CENTRAL_DENSITY  
         n_0_1_m3 =  n_0_1_cgs * (100)**3
         exponent1 = -ADD_CORE_GAS_BETA 
     
-    if ADD_REAL_CGM > 0.0:
-        n_0_2_cgs = ADD_REAL_CGM  
+    if ADD_REAL_CGM_CENTRAL_DENSITY > 0.0:
+        n_0_2_cgs = ADD_REAL_CGM_CENTRAL_DENSITY  
         n_0_2_m3 =  n_0_2_cgs * (100)**3
         beta = 0.5 
         exponent2 = -3.0*beta/2.0
     
-    min_gas_for_dm = MIN_DENSITY_FOR_POWER*(100)**3
 
     totR200_gas, err_gas = evaluate_dm_mass_integral(0, r_200_m, True, best_P, c_SI, r_core_m, n_0_1_m3, exponent1, r_core_m, n_0_2_m3, exponent2, min_gas_for_dm)
     totR200_dm, err_dm = evaluate_dm_mass_integral(0, r_200_m, False, best_P, c_SI, r_core_m, n_0_1_m3, exponent1, r_core_m, n_0_2_m3, exponent2, min_gas_for_dm)
@@ -500,10 +514,9 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2,
         log_file.write(f"  Grid Points per disk thickness = {NUM_LAYERS_Z/Z_HEIGHT:.2f}\n")
         log_file.write(f"  R_GRID_SCALE_FACTOR = {R_GRID_SCALE_FACTOR}\n")
         log_file.write(f"  USE_EXPONENTIAL_DISK = {USE_EXPONENTIAL_DISK}\n")
-        log_file.write(f"  ADD_CORE_GAS = {ADD_CORE_GAS}\n")
         log_file.write(f"  ADD_CORE_GAS_CENTRAL_DENSITY = {ADD_CORE_GAS_CENTRAL_DENSITY}\n")
         log_file.write(f"  ADD_CORE_GAS_BETA = {ADD_CORE_GAS_BETA}\n")
-        log_file.write(f"  ADD_REAL_CGM = {ADD_REAL_CGM}\n")
+        log_file.write(f"  ADD_REAL_CGM = {ADD_REAL_CGM_CENTRAL_DENSITY}\n")
         log_file.write(f"  MIN_DENSITY_FOR_POWER = {MIN_DENSITY_FOR_POWER}\n")
         log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n")
         log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n\n")
@@ -676,7 +689,7 @@ for gal in galaxies:
     g = galaxies[gal]
     
     gas_to_use = 'Vgas'
-    if ADD_CORE_GAS or ADD_REAL_CGM > 0.0:
+    if ADD_CORE_GAS_CENTRAL_DENSITY > 0.0 or ADD_REAL_CGM_CENTRAL_DENSITY > 0.0:
         gas_to_use = 'Vgas_test'
 
     V_dm_final_obs_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
@@ -748,7 +761,7 @@ for gal in galaxies:
     valid = R_m > 0 
     
     gas_to_use = 'Vgas'
-    if ADD_CORE_GAS or ADD_REAL_CGM > 0.0:
+    if ADD_CORE_GAS_CENTRAL_DENSITY > 0.0 or ADD_REAL_CGM_CENTRAL_DENSITY > 0.0:
         gas_to_use = 'Vgas_test'
 
     V_dm_final_sq = best_global_P * g['V_dm_sq_base_kms']
