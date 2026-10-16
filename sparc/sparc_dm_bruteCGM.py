@@ -437,9 +437,9 @@ def compute_galaxy_stats(galaxy_dict, best_P):
             'M_b': m_b,
             'TL': tl/m_b,
             'HIMass': hi/m_b,
-            'R_max_Gas_Mass': tot_gas_mass_msun/m_b,
+            'R_max_Gas_Mass': tot_gas_mass_msun,
             'HIMass_Total_Gas_Ratio': hi_gas_ratio,
-            'Gas_Plus_TL': gas_plus_tl/m_b,
+            'Gas_Plus_TL': gas_plus_tl,
             'R_max_DM_Mass': tot_dm_mass_msun,
             'DM_Mb_Ratio': dm_mb_ratio,
             'DM_Gas_Ratio': dm_gas_ratio,
@@ -591,7 +591,7 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2,
         
         for row in stats:
             log_file.write(f"{row['name']:<14} {row['M_b']:<11.2e} {row['TL']:<9.3f} {row['HIMass']:<9.3f} "
-                           f"{row['R_max_Gas_Mass']:<9.3f}  "
+                           f"{row['R_max_Gas_Mass']/row['M_b']:<9.3f}  "
                            f"{row['DM_Mb_Ratio']:<9.3f} {row['DM_Gas_Ratio']:<9.3f} {row['DM_AllBaryons_Ratio']:<9.3f} {row['r_core_kpc']:<9.3f} "
                            f"{row['totR200_gas']:<11.2e} {row['totR200_dm']:<11.2e} {row['totRMax_gas']:<11.2e} {row['totRMax_dm']:<11.2e} {row['r_200']:<9.0f} {row['r_max']:<9.1f}\n")
         
@@ -613,9 +613,9 @@ def generate_mass_scatter_plots(output_dir, stats):
     plt.scatter(m_b[valid], dm_mass[valid], alpha=0.6, color='blue', edgecolors='k', linewidth=0.5)
     plt.xscale('log')
     plt.yscale('log')
-    plt.xlabel('Total Baryon Mass $M_b$ [$M_{\\odot}$]', fontsize=11)
-    plt.ylabel('Total Dark Mass [$M_{\\odot}$]', fontsize=11)
-    plt.title('Baryon Mass $M_b$ vs Total Dark Mass', fontsize=12)
+    plt.xlabel('R_max Baryon Mass $M_b$ [$M_{\\odot}$]', fontsize=11)
+    plt.ylabel('R_max Dark Mass [$M_{\\odot}$]', fontsize=11)
+    plt.title('Baryon Mass $M_b$ vs Dark Mass (to R_max)', fontsize=12)
     plt.grid(True, which="both", ls="--", alpha=0.5)
     plt.savefig(os.path.join(output_dir, "mb_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=200)
     plt.close()
@@ -625,9 +625,9 @@ def generate_mass_scatter_plots(output_dir, stats):
     plt.scatter(gas_plus_tl[valid], dm_mass[valid], alpha=0.6, color='darkgreen', edgecolors='k', linewidth=0.5)
     plt.xscale('log')
     plt.yscale('log')
-    plt.xlabel('Total Gas Mass + Stellar Mass (TL) [$M_{\\odot}$]', fontsize=11)
-    plt.ylabel('Total Dark Mass [$M_{\\odot}$]', fontsize=11)
-    plt.title('Gas + Stellar Mass vs Total Dark Mass', fontsize=12)
+    plt.xlabel('R_max Gas Mass + Stellar Mass (TL) [$M_{\\odot}$]', fontsize=11)
+    plt.ylabel('R_max Dark Mass [$M_{\\odot}$]', fontsize=11)
+    plt.title('Gas + Stellar Mass vs Total Dark Mass (to R_max)', fontsize=12)
     plt.grid(True, which="both", ls="--", alpha=0.5)
     plt.savefig(os.path.join(output_dir, "gas_plus_tl_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=200)
     plt.close()
@@ -637,9 +637,9 @@ def generate_mass_scatter_plots(output_dir, stats):
     plt.scatter(tot_gas[valid], dm_mass[valid], alpha=0.6, color='purple', edgecolors='k', linewidth=0.5)
     plt.xscale('log')
     plt.yscale('log')
-    plt.xlabel('Total Integrated Gas Mass [$M_{\\odot}$]', fontsize=11)
-    plt.ylabel('Total Dark Mass [$M_{\\odot}$]', fontsize=11)
-    plt.title('Total Gas Mass vs Total Dark Mass', fontsize=12)
+    plt.xlabel('R_max Integrated Gas Mass [$M_{\\odot}$]', fontsize=11)
+    plt.ylabel('R_max Dark Mass [$M_{\\odot}$]', fontsize=11)
+    plt.title('Gas Mass vs Total Dark Mass (to R_max)', fontsize=12)
     plt.grid(True, which="both", ls="--", alpha=0.5)
     plt.savefig(os.path.join(output_dir, "gas_mass_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=200)
     plt.close()
