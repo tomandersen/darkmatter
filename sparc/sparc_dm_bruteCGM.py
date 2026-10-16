@@ -17,7 +17,7 @@ start_datetime = datetime.now()
 warnings.filterwarnings("ignore")
 
 Upsilon_disk = 0.5   
-Upsilon_bulge = 0.7  # 0.6 seems to work a little better
+Upsilon_bulge = 0.6  # 0.6 seems to work a little better
 
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
@@ -26,7 +26,7 @@ USE_LINEAR_ERROR = True
 USE_INTERPOLATED_FIT = True # Added boolean to switch between fits
 
 # control the length of time it takes to calculate everything. 
-NUM_MINUTES = 5 # how long you are willing to wait for results. Make at least 2 minutes
+NUM_MINUTES = 40 # how long you are willing to wait for results. Make at least 2 minutes
 num_points = int(NUM_MINUTES*3e5) 
 base_points = int(num_points**(1/3.0))
 NUM_BLOBS_THETA = int(base_points/1.5) | 1 # the | 1 makes the integer odd, odd is better, as it puts blobs on the central plane, etc.
@@ -34,18 +34,18 @@ NUM_LAYERS_Z = int(2*base_points) | 1
 NUM_R_BINS = int(base_points) | 1 
 
 
-R_GRID_SCALE_FACTOR = 1.2 # How far to go past the last R data point. should be 1.1 or 1.2 or 1.3 
+R_GRID_SCALE_FACTOR = 1.1 # How far to go past the last R data point. should be 1.1 or 1.2 or 1.3 
 # after R_GRID_SCALE_FACTOR, points at R_max observed should not feel any force from mass beyond R_GRID_SCALE_FACTOR
 # Need to go past R_max as Newton's Shell Theorem does not hold in a thin disk. (And no Jeans stuff is not good either)     
  
 USE_EXPONENTIAL_DISK = True  # without this on, disk is just hard cut at +/- h_z
 
 # gas shell # 1, I use this for the 'missing gas' in the core area of galaxies, typical values are 2.1 per cm^3 and a (large)  beta of 1.4. 
-ADD_CORE_GAS_CENTRAL_DENSITY = 2.10 
+ADD_CORE_GAS_CENTRAL_DENSITY = 2.3 
 ADD_CORE_GAS_BETA = 1.4 
 
 # CGM - beta is set in the code - 0.5 
-ADD_REAL_CGM_CENTRAL_DENSITY = 0.015 
+ADD_REAL_CGM_CENTRAL_DENSITY = 0.01 
 MIN_DENSITY_FOR_POWER = 3e-5
 
 # to speed it up, maybe dont bother with heatmaps
