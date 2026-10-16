@@ -17,7 +17,7 @@ start_datetime = datetime.now()
 warnings.filterwarnings("ignore")
 
 Upsilon_disk = 0.5   
-Upsilon_bulge = 0.6  
+Upsilon_bulge = 0.7  # 0.6 seems to work a little better
 
 sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
 sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
@@ -26,11 +26,16 @@ USE_LINEAR_ERROR = True
 USE_INTERPOLATED_FIT = True # Added boolean to switch between fits
 
 # control the length of time it takes to calculate everything. 
-NUM_BLOBS_THETA = 67  # angular resolution (number of blobs around the disk) - each blob represents an equal area of the disk as the others.
-NUM_LAYERS_Z = 501 # z resolution (number of layers) - each layer has thickness 
-Z_HEIGHT = 120  # entire z height, so layers are thickness  2*Z_HEIGHT / NUM_LAYERS_Z (from -Z_HEIGHT to +Z_HEIGHT)
-NUM_R_BINS = 87 
-R_GRID_SCALE_FACTOR = 1.3 # How far to go past the last R data point. Need to go to around 2 to get accurate V_predictions. Go to 8R to capture the entire CGM and halo    
+NUM_MINUTES = 5 # how long you are willing to wait for results. Make at least 2 minutes
+num_points = int(NUM_MINUTES*3e5) 
+base_points = int(num_points**(1/3.0))
+NUM_BLOBS_THETA = int(base_points/2) | 1 # the | 1 makes the integer odd, odd is better, as it puts blobs on the central plane, etc.
+NUM_LAYERS_Z = int(2.5*base_points) | 1
+NUM_R_BINS = int(base_points) | 1 
+
+
+R_GRID_SCALE_FACTOR = 1.2 # How far to go past the last R data point. should be 1.1 or 1.2 or 1.3 
+# after 1.3, points at R_max observed should not feel any force from mass beyond 1.3 R_max observed     
  
 USE_EXPONENTIAL_DISK = True  # without this on, disk is just hard cut at +/- h_z
 
@@ -146,11 +151,12 @@ for i, gal in enumerate(galaxies):
     V_bul_ms = g_data['Vbul'] * 1000.0
     
     max_R_kpc = np.max(R_obs_kpc)
-    grid_max = max_R_kpc
+    grid_max_kpc = max_R_kpc
     if R_GRID_SCALE_FACTOR > 1.0:
-        grid_max = R_GRID_SCALE_FACTOR * grid_max
+        grid_max_kpc = R_GRID_SCALE_FACTOR * grid_max_kpc
+    grid_max_m = grid_max_kpc*kpc_to_m
 
-    R_grid_kpc = np.linspace(max_R_kpc / NUM_R_BINS, grid_max, NUM_R_BINS)
+    R_grid_kpc = np.linspace(max_R_kpc / NUM_R_BINS, grid_max_kpc, NUM_R_BINS)
     R_grid_m = R_grid_kpc * kpc_to_m
     dR_m = R_grid_m[1] - R_grid_m[0]
     
@@ -163,19 +169,18 @@ for i, gal in enumerate(galaxies):
     g_data_eVobs = g_data['eVobs'] 
     
     # if we are extending the grid past the max r, we add data in, with the values adjusted to fall off
+    # I don't use these data for anything but making the interpolation grids up.
     if R_GRID_SCALE_FACTOR > 1.0:
-        # grid_max - where the simulation stops.
+        # grid_max - where the simulation stops. 
         # pick a point where the data grinds out. Not too far out!
-        last_r = g_data_r_obs_kpc[-1] + (grid_max - g_data_r_obs_kpc[-1])/2.0
-        # average_interval = max_R_kpc/len(R_obs_kpc) 
-        # last_r = g_data_r_obs_kpc[-1] + 3*average_interval
-
-        rscale = 1.0/(R_GRID_SCALE_FACTOR * R_GRID_SCALE_FACTOR)
+        # halfway between R_max observed and grid_max
+        last_r = g_data_r_obs_kpc[-1] + (grid_max_kpc - g_data_r_obs_kpc[-1])/2.0
+        rscale = 1.0/R_GRID_SCALE_FACTOR # scale some things down a bit at the extra point
         g_data_r_obs_kpc = np.append(g_data_r_obs_kpc, last_r)
-        g_data_sigma_gas = np.append(g_data_sigma_gas, 0.0)
+        g_data_sigma_gas = np.append(g_data_sigma_gas, rscale*g_data_sigma_gas[-1]) # gas density drops a bit with R.
         g_data_Vdisk = np.append(g_data_Vdisk, rscale*g_data_Vdisk[-1])
         g_data_Vbul = np.append(g_data_Vbul, rscale*g_data_Vbul[-1])
-        g_data_Vgas = np.append(g_data_Vgas, rscale*g_data_Vgas[-1])
+        g_data_Vgas = np.append(g_data_Vgas, g_data_Vgas[-1]) # gas velocity is often flat at the edge of the data. 
         g_data_Vobs = np.append(g_data_Vobs, g_data_Vobs[-1]) 
         g_data_eVobs = np.append(g_data_eVobs, g_data_eVobs[-1]) 
     
@@ -196,14 +201,13 @@ for i, gal in enumerate(galaxies):
     # ---------------------------------------------------------
     # BRUTE FORCE 3D BLOB CALCULATION (Continuous Grid)
     # ---------------------------------------------------------
-    nz = NUM_LAYERS_Z
-    ntheta = NUM_BLOBS_THETA
     
-    Z_m = np.linspace(-Z_HEIGHT * hz_m, Z_HEIGHT * hz_m, nz) 
-    dZ = Z_m[1] - Z_m[0] if nz > 1 else 2.0 * hz_m 
+    # we make a square box of size grid_max_m*2 on a side.
+    Z_m = np.linspace(-grid_max_m, grid_max_m, NUM_LAYERS_Z) 
+    dZ = Z_m[1] - Z_m[0] 
     
-    theta_rad = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
-    dTheta = 2 * np.pi / ntheta
+    theta_rad = np.linspace(0, 2 * np.pi, NUM_BLOBS_THETA, endpoint=False)
+    dTheta = 2 * np.pi / NUM_BLOBS_THETA
 
     R_grid_3d, Z_grid_3d, Theta_grid_3d = np.meshgrid(R_grid_m, Z_m, theta_rad, indexing='ij')
     
@@ -238,6 +242,11 @@ for i, gal in enumerate(galaxies):
         exponent = -3.0*beta/2.0
         gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_m**2)**exponent
 
+    # Zero out gas outside the bounding sphere of radius grid_max_m (keeps 3D shape intact)
+    # this makes it so our output stats make more sense, we can just sum all the dark mass we made, etc.
+    gas_particle_density_grid[r_squared >= grid_max_m**2] = 0.0
+    
+
     g_data['R_grid_kpc'] = R_grid_kpc
     g_data['Z_grid_kpc'] = Z_m / kpc_to_m
     g_data['r_core_kpc'] = r_core_kpc
@@ -256,8 +265,10 @@ for i, gal in enumerate(galaxies):
     V_gas_sq_grid = np.zeros_like(R_grid_m)
     V_dm_sq_base_grid = np.zeros_like(R_grid_m)
     
-    softening_sq = (0.01 * hz_m)**2 
+    softening_sq = (0.001 * hz_m)**2 
     
+    # for each radius on the x axis of R_grid_m, we sum up force from all the gas/dark matter in each blob
+    # I don't need to add power at this point, since its linear, we just multiply it in when we optimize on P.
     for i_idx, R_test in enumerate(R_grid_m):
         dx = X_blob - R_test
         dy = Y_blob
@@ -273,10 +284,12 @@ for i, gal in enumerate(galaxies):
         
         V_gas_sq_grid[i_idx] = -a_x_gas * R_test
         V_dm_sq_base_grid[i_idx] = max(0, -a_x_dm * R_test)
-        
+    
+    # _base_ means the dm still needs to be multiplied by the power.
     g_data['V_dm_sq_base_grid_kms'] = V_dm_sq_base_grid / 1e6
     g_data['Vgas_test_grid_kms'] = np.sign(V_gas_sq_grid) * np.sqrt(np.abs(V_gas_sq_grid)) / 1000.0
     
+    # thses two velocity arrays match the data from Lelli 2016 in format, no added extra point 
     g_data['V_dm_sq_base_kms'] = np.interp(R_obs_kpc, R_grid_kpc, V_dm_sq_base_grid / 1e6)
     g_data['Vgas_test'] = np.interp(R_obs_kpc, R_grid_kpc, g_data['Vgas_test_grid_kms'])
     
@@ -370,6 +383,7 @@ for gal in galaxies:
     dm_grid_chi2_total += np.sum(((g['Vobs_grid'] - V_tot_final_grid_kms) / g['eVobs_grid'])**2)
     dm_grid_linear_total += np.sum(np.abs(g['Vobs_grid'] - V_tot_final_grid_kms))
 
+    # MOND
     mond_chi2_total += np.sum(((g['Vobs'] - g['V_mond_kms']) / g['eVobs'])**2)
     mond_linear_total_err += np.sum(np.abs(g['Vobs'] - g['V_mond_kms']) / g['eVobs'])
     mond_linear_total += np.sum(np.abs(g['Vobs'] - g['V_mond_kms']))
@@ -508,10 +522,8 @@ def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2,
         log_file.write("INPUT CONSTANTS:\n")
         log_file.write(f"  NUM_BLOBS_THETA = {NUM_BLOBS_THETA}\n")
         log_file.write(f"  NUM_LAYERS_Z = {NUM_LAYERS_Z}\n")
-        log_file.write(f"  Z_HEIGHT (total units of disk scale heights) = {Z_HEIGHT}\n")
         log_file.write(f"  NUM_R_BINS = {NUM_R_BINS}\n")
         log_file.write(f"  Total 3D grid points per galaxy = {NUM_R_BINS * NUM_BLOBS_THETA * NUM_LAYERS_Z/1e6:.2f} million\n")
-        log_file.write(f"  Grid Points per disk thickness = {NUM_LAYERS_Z/Z_HEIGHT:.2f}\n")
         log_file.write(f"  R_GRID_SCALE_FACTOR = {R_GRID_SCALE_FACTOR}\n")
         log_file.write(f"  USE_EXPONENTIAL_DISK = {USE_EXPONENTIAL_DISK}\n")
         log_file.write(f"  ADD_CORE_GAS_CENTRAL_DENSITY = {ADD_CORE_GAS_CENTRAL_DENSITY}\n")
