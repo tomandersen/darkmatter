@@ -344,7 +344,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
       
         return total_err
 
-    result = minimize_scalar(global_fit_err, bounds=(2.0, 100.0), method='bounded')
+    result = minimize_scalar(global_fit_err, bounds=(0.5, 100.0), method='bounded')
     print(f"Found best power: {result.x:.3f} (± {result.fun:.3e})")
 
     best_global_P = result.x

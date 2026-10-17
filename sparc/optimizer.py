@@ -28,6 +28,6 @@ study = optuna.create_study(
 )
 
 # 3. Optimize (e.g., run for 50 trials total)
-study.optimize(objective, n_trials=50)
+study.optimize(objective, n_trials=150)
 
 print("Best variables:", study.best_params)
