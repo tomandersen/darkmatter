@@ -23,7 +23,7 @@ def objective(trial):
 
 # 2. Use a persistent SQLite database so you can stop/resume anytime
 study = optuna.create_study(
-    study_name="dark_mass_opt", 
+    study_name="dark_mass_opt_v2", 
     storage="sqlite:///optimization.db", 
     load_if_exists=True,
     direction="minimize" # or "maximize"
