@@ -9,7 +9,7 @@ import matplotlib.colors as mcolors
 import warnings
 import gc 
 
-def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, num_minutes=10, output_graphs=True):
+def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True):
     # Record start time and date
     start_time = time.time()
     start_datetime = datetime.now()
@@ -40,7 +40,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
      
     USE_EXPONENTIAL_DISK = True  # without this on, disk is just hard cut at +/- h_z
 
-    MIN_DENSITY_FOR_POWER = 3e-5
+    MIN_DENSITY_FOR_POWER = 0 # with zero you will get too much cgm on the analytic full halo integrasls... i think. 3e-5
 
     # to speed it up, maybe dont bother with heatmaps
     DO_HEATMAPS = output_graphs
@@ -234,8 +234,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         if add_real_cgm_central_density > 0.0:
             n_0_cgs = add_real_cgm_central_density  
             n_0_m3 =  n_0_cgs * (100)**3
-            beta = 0.5 
-            exponent = -3.0*beta/2.0
+            exponent = -3.0*cgm_beta/2.0
             gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_cgm_m**2)**exponent
 
         # Zero out gas outside the bounding sphere of radius grid_max_m (keeps 3D shape intact)
@@ -486,8 +485,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         if add_real_cgm_central_density > 0.0:
             n_0_2_cgs = add_real_cgm_central_density  
             n_0_2_m3 =  n_0_2_cgs * (100)**3
-            beta = 0.5 
-            exponent2 = -3.0*beta/2.0
+            exponent2 = -3.0*cgm_beta/2.0
         
 
         totR200_gas, err_gas = evaluate_dm_mass_integral(0, r_200_m, True, best_P, c_SI, r_core_gas_m, n_0_1_m3, exponent1, r_core_cgm_m, n_0_2_m3, exponent2, min_gas_for_dm)
@@ -842,6 +840,7 @@ if __name__ == "__main__":
         r_core_factor_gas=1.9185539887661802, 
         add_real_cgm_central_density=0.0007924051055533841, 
         r_core_factor_cgm=3.321241619479955, 
-        num_minutes=10,
-        output_graphs=True
+        cgm_beta = 0.5,
+        num_minutes=20, 
+        output_graphs=False
     )
