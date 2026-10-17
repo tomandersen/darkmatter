@@ -319,11 +319,13 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
                 V_dm_test_sq_grid = P_test * g['V_dm_sq_base_grid_kms']
                 V_bar_sq_grid_kms = np.clip(g['Vdisk_grid']**2 + g['Vbul_grid']**2 + g['Vgas_test_grid_kms'] * np.abs(g['Vgas_test_grid_kms']), 0, None)
                 V_tot_test_grid = np.sqrt(V_bar_sq_grid_kms + V_dm_test_sq_grid)
-                
+                n = len(V_tot_test_grid)
+                # when using the interpolated fit, we use the central area only, ignore the tails...
+                i0, i1 = max(1, int(0.05 * n)), max(2, int(0.95 * n))  # trim outer 5% each side
                 if USE_LINEAR_ERROR:
-                    the_err = np.sum(np.abs(g['Vobs_grid'] - V_tot_test_grid))
+                    the_err = np.sum(np.abs(g['Vobs_grid'][i0:i1] - V_tot_test_grid[i0:i1]))
                 else:
-                    the_err = np.sum(((g['Vobs_grid'] - V_tot_test_grid) / g['eVobs_grid'])**2)
+                    the_err = np.sum(((g['Vobs_grid'][i0:i1] - V_tot_test_grid[i0:i1]) / g['eVobs_grid'][i0:i1])**2)
             else:
                 V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
                 
@@ -841,6 +843,6 @@ if __name__ == "__main__":
         add_real_cgm_central_density=0.0007924051055533841, 
         r_core_factor_cgm=3.321241619479955, 
         cgm_beta = 0.5,
-        num_minutes=20, 
+        num_minutes=6, 
         output_graphs=False
     )
