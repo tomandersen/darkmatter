@@ -837,11 +837,11 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
     run_sparc_dm_brute_cgm(
-        add_core_gas_central_density=2.3, 
-        add_core_gas_beta=1.4, 
-        r_core_factor_gas=1.0, 
-        add_real_cgm_central_density=0.01, 
-        r_core_factor_cgm=1.0, 
-        num_minutes=2,
+        add_core_gas_central_density=0.8776271683921902, 
+        add_core_gas_beta=1.7230672531484585, 
+        r_core_factor_gas=1.9185539887661802, 
+        add_real_cgm_central_density=0.0007924051055533841, 
+        r_core_factor_cgm=3.321241619479955, 
+        num_minutes=10,
         output_graphs=True
     )
