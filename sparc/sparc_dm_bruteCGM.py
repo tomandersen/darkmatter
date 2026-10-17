@@ -507,7 +507,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
 
 
-    def write_run_log(output_dir, best_P, dm_chi2, dm_lin_err, dm_lin, dm_grid_chi2, dm_grid_lin, mond_chi2, mond_lin_err, mond_lin, mond_lin_grid, global_stats, stats):
+    def write_run_log(output_dir, best_global_P, dm_chi2_total, dm_linear_total_err, dm_linear_total, dm_grid_chi2_total, dm_grid_linear_total, mond_chi2_total, mond_linear_total_err, mond_linear_total, mond_linear_total_grid, global_stats, galaxy_stats):
         log_filename = os.path.join(output_dir, "run.txt")
         duration_seconds = time.time() - start_time
         
@@ -534,23 +534,23 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write("--- GLOBAL OPTIMIZATION RESULTS ---\n")
             log_file.write(f"  USE_LINEAR_ERROR = {USE_LINEAR_ERROR}\n")
             log_file.write(f"  USE_INTERPOLATED_FIT = {USE_INTERPOLATED_FIT}\n")
-            log_file.write(f"  Best Global P: {best_P:.4f} W\n")
+            log_file.write(f"  Best Global P: {best_global_P:.4f} W\n")
             
             number_of_points = np.sum([len(galaxies[gal]['Vobs']) for gal in galaxies]) 
             number_of_grid_points = np.sum([len(galaxies[gal]['Vobs_grid']) for gal in galaxies]) 
             
-            log_file.write(f"  DM Chi^2 Total (Obs): {dm_chi2:.2f}\n")
-            log_file.write(f"  DM Linear Total Error (Weighted Obs): {dm_lin_err:.2f}\n")
-            log_file.write(f"  DM Linear Total Error (Unweighted Obs): {dm_lin:.2f} km/s, per point: {dm_lin/number_of_points:.2f} km/s\n\n")
+            log_file.write(f"  DM Chi^2 Total (Obs): {dm_chi2_total:.2f}\n")
+            log_file.write(f"  DM Linear Total Error (Weighted Obs): {dm_linear_total_err:.2f}\n")
+            log_file.write(f"  DM Linear Total Error (Unweighted Obs): {dm_linear_total:.2f} km/s, per point: {dm_linear_total/number_of_points:.2f} km/s\n\n")
             
-            log_file.write(f"  DM Chi^2 Total (Interpolated Grid): {dm_grid_chi2:.2f}\n")
-            log_file.write(f"  DM Linear Total Error (Interpolated Grid): {dm_grid_lin:.2f} km/s, per point: {dm_grid_lin/number_of_grid_points:.2f} km/s\n\n")
+            log_file.write(f"  DM Chi^2 Total (Interpolated Grid): {dm_grid_chi2_total:.2f}\n")
+            log_file.write(f"  DM Linear Total Error (Interpolated Grid): {dm_grid_linear_total:.2f} km/s, per point: {dm_grid_linear_total/number_of_grid_points:.2f} km/s\n\n")
             
             log_file.write("--- MOND (Simple) PREDICTION ERRORS ---\n")
-            log_file.write(f"  MOND Chi^2 Total: {mond_chi2:.2f}\n")
-            log_file.write(f"  MOND Linear Total Error (Weighted): {mond_lin_err:.2f}\n")
-            log_file.write(f"  MOND Linear Total Error (Unweighted): {mond_lin:.2f} km/s, per point: {mond_lin/number_of_points:.2f} km/s\n\n")
-            log_file.write(f"  MOND Linear Total Error via grid (Unweighted): {mond_lin_grid:.2f} km/s, per point: {mond_lin_grid/number_of_grid_points:.2f} km/s\n\n")
+            log_file.write(f"  MOND Chi^2 Total: {mond_chi2_total:.2f}\n")
+            log_file.write(f"  MOND Linear Total Error (Weighted): {mond_linear_total_err:.2f}\n")
+            log_file.write(f"  MOND Linear Total Error (Unweighted): {mond_linear_total:.2f} km/s, per point: {mond_linear_total/number_of_points:.2f} km/s\n\n")
+            log_file.write(f"  MOND Linear Total Error via grid (Unweighted): {mond_linear_total_grid:.2f} km/s, per point: {mond_linear_total_grid/number_of_grid_points:.2f} km/s\n\n")
             
             log_file.write("--- GLOBAL STATISTICAL BREAKDOWN ---\n")
             log_file.write(f"  Sum Baryon Mass to R_max: {global_stats['Global_R_max_Baryon_Mass']:.2e} M_sun\n")
@@ -580,7 +580,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write(header)
             log_file.write("-" * len(header) + "\n")
             
-            for row in stats:
+            for row in galaxy_stats:
                 log_file.write(f"{row['name']:<14} {row['M_b']:<11.2e} {row['TL']:<9.3f} {row['HIMass']:<9.3f} "
                                f"{row['R_max_Gas_Mass']/row['M_b']:<9.3f}  "
                                f"{row['DM_Mb_Ratio']:<9.3f} {row['DM_Gas_Ratio']:<9.3f} {row['DM_AllBaryons_Ratio']:<9.3f} {row['r_core_kpc']:<9.3f} "
@@ -688,18 +688,18 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     write_run_log(
         output_dir=output_dir,
-        best_P=best_global_P,
-        dm_chi2=dm_chi2_total,
-        dm_lin_err=dm_linear_total_err,
-        dm_lin=dm_linear_total,
-        dm_grid_chi2=dm_grid_chi2_total,
-        dm_grid_lin=dm_grid_linear_total,
-        mond_chi2=mond_chi2_total,
-        mond_lin_err=mond_linear_total_err,
-        mond_lin=mond_linear_total,
-        mond_lin_grid=mond_linear_total_grid,
-        global_stats = global_stats,
-        stats=galaxy_stats
+        best_global_P=best_global_P,
+        dm_chi2_total=dm_chi2_total,
+        dm_linear_total_err=dm_linear_total_err,
+        dm_linear_total=dm_linear_total,
+        dm_grid_chi2_total=dm_grid_chi2_total,
+        dm_grid_linear_total=dm_grid_linear_total,
+        mond_chi2_total=mond_chi2_total,
+        mond_linear_total_err=mond_linear_total_err,
+        mond_linear_total=mond_linear_total,
+        mond_linear_total_grid=mond_linear_total_grid,
+        global_stats=global_stats,
+        galaxy_stats=galaxy_stats
     )
 
     if output_graphs:
@@ -829,10 +829,23 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     print(f"All operations completed successfully. Files and plots saved to '{output_dir}'.")
 
-    number_of_points = np.sum([len(galaxies[gal]['Vobs']) for gal in galaxies]) 
 
-    return dm_linear_total/number_of_points
+    # return the correct per point stat, depending on the settings 
+    returned_fit = 0
+    if USE_INTERPOLATED_FIT:
+        number_of_grid_points = np.sum([len(galaxies[gal]['Vobs_grid']) for gal in galaxies])
+        if USE_LINEAR_ERROR:
+            returned_fit = dm_grid_linear_total / number_of_grid_points
+        else:
+            returned_fit = dm_grid_chi2_total / number_of_grid_points
+    else:
+        number_of_points = np.sum([len(galaxies[gal]['Vobs']) for gal in galaxies])
+        if USE_LINEAR_ERROR:
+            returned_fit = dm_linear_total / number_of_points
+        else:
+            returned_fit = dm_chi2_total / number_of_points
 
+    return returned_fit, best_global_P
 
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
