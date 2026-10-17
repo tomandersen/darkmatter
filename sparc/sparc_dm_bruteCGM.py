@@ -849,7 +849,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
-    run_sparc_dm_brute_cgm(
+    err_per_point, best_power = run_sparc_dm_brute_cgm(
         add_core_gas_central_density=0.8776271683921902, 
         add_core_gas_beta=1.7230672531484585, 
         r_core_factor_gas=1.9185539887661802, 
@@ -859,3 +859,6 @@ if __name__ == "__main__":
         num_minutes=6, 
         output_graphs=False
     )
+    print(f"Done.")
+    print(f"Err per point: {err_per_point}")
+    print(f"Best power: {best_power}\n\n\n")
