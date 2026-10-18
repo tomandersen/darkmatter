@@ -4,6 +4,7 @@
 *.hdf5
 .DS_Store
 sparc/dm_mass*
+optimization.db
 
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
