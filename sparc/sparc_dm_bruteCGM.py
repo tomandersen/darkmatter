@@ -10,7 +10,7 @@ import matplotlib.colors as mcolors
 import warnings
 import gc 
 
-def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True):
+def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True, power_override = 9.0, min_mass=0, max_mass=1e99):
     # Record start time and date
     start_time = time.time()
     start_datetime = datetime.now()
@@ -31,7 +31,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     num_points = int(num_minutes*3e5) 
     base_points = int(num_points**(1/3.0))
     NUM_BLOBS_THETA = int(base_points/1.5) | 1 # the | 1 makes the integer odd, odd is better, as it puts blobs on the central plane, etc.
-    NUM_LAYERS_Z = int(2*base_points) | 1
+    NUM_LAYERS_Z = int(1.5*base_points) | 1
     NUM_R_BINS = int(base_points) | 1 
 
 
@@ -136,9 +136,17 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     # 3. Pre-calculate Base Integrals (P=1 Watt) for ALL galaxies
     print(f"Pre-calculating base arrays for {len(galaxies)} galaxies via continuous 3D brute force...")
 
-    for i, gal in enumerate(galaxies):
+    # we may delete galaxies in this loop, filtering them out..
+    for i, (gal, value) in enumerate(list(galaxies.items())):
         print(f"Processing {gal} ({i+1}/{len(galaxies)})...", end='\r')
         
+        # try heavy
+        tl_mass = TL_dict[gal]*1e9
+        if (tl_mass < min_mass or tl_mass > max_mass):
+            del galaxies[gal]
+            continue
+ 
+
         g_data = galaxies[gal]
         R_obs_kpc = g_data['R']
         R_m_obs = R_obs_kpc * kpc_to_m
@@ -307,7 +315,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         del gas_particle_density_grid, dV, dm_gas, dm_base_dm
         gc.collect()
 
-    print("\nIntegrations complete. Optimizing global parameter for Linear Absolute Error...")
+    print(f"\nIntegrations complete. Now at {len(galaxies)} galaxies. Optimizing global parameter for Linear Absolute Error...")
 
 
     # 4. Global Optimization Function
@@ -351,6 +359,10 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     best_global_P = result.x
     min_found_err = result.fun
+    if (power_override > 0.0):
+        best_global_P = power_override
+        min_found_err = 0
+
         
     dm_chi2_total = 0
     dm_linear_total = 0
@@ -877,7 +889,7 @@ if __name__ == "__main__":
         add_real_cgm_central_density=0.02525458477850567, 
         r_core_factor_cgm=0.18411524357558834, 
         cgm_beta = 0.6553533700617219,
-        num_minutes=30, 
+        num_minutes=6, 
         output_graphs=True
     )
     print(f"Done.")

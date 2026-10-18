@@ -1,6 +1,7 @@
 import optuna
 import time
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
+from pathlib import Path
 
 # 1. Define your objective function
 def objective(trial):
@@ -22,8 +23,9 @@ def objective(trial):
     return result # Optuna will try to minimize or maximize this
 
 # 2. Use a persistent SQLite database so you can stop/resume anytime
+study_name = "dark_mass_opt_" + Path(__file__).resolve().parent.parent.name
 study = optuna.create_study(
-    study_name="dark_mass_opt_v2", 
+    study_name=study_name, 
     storage="sqlite:///optimization.db", 
     load_if_exists=True,
     sampler=optuna.samplers.CmaEsSampler(),  
