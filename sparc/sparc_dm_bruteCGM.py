@@ -10,6 +10,7 @@ import matplotlib.colors as mcolors
 import warnings
 import gc 
 
+
 def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True, power_override = 9.0, min_mass=0, max_mass=1e99):
     # Record start time and date
     start_time = time.time()
@@ -141,8 +142,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         print(f"Processing {gal} ({i+1}/{len(galaxies)})...", end='\r')
         
         # try heavy
-        tl_mass = TL_dict[gal]*1e9
-        if (tl_mass < min_mass or tl_mass > max_mass):
+        total_mass = (TL_dict[gal] + HIMass_dict[gal])*1e9
+        if (total_mass < min_mass or total_mass > max_mass):
             del galaxies[gal]
             continue
  
@@ -230,13 +231,16 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         Y_blob = R_grid_3d * np.sin(Theta_grid_3d)
         Z_blob = Z_grid_3d
 
-        total_mass = TL_dict[gal] + HIMass_dict[gal] 
-        r_core_kpc = 2.0*(total_mass*1e9/1e11)**(1/3) 
+        r_core_kpc = 2.0*(total_mass/1e11)**(1/3) 
         r_core_gas_m = (r_core_kpc * r_core_factor_gas) * kpc_to_m
         r_core_cgm_m = (r_core_kpc * r_core_factor_cgm) * kpc_to_m
-        r_squared = X_blob**2 + Y_blob**2 + Z_blob**2 
+        r_squared = X_blob**2 + Y_blob**2 + Z_blob**2
+
+        # core gas density correction: I have determined that I need to add (9.5 - log10(TL))*0.2 to the core gas density.
+        # Determined by fitting.
+        #print(f"{gal} core_gas_density_correction {core_gas_density_correction(total_mass)} total mass: {total_mass/1e9}")
         if add_core_gas_central_density > 0.0:
-            n_0_cgs = add_core_gas_central_density  
+            n_0_cgs = add_core_gas_central_density + core_gas_density_correction(total_mass)
             n_0_m3 =  n_0_cgs * (100)**3
             exponent = -add_core_gas_beta 
             gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_gas_m**2)**exponent
@@ -470,6 +474,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         }
         return stats, global_stats
 
+
     def calc_halo_properties(name, g, best_P):
         # I want to get the analytic numbers for the total halo mass we calculate here:
         # there are two integrals, done until r_200
@@ -492,8 +497,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
 
         n_0_m3 = 0
+        total_mass = (TL_dict[name] + HIMass_dict[name])*1e9
         if add_core_gas_central_density > 0.0:
-            n_0_1_cgs = add_core_gas_central_density  
+            n_0_1_cgs = add_core_gas_central_density + core_gas_density_correction(total_mass) 
             n_0_1_m3 =  n_0_1_cgs * (100)**3
             exponent1 = -add_core_gas_beta 
         
@@ -880,17 +886,28 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     return returned_fit, best_global_P
 
+# core gas density correction: I have determined that I need to add (9.5 - log10(TL))*0.13 to the core gas density.
+# Determined by fitting.
+def core_gas_density_correction(total_mass):
+    core_gas_density_correction = (9.5 - np.log10(total_mass)) * 0.13
+    return core_gas_density_correction
+
+
+
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
     err_per_point, best_power = run_sparc_dm_brute_cgm(
-        add_core_gas_central_density=0.5438962563527086, 
-        add_core_gas_beta=1.9320095297323827, 
-        r_core_factor_gas=2.4982295647435766, 
-        add_real_cgm_central_density=0.02525458477850567, 
-        r_core_factor_cgm=0.18411524357558834, 
-        cgm_beta = 0.6553533700617219,
-        num_minutes=6, 
-        output_graphs=True
+        add_core_gas_central_density=0.60, #0.5438962563527086, 
+        add_core_gas_beta=1.93, 
+        r_core_factor_gas=2.5, 
+        add_real_cgm_central_density=0.026, 
+        r_core_factor_cgm=0.20, 
+        cgm_beta = 0.65,
+        num_minutes=28, 
+        output_graphs=True,
+        power_override = 0.0,
+        min_mass = 0,
+        max_mass = 1e99
     )
     print(f"Done.")
     print(f"Err per point: {err_per_point}")
