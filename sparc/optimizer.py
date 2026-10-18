@@ -26,10 +26,11 @@ study = optuna.create_study(
     study_name="dark_mass_opt_v2", 
     storage="sqlite:///optimization.db", 
     load_if_exists=True,
+    sampler=optuna.samplers.CmaEsSampler(),  
     direction="minimize" # or "maximize"
 )
 
 # 3. Optimize (e.g., run for 50 trials total)
-study.optimize(objective, n_trials=500)
+study.optimize(objective, n_trials=3300)
 
 print("Best variables:", study.best_params)

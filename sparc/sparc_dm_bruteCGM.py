@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 from scipy.optimize import minimize_scalar
+from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import warnings
@@ -757,13 +758,13 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             plt.close()
 
         plt.figure(figsize=(9, 9))
-        plt.scatter(all_V_obs, all_V_pred, alpha=0.3, edgecolors='none', c='blue')
+        plt.scatter(all_V_pred,all_V_obs, alpha=0.3, edgecolors='none', c='blue')
         max_val = max(max(all_V_obs), max(all_V_pred))
-        plt.plot([0, max_val], [0, max_val], 'k--', linewidth=2, label='Perfect Fit (1:1)')
+        plt.plot([0, max_val], [0, max_val], 'k--', linewidth=2, label='Newton')
 
-        plt.xlabel('Observed Velocity (km/s)', fontsize=12)
-        plt.ylabel('Predicted Velocity (km/s)', fontsize=12)
-        plt.title(f'Global Fit: Dark Mass Theory vs SPARC Dataset\n(Total Points = {len(all_V_obs)}, Universal P = {best_global_P:.2f} W)', fontsize=14)
+        plt.xlabel('Predicted Velocity (km/s)', fontsize=12)
+        plt.ylabel('Observed Velocity (km/s)', fontsize=12)
+        plt.title(f'Global Fit: Dark Mass Theory on SPARC Dataset\n(Total Points = {len(all_V_obs)}, Universal P = {best_global_P:.2f} W)', fontsize=14)
         plt.legend(fontsize="small")
         plt.grid(True)
         plt.axis('equal')
@@ -799,16 +800,36 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             all_g_obs.extend(g_obs)
             all_g_pred.extend(g_pred)
 
+        g_pred_arr = np.asarray(all_g_pred)
+        g_obs_arr = np.asarray(all_g_obs)
+        valid_pts = (g_pred_arr > 0) & (g_obs_arr > 0)
+        x_pts = g_pred_arr[valid_pts]
+        y_pts = g_obs_arr[valid_pts]
+
         plt.figure(figsize=(9, 9))
-        plt.scatter(all_g_pred, all_g_obs, alpha=0.3, edgecolors='none', c='blue')
+        try:
+            log_x = np.log10(x_pts)
+            log_y = np.log10(y_pts)
+            density = gaussian_kde(np.vstack([log_x, log_y]))(np.vstack([log_x, log_y]))
+            idx = density.argsort()
+            x_sorted, y_sorted, d_sorted = x_pts[idx], y_pts[idx], density[idx]
+
+            sc = plt.scatter(x_sorted, y_sorted, c=d_sorted, cmap='viridis', s=12, alpha=0.7, edgecolors='none')
+            cbar = plt.colorbar(sc, fraction=0.046, pad=0.04)
+            cbar.set_label('Point Density (log-space KDE)', fontsize=11)
+        except Exception:
+            plt.scatter(x_pts, y_pts, alpha=0.3, edgecolors='none', c='blue')
 
         plt.xscale('log')
         plt.yscale('log')
 
-        min_val = 10**np.floor(np.log10(min(min(all_g_obs), min(all_g_pred))))
-        max_val = 10**np.ceil(np.log10(max(max(all_g_obs), max(all_g_pred))))
-
-        plt.plot([min_val, max_val], [min_val, max_val], 'k--', linewidth=2, label='Newton')
+        # min_val = 10**np.floor(np.log10(min(min(y_pts), min(x_pts))))
+        # max_val = 10**np.ceil(np.log10(max(max(y_pts), max(x_pts))))
+        min_val = min(min(y_pts), min(x_pts))
+        max_val = max(max(y_pts), max(x_pts))
+        min_val = min_val / 1.1
+        max_val = max_val * 1.1
+        plt.plot([min_val, max_val], [min_val, max_val], 'k--', linewidth=1.2, label='Newton')
 
         plt.xlim(min_val, max_val)
         plt.ylim(min_val, max_val)
@@ -817,7 +838,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         plt.ylabel('Observed Acceleration $g_{obs}$ (m/s$^2$)', fontsize=12)
         plt.xlabel('Predicted Acceleration $g_{pred}$ (m/s$^2$)', fontsize=12)
         plt.title(f'Global Fit: Dark Mass vs Observed Acceleration\n(Total Points = {len(all_g_obs)}, Universal P = {best_global_P:.2f} W)', fontsize=14)
-        plt.legend(fontsize="small")
+        plt.legend(fontsize="small", loc="upper left")
         plt.grid(True, which="both", ls="--", alpha=0.5)
 
         plt.savefig(os.path.join(output_dir, "global_predicted_accel_vs_obs.png"), bbox_inches='tight', dpi=200)
@@ -850,14 +871,14 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
     err_per_point, best_power = run_sparc_dm_brute_cgm(
-        add_core_gas_central_density=0.8776271683921902, 
-        add_core_gas_beta=1.7230672531484585, 
-        r_core_factor_gas=1.9185539887661802, 
-        add_real_cgm_central_density=0.0007924051055533841, 
-        r_core_factor_cgm=3.321241619479955, 
-        cgm_beta = 0.5,
-        num_minutes=6, 
-        output_graphs=False
+        add_core_gas_central_density=0.5438962563527086, 
+        add_core_gas_beta=1.9320095297323827, 
+        r_core_factor_gas=2.4982295647435766, 
+        add_real_cgm_central_density=0.02525458477850567, 
+        r_core_factor_cgm=0.18411524357558834, 
+        cgm_beta = 0.6553533700617219,
+        num_minutes=30, 
+        output_graphs=True
     )
     print(f"Done.")
     print(f"Err per point: {err_per_point}")
