@@ -298,7 +298,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             V_gas_sq_grid[i_idx] = -a_x_gas * R_test
             V_dm_sq_base_grid[i_idx] = max(0, -a_x_dm * R_test)
-            V_gas_inDisk_sq_grid[i_idx] = np.sign(a_x_gas) * a_x_gas * R_test
+            a_x_gas_inDisk = np.sum(np.where((dz >= -1.6*hz_m) & (dz <= 1.6*hz_m), da_x_factor * dm_gas, 0.0))
+            V_gas_inDisk_sq_grid[i_idx] = -a_x_gas_inDisk * R_test
         
         # _base_ means the dm still needs to be multiplied by the power.
         g_data['V_dm_sq_base_grid_kms'] = V_dm_sq_base_grid / 1e6
@@ -902,13 +903,13 @@ def core_gas_density_correction(total_mass):
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
     err_per_point, best_power = run_sparc_dm_brute_cgm(
-        add_core_gas_central_density=0.60, #0.5438962563527086, 
+        add_core_gas_central_density=0.60, #0.60
         add_core_gas_beta=1.93, 
         r_core_factor_gas=2.5, 
-        add_real_cgm_central_density=0.026, 
+        add_real_cgm_central_density=0.026,  # 0.026
         r_core_factor_cgm=0.20, 
         cgm_beta = 0.50,
-        num_minutes=1, 
+        num_minutes=8, 
         output_graphs=True,
         power_override = 0.0,
         min_mass = 0,
