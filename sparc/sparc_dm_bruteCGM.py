@@ -277,7 +277,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
         V_gas_sq_grid = np.zeros_like(R_grid_m)
         V_dm_sq_base_grid = np.zeros_like(R_grid_m)
-        
+        V_gas_inDisk_sq_grid = np.zeros_like(R_grid_m)
+
         softening_sq = (0.001 * hz_m)**2 
         
         # for each radius on the x axis of R_grid_m, we sum up force from all the gas/dark matter in each blob
@@ -297,11 +298,13 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             V_gas_sq_grid[i_idx] = -a_x_gas * R_test
             V_dm_sq_base_grid[i_idx] = max(0, -a_x_dm * R_test)
+            V_gas_inDisk_sq_grid[i_idx] = np.sign(a_x_gas) * a_x_gas * R_test
         
         # _base_ means the dm still needs to be multiplied by the power.
         g_data['V_dm_sq_base_grid_kms'] = V_dm_sq_base_grid / 1e6
         g_data['Vgas_test_grid_kms'] = np.sign(V_gas_sq_grid) * np.sqrt(np.abs(V_gas_sq_grid)) / 1000.0
-        
+        g_data['Vgas_test_inDisk_grid_kms'] = np.sign(V_gas_inDisk_sq_grid) * np.sqrt(np.abs(V_gas_inDisk_sq_grid)) / 1000.0
+
         # thses two velocity arrays match the data from Lelli 2016 in format, no added extra point 
         g_data['V_dm_sq_base_kms'] = np.interp(R_obs_kpc, R_grid_kpc, V_dm_sq_base_grid / 1e6)
         g_data['Vgas_test'] = np.interp(R_obs_kpc, R_grid_kpc, g_data['Vgas_test_grid_kms'])
@@ -750,6 +753,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             plt.plot(g['R_grid_kpc'], V_tot_final_grid_kms, 'r-', linewidth=2, label='baryons + dm')
             plt.plot(g['R_grid_kpc'], V_dm_final_grid_kms, 'm--', label=f'dark mass (dm)', linewidth=0.8)
             plt.plot(g['R_grid_kpc'], g['Vgas_test_grid_kms'], 'g', label="gas (as used)", linewidth=0.5)
+            plt.plot(g['R_grid_kpc'], g['Vgas_test_inDisk_grid_kms'], 'cyan', label="gas (inDisk)", linestyle='dotted', linewidth=0.9)
 
             plt.plot(g['R'], g['Vgas'], 'g', label='gas (Lelli)', linestyle='dotted', linewidth=0.7)
             plt.plot(g['R'], g['Vdisk'], 'violet', label='disk (Lelli)', linestyle='dashdot', linewidth=0.7)
@@ -904,8 +908,8 @@ if __name__ == "__main__":
         add_real_cgm_central_density=0.026, 
         r_core_factor_cgm=0.20, 
         cgm_beta = 0.50,
-        num_minutes=8, 
-        output_graphs=False,
+        num_minutes=1, 
+        output_graphs=True,
         power_override = 0.0,
         min_mass = 0,
         max_mass = 1e99
