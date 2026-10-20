@@ -28,7 +28,7 @@ def objective(trial):
     return result # Optuna will try to minimize or maximize this
 
 # 2. Use a persistent SQLite database so you can stop/resume anytime
-study_name = "dark_mass_opt_" + Path(__file__).resolve().parent.parent.name + "-main"
+study_name = "dark_mass_opt_" + Path(__file__).resolve().parent.parent.name + "-main0.09core_gas_density_correction"
 study = optuna.create_study(
     study_name=study_name, 
     storage="sqlite:///optimization.db", 

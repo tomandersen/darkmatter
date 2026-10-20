@@ -886,10 +886,10 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     return returned_fit, best_global_P
 
-# core gas density correction: I have determined that I need to add (9.5 - log10(TL))*0.13 to the core gas density.
+# core gas density correction: I have determined that I need to add (9.5 - log10(TL))*0.10 to the core gas density.
 # Determined by fitting.
 def core_gas_density_correction(total_mass):
-    core_gas_density_correction = (9.5 - np.log10(total_mass)) * 0.13
+    core_gas_density_correction = (9.5 - np.log10(total_mass)) * 0.09
     return core_gas_density_correction
 
 
