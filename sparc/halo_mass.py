@@ -2,11 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import cumulative_trapezoid
 
-def plot_converged_halo_profiles():
+def plot_exponential_taper_profiles():
     # ---------------------------------------------------------
     # 1. Setup X-axis (Radius in kpc)
     # ---------------------------------------------------------
-    r = np.logspace(-2, 2.5, 1000)
+    r = np.logspace(-2, 3.5, 2000)
 
     # ---------------------------------------------------------
     # 2. Unified Physical Parameters (Milky Way-sized)
@@ -18,7 +18,7 @@ def plot_converged_halo_profiles():
     n0_gas = 5e-3         # particles/cm^3
     rc_gas = 3.5          # kpc
     beta = 0.5            
-    P_c3_factor = 10.0    
+    P_c3_factor = 9.0     
     density_cut = 1e-5    # Gas density cutoff (n_c)
 
     # ---------------------------------------------------------
@@ -39,15 +39,14 @@ def plot_converged_halo_profiles():
     r_200 = np.interp(target_density, avg_rho_nfw[::-1], r[::-1])
 
     # ---------------------------------------------------------
-    # 4. Density Profiles with STEEPER Taper (Converging Mass)
+    # 4. Density Profiles with EXPONENTIAL Taper
     # ---------------------------------------------------------
     rho_nfw = rho_s_nfw / ((r / rs_nfw) * (1 + r / rs_nfw)**2)
     rho_iso = rho_0_iso / (1 + (r / rc_dm)**2)
     rho_gas = n0_gas * (1 + (r / rc_gas)**2)**(-1.5 * beta)
     
-    # Steeper taper to guarantee mass convergence (k > 1.33)
-    k = 2.0 
-    taper = 1.0 / (1.0 + (density_cut / rho_gas)**k)
+    # Exponential taper guarantees an incredibly sharp mass convergence
+    taper = np.exp(-(density_cut / rho_gas)**2)
     
     rho_custom = P_c3_factor * (rho_gas)**(2/3) * taper
 
@@ -79,14 +78,14 @@ def plot_converged_halo_profiles():
     ax1.plot(r, rho_nfw, label='1) NFW DM', color='black', linestyle='-')
     ax1.plot(r, rho_iso, label='2) Isothermal DM', color='blue', linestyle='--')
     ax1.plot(r, rho_gas, label='3) CGM Gas', color='green', linestyle='-.')
-    ax1.plot(r, rho_custom, label=f'4) Custom DM (Taper k={k})', color='red', linestyle='-', linewidth=2.5)
+    ax1.plot(r, rho_custom, label=f'4) Custom DM (Exp Taper)', color='red', linestyle='-', linewidth=2.5)
 
     if r_cut: ax1.axvline(r_cut, color='gray', linestyle=':', label=f'Taper Midpoint ($n=n_c$)')
     ax1.axvline(r_200, color='purple', linestyle='-', alpha=0.5, label=f'Dynamic $r_{{200}}$ ({r_200:.0f} kpc)')
 
     ax1.set_xscale('log')
     ax1.set_yscale('log')
-    ax1.set_xlim(0.1, 300)
+    ax1.set_xlim(0.1, 400)
     ax1.set_ylim(1e-6, 1e2)
     ax1.set_xlabel('Radius $r$ (kpc)')
     ax1.set_ylabel('Density $\\rho$ ($m_p$ / cm$^3$)')
@@ -98,18 +97,18 @@ def plot_converged_halo_profiles():
     ax2.plot(r, mass_nfw, label='1) NFW Mass', color='black', linestyle='-')
     ax2.plot(r, mass_iso, label='2) Isothermal DM Mass', color='blue', linestyle='--')
     ax2.plot(r, mass_gas, label='3) CGM Gas Mass', color='green', linestyle='-.')
-    ax2.plot(r, mass_custom, label=f'4) Custom DM Mass (Taper k={k})', color='red', linestyle='-', linewidth=2.5)
+    ax2.plot(r, mass_custom, label=f'4) Custom DM Mass (Exp Taper)', color='red', linestyle='-', linewidth=2.5)
 
     if r_cut: ax2.axvline(r_cut, color='gray', linestyle=':', label=f'Taper Midpoint ($n=n_c$)')
     ax2.axvline(r_200, color='purple', linestyle='-', alpha=0.5, label=f'Dynamic $r_{{200}}$ ({r_200:.0f} kpc)')
 
     ax2.set_xscale('log')
     ax2.set_yscale('log')
-    ax2.set_xlim(0.1, 300)
-    ax2.set_ylim(1e7, 5e12)
+    ax2.set_xlim(0.1, 600)
+    ax2.set_ylim(1e7, 1e13)
     ax2.set_xlabel('Radius $r$ (kpc)')
     ax2.set_ylabel('Enclosed Mass $M(<r)$ ($M_\\odot$)')
-    ax2.set_title('Enclosed Mass Profiles (Converged)')
+    ax2.set_title('Enclosed Mass Profiles (Exponential Convergence)')
     ax2.grid(True, which="both", ls="--", alpha=0.5)
     ax2.legend()
 
@@ -117,4 +116,4 @@ def plot_converged_halo_profiles():
     plt.show()
 
 if __name__ == "__main__":
-    plot_converged_halo_profiles()
+    plot_exponential_taper_profiles()
