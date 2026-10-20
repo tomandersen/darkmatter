@@ -545,6 +545,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write(f"  add_core_gas_central_density = {add_core_gas_central_density}\n")
             log_file.write(f"  add_core_gas_beta = {add_core_gas_beta}\n")
             log_file.write(f"  add_real_cgm_central_density = {add_real_cgm_central_density}\n")
+            log_file.write(f"  cgm_beta = {cgm_beta}\n")
             log_file.write(f"  MIN_DENSITY_FOR_POWER = {MIN_DENSITY_FOR_POWER}\n")
             log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n")
             log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n\n")
@@ -902,9 +903,9 @@ if __name__ == "__main__":
         r_core_factor_gas=2.5, 
         add_real_cgm_central_density=0.026, 
         r_core_factor_cgm=0.20, 
-        cgm_beta = 0.65,
-        num_minutes=28, 
-        output_graphs=True,
+        cgm_beta = 0.50,
+        num_minutes=8, 
+        output_graphs=False,
         power_override = 0.0,
         min_mass = 0,
         max_mass = 1e99
