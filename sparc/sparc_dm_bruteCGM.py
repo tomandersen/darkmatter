@@ -54,8 +54,10 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         return z_d
 
     # 1. Setup and Parse the Data
-    properties_file = "./sparc/SPARC_Lelli2016c.mrt.txt"
-    kinematics_file = "./sparc/MassModels_Lelli2016_SigmaGas.mrt" # i needed to use gas density at each radius, so a seperate python file did that.
+    properties_file = "./sparc/SPARC_UDG_additions.mrt.txt"
+    kinematics_file = "./sparc/MassModels_UDG_additions_SigmaGas.mrt"
+    #properties_file = "./sparc/SPARC_Lelli2016c.mrt.txt"
+    #kinematics_file = "./sparc/MassModels_Lelli2016_SigmaGas.mrt" # i needed to use gas density at each radius, so a seperate python file did that.
     output_galaxies = "./sparc/dm_mass/galaxies"
     output_dir = "./sparc/dm_mass"
     output_gas_heatmaps = "./sparc/dm_mass/gas_heatmaps"
@@ -904,14 +906,14 @@ if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
     err_per_point, best_power = run_sparc_dm_brute_cgm(
         add_core_gas_central_density=0.60, #0.60
-        add_core_gas_beta=1.93, 
-        r_core_factor_gas=2.5, 
+        add_core_gas_beta=1.93,  #1.93
+        r_core_factor_gas=2.5, #2.5
         add_real_cgm_central_density=0.026,  # 0.026
-        r_core_factor_cgm=0.20, 
-        cgm_beta = 0.50,
-        num_minutes=8, 
+        r_core_factor_cgm=0.20, #0.20   
+        cgm_beta = 0.50, #0.5
+        num_minutes=15, # at least 1, and after 3 improvements are less than a few percent. I use like 30
         output_graphs=True,
-        power_override = 0.0,
+        power_override = 9.32,
         min_mass = 0,
         max_mass = 1e99
     )

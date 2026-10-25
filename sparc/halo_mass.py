@@ -19,7 +19,7 @@ def plot_exponential_taper_profiles():
     rc_gas = 3.5          # kpc
     beta = 0.5            
     P_c3_factor = 9.0     
-    density_cut = 1e-5    # Gas density cutoff (n_c)
+    density_cut = 3e-5    # Gas density cutoff (n_c)
 
     # ---------------------------------------------------------
     # 3. Dynamic r_200 Calculation
@@ -46,7 +46,7 @@ def plot_exponential_taper_profiles():
     rho_gas = n0_gas * (1 + (r / rc_gas)**2)**(-1.5 * beta)
     
     # Exponential taper guarantees an incredibly sharp mass convergence
-    taper = np.exp(-(density_cut / rho_gas)**2)
+    taper = np.exp(-(density_cut / rho_gas))
     
     rho_custom = P_c3_factor * (rho_gas)**(2/3) * taper
 
