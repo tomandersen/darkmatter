@@ -423,6 +423,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         total_baryon_mass = 0.0 
         total_dm_mass = 0.0 
         dm_ratio_by_galaxy = 0.0 
+        tot_dm_gas_ratio_to_rmax = 0.0
+        unobserved_gas_fraction = 0.0   
 
         for name, g in galaxy_dict.items():
             tl = TL_dict.get(name, 0.0) * 1e9          
@@ -446,7 +448,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             total_baryon_mass += tot_gas_mass_msun + tl 
             total_dm_mass += tot_dm_mass_msun 
             dm_ratio_by_galaxy += dm_allbaryons_ratio
-
+            tot_dm_gas_ratio_to_rmax += tot_dm_mass_msun/hi
+            unobserved_gas_fraction += (tot_gas_mass_msun-hi)/hi
             calc_halo_properties(name, g, best_P)
 
             stats.append({
@@ -474,7 +477,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             'Global_R_max_Baryon_Mass': total_baryon_mass,
             'Global_R_max_DM_Mass': total_dm_mass,
             'DM_AllBaryons_Ratio': dm_ratio_by_galaxy / len(galaxy_dict),
-            'Overall_R_max_DM_Ratio': total_dm_mass/total_baryon_mass
+            'Overall_R_max_DM_Ratio': total_dm_mass/total_baryon_mass,
+            'Overall_DM_HILelliGas_Ratio_to_RMax': tot_dm_gas_ratio_to_rmax / len(galaxy_dict),
+            'Unobserved_gas_fraction': unobserved_gas_fraction / len(galaxy_dict),
         }
         return stats, global_stats
 
@@ -581,6 +586,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write(f"  Sum DM to R_max: {global_stats['Global_R_max_DM_Mass']:.2e} M_sun\n")
             log_file.write(f"  Average (Sum DM / Sum Baryons): {global_stats['DM_AllBaryons_Ratio']:.2f}\n")
             log_file.write(f"  Overall DM Ratio: {global_stats['Overall_R_max_DM_Ratio']:.2f}\n\n")
+            log_file.write(f"  DM to Lelli HI Gas Average to R_max: {global_stats['Overall_DM_HILelliGas_Ratio_to_RMax']:.2f}\n\n")
+            log_file.write(f"  Unobserved gas fraction average: {global_stats['Unobserved_gas_fraction']:.2f}\n\n")
+            
 
             log_file.write("--- GALAXY STATISTICAL BREAKDOWN ---\n")
             log_file.write("Column Legend:\n")
@@ -890,7 +898,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         else:
             returned_fit = dm_chi2_total / number_of_points
 
-    return returned_fit, best_global_P
+    return returned_fit, best_global_P, global_stats['Unobserved_gas_fraction']
 
 # core gas density correction: I have determined that I need to add (9.5 - log10(TL))*0.10 to the core gas density.
 # Determined by fitting.
@@ -902,14 +910,14 @@ def core_gas_density_correction(total_mass):
 
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
-    err_per_point, best_power = run_sparc_dm_brute_cgm(
-        add_core_gas_central_density=0.60, #0.60
+    err_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
+        add_core_gas_central_density=0.6, #0.60, #0.60
         add_core_gas_beta=1.93, 
         r_core_factor_gas=2.5, 
-        add_real_cgm_central_density=0.026,  # 0.026
+        add_real_cgm_central_density=0.00,  # 0.026
         r_core_factor_cgm=0.20, 
         cgm_beta = 0.50,
-        num_minutes=8, 
+        num_minutes=3, 
         output_graphs=True,
         power_override = 0.0,
         min_mass = 0,
@@ -917,4 +925,5 @@ if __name__ == "__main__":
     )
     print(f"Done.")
     print(f"Err per point: {err_per_point}")
-    print(f"Best power: {best_power}\n\n\n")
+    print(f"Best power: {best_power}\n")
+    print(f"Unobserved gas fraction: {unobserved_gas_fraction}\n\n\n")
