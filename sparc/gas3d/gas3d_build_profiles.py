@@ -1,12 +1,12 @@
 # Build measured gas surface density profiles (HI + H2) for the 3D gas test.
 #
-# Reads THINGS HI moment-0 maps and HERACLES CO(2-1) moment-0 maps (downloaded into data_3dgas/raw),
+# Reads THINGS HI moment-0 maps and HERACLES CO(2-1) moment-0 maps (downloaded into sparc/gas3d/raw),
 # deprojects them with the THINGS tilted-ring geometry (de Blok et al. 2008, Table 2) and writes
 # face-on ring-averaged profiles to sparc/gas3d/<GAL>_profiles.csv in the same units as the
 # Sigma_gas column of MassModels_Lelli2016_SigmaGas.mrt (hydrogen particles / cm^2, no helium).
 #
 # Run from the repo root, isolated (the FITS files are downloaded data):
-#   .venv/bin/python -I sparc/gas3d_build_profiles.py
+#   .venv/bin/python -I sparc/gas3d/gas3d_build_profiles.py
 import os
 import numpy as np
 from astropy.io import fits
@@ -15,7 +15,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-RAW_DIR = "./data_3dgas/raw"
+RAW_DIR = "./sparc/gas3d/raw"
 OUT_DIR = "./sparc/gas3d"
 
 # CO -> H2. Bolatto, Wolfire & Leroy 2013 (ARA&A 51, 207): alpha_CO(1-0) = 4.35 Msun/pc^2/(K km/s) including helium,

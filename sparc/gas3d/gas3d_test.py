@@ -12,13 +12,15 @@
 # plus sensitivity runs (alpha_CO x0.5 and x2, no ionized gas) and a scan of the core gas central density.
 #
 # Needs sparc/gas3d/<GAL>_profiles.csv from gas3d_build_profiles.py. Run from the repo root:
-#   .venv/bin/python sparc/gas3d_test.py
+#   .venv/bin/python sparc/gas3d/gas3d_test.py
 import os
+import sys
 import json
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))  # the model lives in sparc/
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm, core_gas_density_correction
 
 # all SPARC galaxies with THINGS HI + HERACLES CO maps, except NGC 4214 (inclination 15 deg) and NGC 2366 (SPARC quality 3)

@@ -241,6 +241,5 @@ Thumbs.db
 *.swp
 *.vscode/
 
-# 3D gas test: downloaded survey data (untrusted, large) and raw model run outputs
-data_3dgas/raw/
+# 3D gas test: raw model run outputs (the downloaded maps in sparc/gas3d/raw are committed)
 sparc/gas3d/runs/
