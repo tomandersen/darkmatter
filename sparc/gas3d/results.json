@@ -1,0 +1,2336 @@
+{
+ "NGC6946": {
+  "a0_sparc_nocore": {
+   "mae": 26.758041764965697,
+   "chi2_per_pt": 85.66795581493925,
+   "mean_bias": -25.504004824163527,
+   "gas_mass_inside_rmax_Msun": 4065022547.833171
+  },
+  "a_sparc_core": {
+   "mae": 10.520855875714304,
+   "chi2_per_pt": 15.58057809434501,
+   "mean_bias": 10.223284342250956,
+   "gas_mass_inside_rmax_Msun": 15278024816.921412
+  },
+  "b_measured_nocore": {
+   "mae": 12.949651261289004,
+   "chi2_per_pt": 18.16444407135486,
+   "mean_bias": -7.4426152765375955,
+   "gas_mass_inside_rmax_Msun": 10153077766.784071
+  },
+  "c_measured_core": {
+   "mae": 23.761714553648428,
+   "chi2_per_pt": 74.35204462160854,
+   "mean_bias": 23.761714553648428,
+   "gas_mass_inside_rmax_Msun": 21366080035.872314
+  },
+  "b_alpha_x0.5": {
+   "mae": 16.077382177904973,
+   "chi2_per_pt": 37.44359184767474,
+   "mean_bias": -13.538030180231612,
+   "gas_mass_inside_rmax_Msun": 7969487068.096581
+  },
+  "b_alpha_x2": {
+   "mae": 12.539990163352595,
+   "chi2_per_pt": 22.719979142997826,
+   "mean_bias": 3.3058238422285924,
+   "gas_mass_inside_rmax_Msun": 14520259164.15905
+  },
+  "b_no_ionized": {
+   "mae": 16.631599387709404,
+   "chi2_per_pt": 28.00141514986812,
+   "mean_bias": -11.202591823741269,
+   "gas_mass_inside_rmax_Msun": 8996203231.001804
+  },
+  "MOND_sparc_gas": {
+   "mae": 15.48209902004604,
+   "chi2_per_pt": 27.965046583739145,
+   "mean_bias": 15.48209902004604
+  },
+  "MOND_measured_gas": {
+   "mae": 24.560531790160507,
+   "chi2_per_pt": 75.34422917381404,
+   "mean_bias": 24.560531790160507
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 26.758041764965697,
+     "gas_mass_inside_rmax_Msun": 4065022547.833171
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.027925398673259064,
+     "mae": 22.222486137671456,
+     "gas_mass_inside_rmax_Msun": 4720203376.384453
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.07792539867325908,
+     "mae": 17.003282373178422,
+     "gas_mass_inside_rmax_Msun": 5893294647.555227
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.12792539867325908,
+     "mae": 12.748848268471825,
+     "gas_mass_inside_rmax_Msun": 7066385918.726
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.17792539867325907,
+     "mae": 9.101272613408787,
+     "gas_mass_inside_rmax_Msun": 8239477189.896773
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2579253986732591,
+     "mae": 4.5796428992232725,
+     "gas_mass_inside_rmax_Msun": 10116423223.770012
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.3279253986732591,
+     "mae": 3.726293074133186,
+     "gas_mass_inside_rmax_Msun": 11758751003.409092,
+     "at_scan_edge": false,
+     "core_mass_Msun": 7693728455.575921
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.47792539867325906,
+     "mae": 10.520855875714304,
+     "gas_mass_inside_rmax_Msun": 15278024816.921412
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6779253986732591,
+     "mae": 20.0094740049421,
+     "gas_mass_inside_rmax_Msun": 19970389901.604507
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.877925398673259,
+     "mae": 28.460740009124372,
+     "gas_mass_inside_rmax_Msun": 24662754986.2876
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1779253986732592,
+     "mae": 39.770459591697616,
+     "gas_mass_inside_rmax_Msun": 31701302613.31224
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.577925398673259,
+     "mae": 53.073175829811376,
+     "gas_mass_inside_rmax_Msun": 41086032782.67842
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0779253986732593,
+     "mae": 67.80389315693802,
+     "gas_mass_inside_rmax_Msun": 52816945494.38616
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 12.949651261289004,
+     "gas_mass_inside_rmax_Msun": 10153077766.784071
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.027925398673259064,
+     "mae": 9.875676024241313,
+     "gas_mass_inside_rmax_Msun": 10808258595.335356
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.07792539867325908,
+     "mae": 6.928906544948851,
+     "gas_mass_inside_rmax_Msun": 11981349866.506128
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.12792539867325908,
+     "mae": 6.262362827327055,
+     "gas_mass_inside_rmax_Msun": 13154441137.6769,
+     "at_scan_edge": false,
+     "core_mass_Msun": 3001363370.89283
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.17792539867325907,
+     "mae": 8.032232947085127,
+     "gas_mass_inside_rmax_Msun": 14327532408.847675
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2579253986732591,
+     "mae": 12.431686596745875,
+     "gas_mass_inside_rmax_Msun": 16204478442.720913
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.3279253986732591,
+     "mae": 16.291593623056503,
+     "gas_mass_inside_rmax_Msun": 17846806222.359993
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.47792539867325906,
+     "mae": 23.761714553648428,
+     "gas_mass_inside_rmax_Msun": 21366080035.872314
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6779253986732591,
+     "mae": 32.559959998719975,
+     "gas_mass_inside_rmax_Msun": 26058445120.5554
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.877925398673259,
+     "mae": 40.45064885608667,
+     "gas_mass_inside_rmax_Msun": 30750810205.238495
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1779253986732592,
+     "mae": 51.09862600923806,
+     "gas_mass_inside_rmax_Msun": 37789357832.263145
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.577925398673259,
+     "mae": 63.730566556824094,
+     "gas_mass_inside_rmax_Msun": 47174088001.629326
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0779253986732593,
+     "mae": 77.76580811560811,
+     "gas_mass_inside_rmax_Msun": 58905000713.33706
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 0.45,
+   "n0_cm3": 0.3279253986732591,
+   "mae": 3.726293074133186,
+   "gas_mass_inside_rmax_Msun": 11758751003.409092,
+   "at_scan_edge": false,
+   "core_mass_Msun": 7693728455.575921
+  },
+  "best_core_measured": {
+   "add_core": 0.25,
+   "n0_cm3": 0.12792539867325908,
+   "mae": 6.262362827327055,
+   "gas_mass_inside_rmax_Msun": 13154441137.6769,
+   "at_scan_edge": false,
+   "core_mass_Msun": 3001363370.89283
+  },
+  "Vflat": 181.0
+ },
+ "NGC2403": {
+  "a0_sparc_nocore": {
+   "mae": 30.65841415545137,
+   "chi2_per_pt": 1903.0777165830739,
+   "mean_bias": -30.65841415545137,
+   "gas_mass_inside_rmax_Msun": 5365273367.684335
+  },
+  "a_sparc_core": {
+   "mae": 13.17629175553643,
+   "chi2_per_pt": 303.9841400981517,
+   "mean_bias": -13.17629175553643,
+   "gas_mass_inside_rmax_Msun": 8157418033.948947
+  },
+  "b_measured_nocore": {
+   "mae": 30.441624766429545,
+   "chi2_per_pt": 2040.0173409448212,
+   "mean_bias": -30.441624766429545,
+   "gas_mass_inside_rmax_Msun": 4304892103.647452
+  },
+  "c_measured_core": {
+   "mae": 13.657506963979376,
+   "chi2_per_pt": 386.8324797594843,
+   "mean_bias": -13.657506963979376,
+   "gas_mass_inside_rmax_Msun": 7097036769.912065
+  },
+  "b_alpha_x0.5": {
+   "mae": 31.148992165341834,
+   "chi2_per_pt": 2108.2598823749695,
+   "mean_bias": -31.148992165341834,
+   "gas_mass_inside_rmax_Msun": 4228071654.134073
+  },
+  "b_alpha_x2": {
+   "mae": 29.13066283353686,
+   "chi2_per_pt": 1915.3830811134428,
+   "mean_bias": -29.13066283353686,
+   "gas_mass_inside_rmax_Msun": 4458533002.6742115
+  },
+  "b_no_ionized": {
+   "mae": 34.035917121947016,
+   "chi2_per_pt": 2618.2298306224548,
+   "mean_bias": -34.035917121947016,
+   "gas_mass_inside_rmax_Msun": 3474728810.8225927
+  },
+  "MOND_sparc_gas": {
+   "mae": 5.587172844223103,
+   "chi2_per_pt": 69.51338746391548,
+   "mean_bias": -3.9330089452676122
+  },
+  "MOND_measured_gas": {
+   "mae": 7.283373813803639,
+   "chi2_per_pt": 122.1145042218855,
+   "mean_bias": -5.3857668810041455
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 30.65841415545137,
+     "gas_mass_inside_rmax_Msun": 5365273367.684335
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.09403008134066868,
+     "mae": 25.933904612409705,
+     "gas_mass_inside_rmax_Msun": 5847867251.898929
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.1440300813406687,
+     "mae": 24.11944155276717,
+     "gas_mass_inside_rmax_Msun": 6104484005.460042
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.19403008134066868,
+     "mae": 22.47023474700352,
+     "gas_mass_inside_rmax_Msun": 6361100759.021154
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.24403008134066867,
+     "mae": 20.937857574650543,
+     "gas_mass_inside_rmax_Msun": 6617717512.582268
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.3240300813406687,
+     "mae": 18.66553670612355,
+     "gas_mass_inside_rmax_Msun": 7028304318.280048
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.3940300813406687,
+     "mae": 16.816363589448528,
+     "gas_mass_inside_rmax_Msun": 7387567773.265606
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.5440300813406687,
+     "mae": 13.17629175553643,
+     "gas_mass_inside_rmax_Msun": 8157418033.948947
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.7440300813406687,
+     "mae": 8.922895456110211,
+     "gas_mass_inside_rmax_Msun": 9183885048.1934
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.9440300813406687,
+     "mae": 6.278872886576002,
+     "gas_mass_inside_rmax_Msun": 10210352062.43785
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.2440300813406688,
+     "mae": 5.638167712900122,
+     "gas_mass_inside_rmax_Msun": 11750052583.804525,
+     "at_scan_edge": false,
+     "core_mass_Msun": 6384779216.120191
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.6440300813406687,
+     "mae": 9.450426123850573,
+     "gas_mass_inside_rmax_Msun": 13802986612.293432
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.1440300813406687,
+     "mae": 15.72334947665091,
+     "gas_mass_inside_rmax_Msun": 16369154147.904566
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 30.441624766429545,
+     "gas_mass_inside_rmax_Msun": 4304892103.647452
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.09403008134066868,
+     "mae": 26.242446074474252,
+     "gas_mass_inside_rmax_Msun": 4787485987.862048
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.1440300813406687,
+     "mae": 24.480672371608314,
+     "gas_mass_inside_rmax_Msun": 5044102741.423161
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.19403008134066868,
+     "mae": 22.865010473348484,
+     "gas_mass_inside_rmax_Msun": 5300719494.984275
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.24403008134066867,
+     "mae": 21.356139415989734,
+     "gas_mass_inside_rmax_Msun": 5557336248.545387
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.3240300813406687,
+     "mae": 19.109707271866338,
+     "gas_mass_inside_rmax_Msun": 5967923054.243167
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.3940300813406687,
+     "mae": 17.276147855158836,
+     "gas_mass_inside_rmax_Msun": 6327186509.228725
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.5440300813406687,
+     "mae": 13.657506963979376,
+     "gas_mass_inside_rmax_Msun": 7097036769.912065
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.7440300813406687,
+     "mae": 9.564471850957482,
+     "gas_mass_inside_rmax_Msun": 8123503784.156518
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.9440300813406687,
+     "mae": 7.115006910844875,
+     "gas_mass_inside_rmax_Msun": 9149970798.40097
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.2440300813406688,
+     "mae": 5.380564295129567,
+     "gas_mass_inside_rmax_Msun": 10689671319.767647,
+     "at_scan_edge": false,
+     "core_mass_Msun": 6384779216.120194
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.6440300813406687,
+     "mae": 8.836030047421172,
+     "gas_mass_inside_rmax_Msun": 12742605348.25655
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.1440300813406687,
+     "mae": 15.094514150189811,
+     "gas_mass_inside_rmax_Msun": 15308772883.867683
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 1.3,
+   "n0_cm3": 1.2440300813406688,
+   "mae": 5.638167712900122,
+   "gas_mass_inside_rmax_Msun": 11750052583.804525,
+   "at_scan_edge": false,
+   "core_mass_Msun": 6384779216.120191
+  },
+  "best_core_measured": {
+   "add_core": 1.3,
+   "n0_cm3": 1.2440300813406688,
+   "mae": 5.380564295129567,
+   "gas_mass_inside_rmax_Msun": 10689671319.767647,
+   "at_scan_edge": false,
+   "core_mass_Msun": 6384779216.120194
+  },
+  "Vflat": 136.0
+ },
+ "NGC2841": {
+  "a0_sparc_nocore": {
+   "mae": 106.51424089606145,
+   "chi2_per_pt": 416.1471314198412,
+   "mean_bias": -106.51424089606145,
+   "gas_mass_inside_rmax_Msun": 41418787357.65942
+  },
+  "a_sparc_core": {
+   "mae": 58.26313404410953,
+   "chi2_per_pt": 98.79264890850558,
+   "mean_bias": -58.26313404410953,
+   "gas_mass_inside_rmax_Msun": 76448397913.83153
+  },
+  "b_measured_nocore": {
+   "mae": 119.5492004131636,
+   "chi2_per_pt": 566.7081732006786,
+   "mean_bias": -119.5492004131636,
+   "gas_mass_inside_rmax_Msun": 15057728253.242197
+  },
+  "c_measured_core": {
+   "mae": 66.88880202797526,
+   "chi2_per_pt": 147.99655994084694,
+   "mean_bias": -66.88880202797526,
+   "gas_mass_inside_rmax_Msun": 50087338809.41429
+  },
+  "b_alpha_x0.5": {
+   "mae": 120.29722756651842,
+   "chi2_per_pt": 572.9751987293746,
+   "mean_bias": -120.29722756651842,
+   "gas_mass_inside_rmax_Msun": 14503181088.526827
+  },
+  "b_alpha_x2": {
+   "mae": 118.1668446456294,
+   "chi2_per_pt": 555.3399356017644,
+   "mean_bias": -118.1668446456294,
+   "gas_mass_inside_rmax_Msun": 16166822582.672945
+  },
+  "b_no_ionized": {
+   "mae": 122.37137888853107,
+   "chi2_per_pt": 611.6588662024706,
+   "mean_bias": -122.37137888853107,
+   "gas_mass_inside_rmax_Msun": 12267952476.894335
+  },
+  "MOND_sparc_gas": {
+   "mae": 56.68038061033771,
+   "chi2_per_pt": 92.77928288493771,
+   "mean_bias": -56.68038061033771
+  },
+  "MOND_measured_gas": {
+   "mae": 62.78094348769865,
+   "chi2_per_pt": 126.23734946945048,
+   "mean_bias": -62.78094348769865
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 106.51424089606145,
+     "gas_mass_inside_rmax_Msun": 41418787357.65942
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.03832066855474195,
+     "mae": 98.01401037371494,
+     "gas_mass_inside_rmax_Msun": 44481289749.23239
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.08832066855474194,
+     "mae": 90.90032075321841,
+     "gas_mass_inside_rmax_Msun": 48477178269.80728
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.13832066855474193,
+     "mae": 84.96388178720858,
+     "gas_mass_inside_rmax_Msun": 52473066790.382164
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.21832066855474194,
+     "mae": 76.73625646291761,
+     "gas_mass_inside_rmax_Msun": 58866488423.302
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.2883206685547419,
+     "mae": 70.34713047256922,
+     "gas_mass_inside_rmax_Msun": 64460732352.10686
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.43832066855474194,
+     "mae": 58.26313404410953,
+     "gas_mass_inside_rmax_Msun": 76448397913.83153
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.638320668554742,
+     "mae": 44.34399508289444,
+     "gas_mass_inside_rmax_Msun": 92431951996.13109
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.838320668554742,
+     "mae": 32.05596932095605,
+     "gas_mass_inside_rmax_Msun": 108415506078.43065
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.138320668554742,
+     "mae": 18.529361942191805,
+     "gas_mass_inside_rmax_Msun": 132390837201.88
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.538320668554742,
+     "mae": 18.05598005025732,
+     "gas_mass_inside_rmax_Msun": 164357945366.4791,
+     "at_scan_edge": false,
+     "core_mass_Msun": 122939158008.81967
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.038320668554742,
+     "mae": 30.633237804206946,
+     "gas_mass_inside_rmax_Msun": 204316830572.228
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 119.5492004131636,
+     "gas_mass_inside_rmax_Msun": 15057728253.242197
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.03832066855474195,
+     "mae": 110.06812159983612,
+     "gas_mass_inside_rmax_Msun": 18120230644.81517
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.08832066855474194,
+     "mae": 102.1209917097919,
+     "gas_mass_inside_rmax_Msun": 22116119165.39006
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.13832066855474193,
+     "mae": 95.58747340713381,
+     "gas_mass_inside_rmax_Msun": 26112007685.96495
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.21832066855474194,
+     "mae": 86.6426674352533,
+     "gas_mass_inside_rmax_Msun": 32505429318.88478
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.2883206685547419,
+     "mae": 79.76629462264738,
+     "gas_mass_inside_rmax_Msun": 38099673247.68962
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.43832066855474194,
+     "mae": 66.88880202797526,
+     "gas_mass_inside_rmax_Msun": 50087338809.41429
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.638320668554742,
+     "mae": 52.21362280836086,
+     "gas_mass_inside_rmax_Msun": 66070892891.71387
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.838320668554742,
+     "mae": 39.363432859864375,
+     "gas_mass_inside_rmax_Msun": 82054446974.01343
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.138320668554742,
+     "mae": 22.362100661226627,
+     "gas_mass_inside_rmax_Msun": 106029778097.46278
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.538320668554742,
+     "mae": 14.220542594786957,
+     "gas_mass_inside_rmax_Msun": 137996886262.06192,
+     "at_scan_edge": false,
+     "core_mass_Msun": 122939158008.81972
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.038320668554742,
+     "mae": 25.069989347031207,
+     "gas_mass_inside_rmax_Msun": 177955771467.8108
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 1.7,
+   "n0_cm3": 1.538320668554742,
+   "mae": 18.05598005025732,
+   "gas_mass_inside_rmax_Msun": 164357945366.4791,
+   "at_scan_edge": false,
+   "core_mass_Msun": 122939158008.81967
+  },
+  "best_core_measured": {
+   "add_core": 1.7,
+   "n0_cm3": 1.538320668554742,
+   "mae": 14.220542594786957,
+   "gas_mass_inside_rmax_Msun": 137996886262.06192,
+   "at_scan_edge": false,
+   "core_mass_Msun": 122939158008.81972
+  },
+  "Vflat": 323.0
+ },
+ "NGC2903": {
+  "a0_sparc_nocore": {
+   "mae": 41.79666440525414,
+   "chi2_per_pt": 488.90842886847884,
+   "mean_bias": -29.657151724462945,
+   "gas_mass_inside_rmax_Msun": 3793759823.003783
+  },
+  "a_sparc_core": {
+   "mae": 12.739745840587904,
+   "chi2_per_pt": 15.106960719925791,
+   "mean_bias": 3.558530808684258,
+   "gas_mass_inside_rmax_Msun": 17514433846.93425
+  },
+  "b_measured_nocore": {
+   "mae": 37.78814094298835,
+   "chi2_per_pt": 403.791034581216,
+   "mean_bias": -23.09440472607349,
+   "gas_mass_inside_rmax_Msun": 5538710966.460484
+  },
+  "c_measured_core": {
+   "mae": 12.672625837867338,
+   "chi2_per_pt": 15.373886103283743,
+   "mean_bias": 8.209846655715724,
+   "gas_mass_inside_rmax_Msun": 19259384990.390957
+  },
+  "b_alpha_x0.5": {
+   "mae": 38.71373346509279,
+   "chi2_per_pt": 443.6863289965321,
+   "mean_bias": -25.442381684989396,
+   "gas_mass_inside_rmax_Msun": 4736155791.400082
+  },
+  "b_alpha_x2": {
+   "mae": 36.81997299775519,
+   "chi2_per_pt": 338.26978425955724,
+   "mean_bias": -18.82041547017882,
+   "gas_mass_inside_rmax_Msun": 7143821316.58129
+  },
+  "b_no_ionized": {
+   "mae": 40.359468742453174,
+   "chi2_per_pt": 459.9002886610433,
+   "mean_bias": -25.733149276490227,
+   "gas_mass_inside_rmax_Msun": 4752029090.945141
+  },
+  "MOND_sparc_gas": {
+   "mae": 12.385322932187313,
+   "chi2_per_pt": 14.939644734292067,
+   "mean_bias": 9.625506398202626
+  },
+  "MOND_measured_gas": {
+   "mae": 13.354608019651756,
+   "chi2_per_pt": 18.79821189645214,
+   "mean_bias": 12.455183064026844
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 41.79666440525414,
+     "gas_mass_inside_rmax_Msun": 3793759823.003783
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.021622233767472465,
+     "mae": 38.20660487898087,
+     "gas_mass_inside_rmax_Msun": 4422804850.891468
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.07162223376747248,
+     "mae": 33.33012101414771,
+     "gas_mass_inside_rmax_Msun": 5877430294.896222
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.12162223376747247,
+     "mae": 29.531667164593244,
+     "gas_mass_inside_rmax_Msun": 7332055738.900976
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.17162223376747246,
+     "mae": 26.264187813918728,
+     "gas_mass_inside_rmax_Msun": 8786681182.90573
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2516222337674725,
+     "mae": 21.808418037981816,
+     "gas_mass_inside_rmax_Msun": 11114081893.313335
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.32162223376747245,
+     "mae": 18.488986988274092,
+     "gas_mass_inside_rmax_Msun": 13150557514.919989
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.4716222337674725,
+     "mae": 12.739745840587904,
+     "gas_mass_inside_rmax_Msun": 17514433846.93425,
+     "at_scan_edge": false,
+     "core_mass_Msun": 13720674023.930466
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6716222337674725,
+     "mae": 13.487068818564687,
+     "gas_mass_inside_rmax_Msun": 23332935622.95327
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8716222337674725,
+     "mae": 20.9817155551135,
+     "gas_mass_inside_rmax_Msun": 29151437398.97228
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1716222337674724,
+     "mae": 31.067945885201734,
+     "gas_mass_inside_rmax_Msun": 37879190063.0008
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.5716222337674723,
+     "mae": 43.04458248773645,
+     "gas_mass_inside_rmax_Msun": 49516193615.03883
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0716222337674726,
+     "mae": 56.228590337026816,
+     "gas_mass_inside_rmax_Msun": 64062448055.086395
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 37.78814094298835,
+     "gas_mass_inside_rmax_Msun": 5538710966.460484
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.021622233767472465,
+     "mae": 34.999251471402346,
+     "gas_mass_inside_rmax_Msun": 6167755994.34817
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.07162223376747248,
+     "mae": 30.79726156461166,
+     "gas_mass_inside_rmax_Msun": 7622381438.352922
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.12162223376747247,
+     "mae": 27.4325898416741,
+     "gas_mass_inside_rmax_Msun": 9077006882.357677
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.17162223376747246,
+     "mae": 24.61730662862688,
+     "gas_mass_inside_rmax_Msun": 10531632326.36243
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2516222337674725,
+     "mae": 20.650261536093165,
+     "gas_mass_inside_rmax_Msun": 12859033036.770039
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.32162223376747245,
+     "mae": 17.73136970571525,
+     "gas_mass_inside_rmax_Msun": 14895508658.376692
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.4716222337674725,
+     "mae": 12.672625837867338,
+     "gas_mass_inside_rmax_Msun": 19259384990.390957,
+     "at_scan_edge": false,
+     "core_mass_Msun": 13720674023.930473
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6716222337674725,
+     "mae": 17.2328311933059,
+     "gas_mass_inside_rmax_Msun": 25077886766.409977
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8716222337674725,
+     "mae": 24.695944445768465,
+     "gas_mass_inside_rmax_Msun": 30896388542.428986
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1716222337674724,
+     "mae": 34.680596547224006,
+     "gas_mass_inside_rmax_Msun": 39624141206.457504
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.5716222337674723,
+     "mae": 46.47621855855341,
+     "gas_mass_inside_rmax_Msun": 51261144758.49554
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0716222337674726,
+     "mae": 59.70466540800131,
+     "gas_mass_inside_rmax_Msun": 65807399198.543076
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 0.6,
+   "n0_cm3": 0.4716222337674725,
+   "mae": 12.739745840587904,
+   "gas_mass_inside_rmax_Msun": 17514433846.93425,
+   "at_scan_edge": false,
+   "core_mass_Msun": 13720674023.930466
+  },
+  "best_core_measured": {
+   "add_core": 0.6,
+   "n0_cm3": 0.4716222337674725,
+   "mae": 12.672625837867338,
+   "gas_mass_inside_rmax_Msun": 19259384990.390957,
+   "at_scan_edge": false,
+   "core_mass_Msun": 13720674023.930473
+  },
+  "Vflat": 216.0
+ },
+ "NGC2976": {
+  "a0_sparc_nocore": {
+   "mae": 8.798519505693584,
+   "chi2_per_pt": 8.447515674915886,
+   "mean_bias": -8.501130207602786,
+   "gas_mass_inside_rmax_Msun": 260430839.3102708
+  },
+  "a_sparc_core": {
+   "mae": 3.2533128246888245,
+   "chi2_per_pt": 1.2189709839046305,
+   "mean_bias": -2.6849624050520213,
+   "gas_mass_inside_rmax_Msun": 527055112.8259188
+  },
+  "b_measured_nocore": {
+   "mae": 10.663333121467042,
+   "chi2_per_pt": 12.11238765147706,
+   "mean_bias": -10.468524018517401,
+   "gas_mass_inside_rmax_Msun": 195474373.94439667
+  },
+  "c_measured_core": {
+   "mae": 4.595457989370567,
+   "chi2_per_pt": 2.279171096671454,
+   "mean_bias": -4.222631434744606,
+   "gas_mass_inside_rmax_Msun": 462098647.46004456
+  },
+  "b_alpha_x0.5": {
+   "mae": 11.179591551457056,
+   "chi2_per_pt": 13.337826547386747,
+   "mean_bias": -10.969193464781988,
+   "gas_mass_inside_rmax_Msun": 162197247.19922626
+  },
+  "b_alpha_x2": {
+   "mae": 9.72250500687245,
+   "chi2_per_pt": 10.100923164783156,
+   "mean_bias": -9.559428013888475,
+   "gas_mass_inside_rmax_Msun": 262028627.43473762
+  },
+  "b_no_ionized": {
+   "mae": 11.20158560178862,
+   "chi2_per_pt": 13.340322703956831,
+   "mean_bias": -11.007314046389096,
+   "gas_mass_inside_rmax_Msun": 172741490.05069315
+  },
+  "MOND_sparc_gas": {
+   "mae": 5.2655063235146145,
+   "chi2_per_pt": 3.3139965446090462,
+   "mean_bias": 5.143271242360571
+  },
+  "MOND_measured_gas": {
+   "mae": 4.352304804157106,
+   "chi2_per_pt": 2.739181484910975,
+   "mean_bias": 3.9911581611829368
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 8.798519505693584,
+     "gas_mass_inside_rmax_Msun": 260430839.3102708
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.145556596290014,
+     "mae": 7.131784466617193,
+     "gas_mass_inside_rmax_Msun": 325594959.70284706
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.195556596290014,
+     "mae": 6.637868112366385,
+     "gas_mass_inside_rmax_Msun": 347979421.1609662
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.245556596290014,
+     "mae": 6.164558602449987,
+     "gas_mass_inside_rmax_Msun": 370363882.61908525
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.29555659629001396,
+     "mae": 5.708129657621281,
+     "gas_mass_inside_rmax_Msun": 392748344.0772043
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.375556596290014,
+     "mae": 5.006903277233844,
+     "gas_mass_inside_rmax_Msun": 428563482.4101948
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.445556596290014,
+     "mae": 4.417998053135012,
+     "gas_mass_inside_rmax_Msun": 459901728.45156157
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.595556596290014,
+     "mae": 3.2533128246888245,
+     "gas_mass_inside_rmax_Msun": 527055112.8259188
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.7955565962900141,
+     "mae": 2.118498485532069,
+     "gas_mass_inside_rmax_Msun": 616592958.6583952
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.995556596290014,
+     "mae": 1.5363464712186963,
+     "gas_mass_inside_rmax_Msun": 706130804.4908713,
+     "at_scan_edge": false,
+     "core_mass_Msun": 445699965.1806005
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.295556596290014,
+     "mae": 2.581690165648505,
+     "gas_mass_inside_rmax_Msun": 840437573.2395856
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.6955565962900139,
+     "mae": 4.900601497307095,
+     "gas_mass_inside_rmax_Msun": 1019513264.9045382
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.195556596290014,
+     "mae": 7.786452540756074,
+     "gas_mass_inside_rmax_Msun": 1243357879.485729
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 10.663333121467042,
+     "gas_mass_inside_rmax_Msun": 195474373.94439667
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.145556596290014,
+     "mae": 8.830899869911931,
+     "gas_mass_inside_rmax_Msun": 260638494.33697298
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.195556596290014,
+     "mae": 8.279796406161791,
+     "gas_mass_inside_rmax_Msun": 283022955.795092
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.245556596290014,
+     "mae": 7.752987395965089,
+     "gas_mass_inside_rmax_Msun": 305407417.25321114
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.29555659629001396,
+     "mae": 7.253737352256813,
+     "gas_mass_inside_rmax_Msun": 327791878.7113302
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.375556596290014,
+     "mae": 6.499670129366694,
+     "gas_mass_inside_rmax_Msun": 363607017.0443207
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.445556596290014,
+     "mae": 5.869824530859659,
+     "gas_mass_inside_rmax_Msun": 394945263.08568746
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.595556596290014,
+     "mae": 4.595457989370567,
+     "gas_mass_inside_rmax_Msun": 462098647.46004456
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.7955565962900141,
+     "mae": 3.131555963963649,
+     "gas_mass_inside_rmax_Msun": 551636493.2925209
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.995556596290014,
+     "mae": 2.1567121419700888,
+     "gas_mass_inside_rmax_Msun": 641174339.1249971
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.295556596290014,
+     "mae": 1.8276162881957436,
+     "gas_mass_inside_rmax_Msun": 775481107.8737116,
+     "at_scan_edge": false,
+     "core_mass_Msun": 580006733.9293149
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.6955565962900139,
+     "mae": 3.797091785561924,
+     "gas_mass_inside_rmax_Msun": 954556799.5386641
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.195556596290014,
+     "mae": 6.689570532936824,
+     "gas_mass_inside_rmax_Msun": 1178401414.119855
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 1.0,
+   "n0_cm3": 0.995556596290014,
+   "mae": 1.5363464712186963,
+   "gas_mass_inside_rmax_Msun": 706130804.4908713,
+   "at_scan_edge": false,
+   "core_mass_Msun": 445699965.1806005
+  },
+  "best_core_measured": {
+   "add_core": 1.3,
+   "n0_cm3": 1.295556596290014,
+   "mae": 1.8276162881957436,
+   "gas_mass_inside_rmax_Msun": 775481107.8737116,
+   "at_scan_edge": false,
+   "core_mass_Msun": 580006733.9293149
+  },
+  "Vflat": 88.7
+ },
+ "NGC3198": {
+  "a0_sparc_nocore": {
+   "mae": 33.45454857650114,
+   "chi2_per_pt": 328.8395256676083,
+   "mean_bias": -31.599956099004377,
+   "gas_mass_inside_rmax_Msun": 13954530288.899317
+  },
+  "a_sparc_core": {
+   "mae": 4.550825241901622,
+   "chi2_per_pt": 3.395366232016566,
+   "mean_bias": 1.8796597837924012,
+   "gas_mass_inside_rmax_Msun": 23890731189.24587
+  },
+  "b_measured_nocore": {
+   "mae": 26.08203056382004,
+   "chi2_per_pt": 220.85769760157217,
+   "mean_bias": -24.124895449157563,
+   "gas_mass_inside_rmax_Msun": 16963496535.602192
+  },
+  "c_measured_core": {
+   "mae": 7.767128989644125,
+   "chi2_per_pt": 25.366205652439586,
+   "mean_bias": 6.893334121594852,
+   "gas_mass_inside_rmax_Msun": 26899697435.94875
+  },
+  "b_alpha_x0.5": {
+   "mae": 27.151964913459814,
+   "chi2_per_pt": 242.80777689165484,
+   "mean_bias": -25.259247498234153,
+   "gas_mass_inside_rmax_Msun": 16631775594.64632
+  },
+  "b_alpha_x2": {
+   "mae": 24.006623538300154,
+   "chi2_per_pt": 183.52262633906741,
+   "mean_bias": -21.940097654133442,
+   "gas_mass_inside_rmax_Msun": 17626938417.513935
+  },
+  "b_no_ionized": {
+   "mae": 30.28035771527284,
+   "chi2_per_pt": 273.048186109872,
+   "mean_bias": -28.323817592179186,
+   "gas_mass_inside_rmax_Msun": 13703475757.825161
+  },
+  "MOND_sparc_gas": {
+   "mae": 8.100107499442991,
+   "chi2_per_pt": 14.190873760750954,
+   "mean_bias": 7.698590890467141
+  },
+  "MOND_measured_gas": {
+   "mae": 10.816394660818856,
+   "chi2_per_pt": 31.5701558826321,
+   "mean_bias": 10.601045131548918
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 33.45454857650114,
+     "gas_mass_inside_rmax_Msun": 13954530288.899317
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.04276447353583833,
+     "mae": 27.808933200564567,
+     "gas_mass_inside_rmax_Msun": 14816841643.04514
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.09276447353583835,
+     "mae": 23.409195933775976,
+     "gas_mass_inside_rmax_Msun": 15825051592.623001
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.14276447353583832,
+     "mae": 19.707761910085082,
+     "gas_mass_inside_rmax_Msun": 16833261542.200857
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.1927644735358383,
+     "mae": 16.415251864276136,
+     "gas_mass_inside_rmax_Msun": 17841471491.778717
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2727644735358383,
+     "mae": 11.893624795019484,
+     "gas_mass_inside_rmax_Msun": 19454607411.103294
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.34276447353583833,
+     "mae": 8.589655128484,
+     "gas_mass_inside_rmax_Msun": 20866101340.512295
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.4927644735358383,
+     "mae": 4.550825241901622,
+     "gas_mass_inside_rmax_Msun": 23890731189.24587,
+     "at_scan_edge": false,
+     "core_mass_Msun": 9936200900.346552
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6927644735358384,
+     "mae": 10.345215020268387,
+     "gas_mass_inside_rmax_Msun": 27923570987.55731
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8927644735358383,
+     "mae": 17.821642468646655,
+     "gas_mass_inside_rmax_Msun": 31956410785.868736
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1927644735358385,
+     "mae": 27.76415604819117,
+     "gas_mass_inside_rmax_Msun": 38005670483.3359
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.5927644735358384,
+     "mae": 39.377761080917985,
+     "gas_mass_inside_rmax_Msun": 46071350079.958755
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0927644735358384,
+     "mae": 52.09360655204687,
+     "gas_mass_inside_rmax_Msun": 56153449575.73734
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 26.08203056382004,
+     "gas_mass_inside_rmax_Msun": 16963496535.602192
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.04276447353583833,
+     "mae": 21.375782673953438,
+     "gas_mass_inside_rmax_Msun": 17825807889.74802
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.09276447353583835,
+     "mae": 18.07293332008529,
+     "gas_mass_inside_rmax_Msun": 18834017839.325882
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.14276447353583832,
+     "mae": 15.537967614048247,
+     "gas_mass_inside_rmax_Msun": 19842227788.903736
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.1927644735358383,
+     "mae": 13.503272875545553,
+     "gas_mass_inside_rmax_Msun": 20850437738.4816
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2727644735358383,
+     "mae": 11.014524037955361,
+     "gas_mass_inside_rmax_Msun": 22463573657.806168
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.34276447353583833,
+     "mae": 9.189612728905542,
+     "gas_mass_inside_rmax_Msun": 23875067587.21517
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.4927644735358383,
+     "mae": 7.767128989644125,
+     "gas_mass_inside_rmax_Msun": 26899697435.94875,
+     "at_scan_edge": false,
+     "core_mass_Msun": 9936200900.346558
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6927644735358384,
+     "mae": 14.980739712202075,
+     "gas_mass_inside_rmax_Msun": 30932537234.260193
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8927644735358383,
+     "mae": 22.161293112927382,
+     "gas_mass_inside_rmax_Msun": 34965377032.57162
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1927644735358385,
+     "mae": 31.756434806862064,
+     "gas_mass_inside_rmax_Msun": 41014636730.03877
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.5927644735358384,
+     "mae": 43.019363819214036,
+     "gas_mass_inside_rmax_Msun": 49080316326.66164
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0927644735358384,
+     "mae": 55.40637202755044,
+     "gas_mass_inside_rmax_Msun": 59162415822.44021
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 0.6,
+   "n0_cm3": 0.4927644735358383,
+   "mae": 4.550825241901622,
+   "gas_mass_inside_rmax_Msun": 23890731189.24587,
+   "at_scan_edge": false,
+   "core_mass_Msun": 9936200900.346552
+  },
+  "best_core_measured": {
+   "add_core": 0.6,
+   "n0_cm3": 0.4927644735358383,
+   "mae": 7.767128989644125,
+   "gas_mass_inside_rmax_Msun": 26899697435.94875,
+   "at_scan_edge": false,
+   "core_mass_Msun": 9936200900.346558
+  },
+  "Vflat": 157.0
+ },
+ "NGC3521": {
+  "a0_sparc_nocore": {
+   "mae": 25.600722699171993,
+   "chi2_per_pt": 9.036304367841225,
+   "mean_bias": -25.600722699171993,
+   "gas_mass_inside_rmax_Msun": 4985654751.776982
+  },
+  "a_sparc_core": {
+   "mae": 6.759401003740409,
+   "chi2_per_pt": 1.0685426528211552,
+   "mean_bias": -6.2834990049915875,
+   "gas_mass_inside_rmax_Msun": 17417815567.004745
+  },
+  "b_measured_nocore": {
+   "mae": 18.24203601097086,
+   "chi2_per_pt": 5.5822934545410865,
+   "mean_bias": -18.24203601097086,
+   "gas_mass_inside_rmax_Msun": 8464049946.935343
+  },
+  "c_measured_core": {
+   "mae": 7.373570089289651,
+   "chi2_per_pt": 0.8536453148083826,
+   "mean_bias": -0.18017140551131453,
+   "gas_mass_inside_rmax_Msun": 20896210762.163105
+  },
+  "b_alpha_x0.5": {
+   "mae": 21.235027396122394,
+   "chi2_per_pt": 6.541533718876293,
+   "mean_bias": -21.235027396122394,
+   "gas_mass_inside_rmax_Msun": 7418214172.247636
+  },
+  "b_alpha_x2": {
+   "mae": 12.906590354984552,
+   "chi2_per_pt": 4.260370456504456,
+   "mean_bias": -12.829367394817282,
+   "gas_mass_inside_rmax_Msun": 10555721496.310755
+  },
+  "b_no_ionized": {
+   "mae": 19.465850067482457,
+   "chi2_per_pt": 6.848967714067038,
+   "mean_bias": -19.465850067482457,
+   "gas_mass_inside_rmax_Msun": 7190254691.422844
+  },
+  "MOND_sparc_gas": {
+   "mae": 5.868433653598064,
+   "chi2_per_pt": 0.5741300866562151,
+   "mean_bias": 0.06581546723887755
+  },
+  "MOND_measured_gas": {
+   "mae": 7.691410448057235,
+   "chi2_per_pt": 0.7029370321333864,
+   "mean_bias": 3.769038412737679
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 25.600722699171993,
+     "gas_mass_inside_rmax_Msun": 4985654751.776982
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.01955929139065518,
+     "mae": 23.995046718697083,
+     "gas_mass_inside_rmax_Msun": 5503511091.666171
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.0695592913906552,
+     "mae": 21.14090526468806,
+     "gas_mass_inside_rmax_Msun": 6827322700.037124
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.11955929139065519,
+     "mae": 18.78074474358128,
+     "gas_mass_inside_rmax_Msun": 8151134308.408077
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.16955929139065518,
+     "mae": 16.663539979813233,
+     "gas_mass_inside_rmax_Msun": 9474945916.779028
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2495592913906552,
+     "mae": 13.589066844493821,
+     "gas_mass_inside_rmax_Msun": 11593044490.172554
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.3195592913906552,
+     "mae": 11.11703229692414,
+     "gas_mass_inside_rmax_Msun": 13446380741.891888
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.46955929139065516,
+     "mae": 6.759401003740409,
+     "gas_mass_inside_rmax_Msun": 17417815567.004745,
+     "at_scan_edge": false,
+     "core_mass_Msun": 12432160815.227764
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6695592913906552,
+     "mae": 6.894111454947788,
+     "gas_mass_inside_rmax_Msun": 22713062000.488556
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8695592913906551,
+     "mae": 10.747082431608156,
+     "gas_mass_inside_rmax_Msun": 28008308433.972363
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1695592913906552,
+     "mae": 16.580800750438005,
+     "gas_mass_inside_rmax_Msun": 35951178084.19808
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.569559291390655,
+     "mae": 23.975882492253852,
+     "gas_mass_inside_rmax_Msun": 46541670951.16571
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0695592913906555,
+     "mae": 32.667265994870284,
+     "gas_mass_inside_rmax_Msun": 59779787034.87525
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 18.24203601097086,
+     "gas_mass_inside_rmax_Msun": 8464049946.935343
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.01955929139065518,
+     "mae": 16.826806111522686,
+     "gas_mass_inside_rmax_Msun": 8981906286.82453
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.0695592913906552,
+     "mae": 14.196895232163453,
+     "gas_mass_inside_rmax_Msun": 10305717895.195484
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.11955929139065519,
+     "mae": 11.994001801842046,
+     "gas_mass_inside_rmax_Msun": 11629529503.566435
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.16955929139065518,
+     "mae": 10.079090096475685,
+     "gas_mass_inside_rmax_Msun": 12953341111.93739
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2495592913906552,
+     "mae": 8.086959850812198,
+     "gas_mass_inside_rmax_Msun": 15071439685.330915
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.3195592913906552,
+     "mae": 7.158660526817355,
+     "gas_mass_inside_rmax_Msun": 16924775937.050247,
+     "at_scan_edge": false,
+     "core_mass_Msun": 8460725990.114904
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.46955929139065516,
+     "mae": 7.373570089289651,
+     "gas_mass_inside_rmax_Msun": 20896210762.163105
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6695592913906552,
+     "mae": 10.869234865815471,
+     "gas_mass_inside_rmax_Msun": 26191457195.646923
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8695592913906551,
+     "mae": 15.069122801692535,
+     "gas_mass_inside_rmax_Msun": 31486703629.13073
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1695592913906552,
+     "mae": 21.023326862575228,
+     "gas_mass_inside_rmax_Msun": 39429573279.35644
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.569559291390655,
+     "mae": 28.383351031096165,
+     "gas_mass_inside_rmax_Msun": 50020066146.324066
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0695592913906555,
+     "mae": 37.148406623515044,
+     "gas_mass_inside_rmax_Msun": 63258182230.0336
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 0.6,
+   "n0_cm3": 0.46955929139065516,
+   "mae": 6.759401003740409,
+   "gas_mass_inside_rmax_Msun": 17417815567.004745,
+   "at_scan_edge": false,
+   "core_mass_Msun": 12432160815.227764
+  },
+  "best_core_measured": {
+   "add_core": 0.45,
+   "n0_cm3": 0.3195592913906552,
+   "mae": 7.158660526817355,
+   "gas_mass_inside_rmax_Msun": 16924775937.050247,
+   "at_scan_edge": false,
+   "core_mass_Msun": 8460725990.114904
+  },
+  "Vflat": 220.0
+ },
+ "NGC5055": {
+  "a0_sparc_nocore": {
+   "mae": 24.18508808108058,
+   "chi2_per_pt": 602.3480419466825,
+   "mean_bias": -20.985439125507146,
+   "gas_mass_inside_rmax_Msun": 14990765132.62177
+  },
+  "a_sparc_core": {
+   "mae": 25.323655491332556,
+   "chi2_per_pt": 798.5461863743137,
+   "mean_bias": 25.323655491332556,
+   "gas_mass_inside_rmax_Msun": 44126816070.487526
+  },
+  "b_measured_nocore": {
+   "mae": 21.81761043963868,
+   "chi2_per_pt": 478.5605861270248,
+   "mean_bias": -11.652518912600575,
+   "gas_mass_inside_rmax_Msun": 20455093412.7597
+  },
+  "c_measured_core": {
+   "mae": 31.898536431265686,
+   "chi2_per_pt": 1340.3767271431784,
+   "mean_bias": 31.898536431265686,
+   "gas_mass_inside_rmax_Msun": 49591144350.62546
+  },
+  "b_alpha_x0.5": {
+   "mae": 21.48975798555281,
+   "chi2_per_pt": 520.2229890054795,
+   "mean_bias": -15.388443947344637,
+   "gas_mass_inside_rmax_Msun": 17724498178.779472
+  },
+  "b_alpha_x2": {
+   "mae": 23.22881904598927,
+   "chi2_per_pt": 525.4546320021007,
+   "mean_bias": -4.9357698089400674,
+   "gas_mass_inside_rmax_Msun": 25916283880.720165
+  },
+  "b_no_ionized": {
+   "mae": 25.111298625486143,
+   "chi2_per_pt": 637.406339916811,
+   "mean_bias": -15.47828529675452,
+   "gas_mass_inside_rmax_Msun": 17456296269.093647
+  },
+  "MOND_sparc_gas": {
+   "mae": 29.26200473542585,
+   "chi2_per_pt": 899.5062138689667,
+   "mean_bias": 29.26200473542585
+  },
+  "MOND_measured_gas": {
+   "mae": 33.831816742306195,
+   "chi2_per_pt": 1241.2535152251914,
+   "mean_bias": 33.831816742306195
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 24.18508808108058,
+     "gas_mass_inside_rmax_Msun": 14990765132.62177
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.04551086822038061,
+     "mae": 16.212327770932927,
+     "gas_mass_inside_rmax_Msun": 17967139154.634563
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.0955108682203806,
+     "mae": 12.085348912250172,
+     "gas_mass_inside_rmax_Msun": 21237098769.116184
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.1455108682203806,
+     "mae": 9.272845260794698,
+     "gas_mass_inside_rmax_Msun": 24507058383.597805
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2255108682203806,
+     "mae": 9.046555204729314,
+     "gas_mass_inside_rmax_Msun": 29738993766.768402,
+     "at_scan_edge": false,
+     "core_mass_Msun": 14748228634.146631
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.29551086822038064,
+     "mae": 14.295382888105332,
+     "gas_mass_inside_rmax_Msun": 34316937227.042675
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.44551086822038055,
+     "mae": 25.323655491332556,
+     "gas_mass_inside_rmax_Msun": 44126816070.487526
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6455108682203806,
+     "mae": 37.901949387288724,
+     "gas_mass_inside_rmax_Msun": 57206654528.41402
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8455108682203806,
+     "mae": 48.91701537986364,
+     "gas_mass_inside_rmax_Msun": 70286492986.34052
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1455108682203807,
+     "mae": 63.49121434145947,
+     "gas_mass_inside_rmax_Msun": 89906250673.23024
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.5455108682203806,
+     "mae": 80.4605071793375,
+     "gas_mass_inside_rmax_Msun": 116065927589.0832
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0455108682203806,
+     "mae": 99.01446301021667,
+     "gas_mass_inside_rmax_Msun": 148765523733.8994
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 21.81761043963868,
+     "gas_mass_inside_rmax_Msun": 20455093412.7597
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.04551086822038061,
+     "mae": 17.019832673530885,
+     "gas_mass_inside_rmax_Msun": 23431467434.77249
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.0955108682203806,
+     "mae": 15.193983858479331,
+     "gas_mass_inside_rmax_Msun": 26701427049.254112
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.1455108682203806,
+     "mae": 14.426138429617806,
+     "gas_mass_inside_rmax_Msun": 29971386663.735744,
+     "at_scan_edge": false,
+     "core_mass_Msun": 9516293250.976044
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.2255108682203806,
+     "mae": 15.742382218446433,
+     "gas_mass_inside_rmax_Msun": 35203322046.906334
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.29551086822038064,
+     "mae": 21.296685177875723,
+     "gas_mass_inside_rmax_Msun": 39781265507.18061
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.44551086822038055,
+     "mae": 31.898536431265686,
+     "gas_mass_inside_rmax_Msun": 49591144350.62546
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6455108682203806,
+     "mae": 44.05216787229407,
+     "gas_mass_inside_rmax_Msun": 62670982808.551956
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8455108682203806,
+     "mae": 54.73815802979579,
+     "gas_mass_inside_rmax_Msun": 75750821266.47844
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.1455108682203807,
+     "mae": 68.92651494950057,
+     "gas_mass_inside_rmax_Msun": 95370578953.36818
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.5455108682203806,
+     "mae": 85.50435778086644,
+     "gas_mass_inside_rmax_Msun": 121530255869.22116
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.0455108682203806,
+     "mae": 103.68749887098592,
+     "gas_mass_inside_rmax_Msun": 154229852014.03735
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 0.38,
+   "n0_cm3": 0.2255108682203806,
+   "mae": 9.046555204729314,
+   "gas_mass_inside_rmax_Msun": 29738993766.768402,
+   "at_scan_edge": false,
+   "core_mass_Msun": 14748228634.146631
+  },
+  "best_core_measured": {
+   "add_core": 0.3,
+   "n0_cm3": 0.1455108682203806,
+   "mae": 14.426138429617806,
+   "gas_mass_inside_rmax_Msun": 29971386663.735744,
+   "at_scan_edge": false,
+   "core_mass_Msun": 9516293250.976044
+  },
+  "Vflat": 206.0
+ },
+ "NGC7331": {
+  "a0_sparc_nocore": {
+   "mae": 31.463622285608803,
+   "chi2_per_pt": 72.77861817911955,
+   "mean_bias": -22.96667767657949,
+   "gas_mass_inside_rmax_Msun": 14779416400.52114
+  },
+  "a_sparc_core": {
+   "mae": 30.313108947232333,
+   "chi2_per_pt": 69.44735232432944,
+   "mean_bias": 30.313108947232333,
+   "gas_mass_inside_rmax_Msun": 53292512745.55756
+  },
+  "b_measured_nocore": {
+   "mae": 26.722744191950035,
+   "chi2_per_pt": 49.69505669840966,
+   "mean_bias": -15.451637832455024,
+   "gas_mass_inside_rmax_Msun": 20601468455.24858
+  },
+  "c_measured_core": {
+   "mae": 35.98175632456802,
+   "chi2_per_pt": 96.80650443459207,
+   "mean_bias": 35.98175632456802,
+   "gas_mass_inside_rmax_Msun": 59114564800.285
+  },
+  "b_alpha_x0.5": {
+   "mae": 28.408402773146253,
+   "chi2_per_pt": 57.448379543688944,
+   "mean_bias": -18.644384033492198,
+   "gas_mass_inside_rmax_Msun": 17802851939.660347
+  },
+  "b_alpha_x2": {
+   "mae": 24.197699499775442,
+   "chi2_per_pt": 39.2174033068165,
+   "mean_bias": -9.658798836440468,
+   "gas_mass_inside_rmax_Msun": 26198701486.425045
+  },
+  "b_no_ionized": {
+   "mae": 31.22679338002608,
+   "chi2_per_pt": 72.95348478002813,
+   "mean_bias": -20.005886305195443,
+   "gas_mass_inside_rmax_Msun": 17600616607.452003
+  },
+  "MOND_sparc_gas": {
+   "mae": 25.43587538777147,
+   "chi2_per_pt": 40.987106175704085,
+   "mean_bias": 25.43587538777147
+  },
+  "MOND_measured_gas": {
+   "mae": 29.01309673648453,
+   "chi2_per_pt": 53.59025881151116,
+   "mean_bias": 29.01309673648453
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 31.463622285608803,
+     "gas_mass_inside_rmax_Msun": 14779416400.52114
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.027397963675843878,
+     "mae": 25.11011112669839,
+     "gas_mass_inside_rmax_Msun": 17248263948.671547
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.07739796367584387,
+     "mae": 18.196421547567766,
+     "gas_mass_inside_rmax_Msun": 21753795048.282295
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.12739796367584386,
+     "mae": 13.349866824199246,
+     "gas_mass_inside_rmax_Msun": 26259326147.89305,
+     "at_scan_edge": false,
+     "core_mass_Msun": 11479909747.371912
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.20739796367584387,
+     "mae": 15.042931548590364,
+     "gas_mass_inside_rmax_Msun": 33468175907.27026
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.2773979636758439,
+     "mae": 18.474051926461495,
+     "gas_mass_inside_rmax_Msun": 39775919446.72532
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.4273979636758438,
+     "mae": 30.313108947232333,
+     "gas_mass_inside_rmax_Msun": 53292512745.55756
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6273979636758439,
+     "mae": 46.03395990659584,
+     "gas_mass_inside_rmax_Msun": 71314637144.00058
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8273979636758438,
+     "mae": 59.85519264877861,
+     "gas_mass_inside_rmax_Msun": 89336761542.44357
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.127397963675844,
+     "mae": 78.2114582838256,
+     "gas_mass_inside_rmax_Msun": 116369948140.10812
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.527397963675844,
+     "mae": 99.66919909968838,
+     "gas_mass_inside_rmax_Msun": 152414196936.9941
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.027397963675844,
+     "mae": 123.21745667407458,
+     "gas_mass_inside_rmax_Msun": 197469507933.10162
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 26.722744191950035,
+     "gas_mass_inside_rmax_Msun": 20601468455.24858
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.027397963675843878,
+     "mae": 21.08353073602176,
+     "gas_mass_inside_rmax_Msun": 23070316003.398987
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.07739796367584387,
+     "mae": 16.18084251384449,
+     "gas_mass_inside_rmax_Msun": 27575847103.00973,
+     "at_scan_edge": false,
+     "core_mass_Msun": 6974378647.76115
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.12739796367584386,
+     "mae": 16.291087619955185,
+     "gas_mass_inside_rmax_Msun": 32081378202.620483
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.20739796367584387,
+     "mae": 19.361155110751838,
+     "gas_mass_inside_rmax_Msun": 39290227961.997696
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.2773979636758439,
+     "mae": 23.591189964786363,
+     "gas_mass_inside_rmax_Msun": 45597971501.45276
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.4273979636758438,
+     "mae": 35.98175632456802,
+     "gas_mass_inside_rmax_Msun": 59114564800.285
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.6273979636758439,
+     "mae": 51.324543798267705,
+     "gas_mass_inside_rmax_Msun": 77136689198.728
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 0.8273979636758438,
+     "mae": 64.8484284385057,
+     "gas_mass_inside_rmax_Msun": 95158813597.171
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.127397963675844,
+     "mae": 82.85271419975378,
+     "gas_mass_inside_rmax_Msun": 122192000194.83554
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.527397963675844,
+     "mae": 103.951067719857,
+     "gas_mass_inside_rmax_Msun": 158236248991.72156
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.027397963675844,
+     "mae": 127.15791875615497,
+     "gas_mass_inside_rmax_Msun": 203291559987.8291
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 0.3,
+   "n0_cm3": 0.12739796367584386,
+   "mae": 13.349866824199246,
+   "gas_mass_inside_rmax_Msun": 26259326147.89305,
+   "at_scan_edge": false,
+   "core_mass_Msun": 11479909747.371912
+  },
+  "best_core_measured": {
+   "add_core": 0.25,
+   "n0_cm3": 0.07739796367584387,
+   "mae": 16.18084251384449,
+   "gas_mass_inside_rmax_Msun": 27575847103.00973,
+   "at_scan_edge": false,
+   "core_mass_Msun": 6974378647.76115
+  },
+  "Vflat": 257.0
+ },
+ "DDO154": {
+  "a0_sparc_nocore": {
+   "mae": 10.849152329684218,
+   "chi2_per_pt": 1327.6046852640832,
+   "mean_bias": -10.849152329684218,
+   "gas_mass_inside_rmax_Msun": 242604235.07897577
+  },
+  "a_sparc_core": {
+   "mae": 5.144816241657883,
+   "chi2_per_pt": 313.7314396792686,
+   "mean_bias": -4.099882569025089,
+   "gas_mass_inside_rmax_Msun": 329612886.5153852
+  },
+  "b_measured_nocore": {
+   "mae": 6.448574086273215,
+   "chi2_per_pt": 661.3687796111067,
+   "mean_bias": -6.261946393890418,
+   "gas_mass_inside_rmax_Msun": 406942018.3869204
+  },
+  "c_measured_core": {
+   "mae": 2.8254096786027745,
+   "chi2_per_pt": 141.14733253313582,
+   "mean_bias": -1.113630406359058,
+   "gas_mass_inside_rmax_Msun": 493950669.8233299
+  },
+  "b_alpha_x0.5": {
+   "mae": 6.480055596145921,
+   "chi2_per_pt": 667.2697240237804,
+   "mean_bias": -6.295956706867156,
+   "gas_mass_inside_rmax_Msun": 406314814.7814199
+  },
+  "b_alpha_x2": {
+   "mae": 6.3867427548990285,
+   "chi2_per_pt": 649.9413869655364,
+   "mean_bias": -6.195103652353726,
+   "gas_mass_inside_rmax_Msun": 408196425.59792143
+  },
+  "b_no_ionized": {
+   "mae": 9.523868122484787,
+   "chi2_per_pt": 1340.5771195781133,
+   "mean_bias": -9.523868122484787,
+   "gas_mass_inside_rmax_Msun": 327252576.42741406
+  },
+  "MOND_sparc_gas": {
+   "mae": 4.093097192308494,
+   "chi2_per_pt": 90.39708927830219,
+   "mean_bias": 4.093097192308494
+  },
+  "MOND_measured_gas": {
+   "mae": 5.761445352923278,
+   "chi2_per_pt": 152.93707695041556,
+   "mean_bias": 5.761445352923278
+  },
+  "core_scan": {
+   "sparc": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 10.849152329684218,
+     "gas_mass_inside_rmax_Msun": 242604235.07897577
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.23857135406594887,
+     "mae": 7.787406037610924,
+     "gas_mass_inside_rmax_Msun": 272750379.9426325
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.28857135406594886,
+     "mae": 7.344447757114518,
+     "gas_mass_inside_rmax_Msun": 279068436.2284939
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.33857135406594885,
+     "mae": 6.956914487653333,
+     "gas_mass_inside_rmax_Msun": 285386492.5143553
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.38857135406594884,
+     "mae": 6.6464470130081565,
+     "gas_mass_inside_rmax_Msun": 291704548.80021673
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.46857135406594885,
+     "mae": 6.219019222499298,
+     "gas_mass_inside_rmax_Msun": 301813438.85759497
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.5385713540659489,
+     "mae": 5.862869981411552,
+     "gas_mass_inside_rmax_Msun": 310658717.657801
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.6885713540659488,
+     "mae": 5.144816241657883,
+     "gas_mass_inside_rmax_Msun": 329612886.5153852
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.8885713540659489,
+     "mae": 4.525490493518556,
+     "gas_mass_inside_rmax_Msun": 354885111.65883094
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 1.088571354065949,
+     "mae": 4.073841167208357,
+     "gas_mass_inside_rmax_Msun": 380157336.8022766
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.388571354065949,
+     "mae": 3.8103168657096824,
+     "gas_mass_inside_rmax_Msun": 418065674.5174451,
+     "at_scan_edge": false,
+     "core_mass_Msun": 175461439.43846932
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.788571354065949,
+     "mae": 3.900433599197742,
+     "gas_mass_inside_rmax_Msun": 468610124.8043365
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.288571354065949,
+     "mae": 4.852642822792865,
+     "gas_mass_inside_rmax_Msun": 531790687.6629506
+    }
+   ],
+   "measured": [
+    {
+     "add_core": 0.0,
+     "n0_cm3": 0.0,
+     "mae": 6.448574086273215,
+     "gas_mass_inside_rmax_Msun": 406942018.3869204
+    },
+    {
+     "add_core": 0.15,
+     "n0_cm3": 0.23857135406594887,
+     "mae": 4.569242766491396,
+     "gas_mass_inside_rmax_Msun": 437088163.2505771
+    },
+    {
+     "add_core": 0.2,
+     "n0_cm3": 0.28857135406594886,
+     "mae": 4.222702462018163,
+     "gas_mass_inside_rmax_Msun": 443406219.53643847
+    },
+    {
+     "add_core": 0.25,
+     "n0_cm3": 0.33857135406594885,
+     "mae": 3.9395553177043663,
+     "gas_mass_inside_rmax_Msun": 449724275.8222999
+    },
+    {
+     "add_core": 0.3,
+     "n0_cm3": 0.38857135406594884,
+     "mae": 3.68051090682993,
+     "gas_mass_inside_rmax_Msun": 456042332.10816145
+    },
+    {
+     "add_core": 0.38,
+     "n0_cm3": 0.46857135406594885,
+     "mae": 3.358016355239848,
+     "gas_mass_inside_rmax_Msun": 466151222.1655396
+    },
+    {
+     "add_core": 0.45,
+     "n0_cm3": 0.5385713540659489,
+     "mae": 3.1842603396088953,
+     "gas_mass_inside_rmax_Msun": 474996500.9657456
+    },
+    {
+     "add_core": 0.6,
+     "n0_cm3": 0.6885713540659488,
+     "mae": 2.8254096786027745,
+     "gas_mass_inside_rmax_Msun": 493950669.8233299
+    },
+    {
+     "add_core": 0.8,
+     "n0_cm3": 0.8885713540659489,
+     "mae": 2.5056308106535696,
+     "gas_mass_inside_rmax_Msun": 519222894.96677554,
+     "at_scan_edge": false,
+     "core_mass_Msun": 112280876.57985514
+    },
+    {
+     "add_core": 1.0,
+     "n0_cm3": 1.088571354065949,
+     "mae": 2.55892619369876,
+     "gas_mass_inside_rmax_Msun": 544495120.1102213
+    },
+    {
+     "add_core": 1.3,
+     "n0_cm3": 1.388571354065949,
+     "mae": 3.0771723289072406,
+     "gas_mass_inside_rmax_Msun": 582403457.8253899
+    },
+    {
+     "add_core": 1.7,
+     "n0_cm3": 1.788571354065949,
+     "mae": 4.607217686412226,
+     "gas_mass_inside_rmax_Msun": 632947908.112281
+    },
+    {
+     "add_core": 2.2,
+     "n0_cm3": 2.288571354065949,
+     "mae": 6.759761718944184,
+     "gas_mass_inside_rmax_Msun": 696128470.9708952
+    }
+   ]
+  },
+  "best_core_sparc": {
+   "add_core": 1.3,
+   "n0_cm3": 1.388571354065949,
+   "mae": 3.8103168657096824,
+   "gas_mass_inside_rmax_Msun": 418065674.5174451,
+   "at_scan_edge": false,
+   "core_mass_Msun": 175461439.43846932
+  },
+  "best_core_measured": {
+   "add_core": 0.8,
+   "n0_cm3": 0.8885713540659489,
+   "mae": 2.5056308106535696,
+   "gas_mass_inside_rmax_Msun": 519222894.96677554,
+   "at_scan_edge": false,
+   "core_mass_Msun": 112280876.57985514
+  },
+  "Vflat": 48.2
+ }
+}

@@ -240,3 +240,7 @@ Thumbs.db
 *.bak
 *.swp
 *.vscode/
+
+# 3D gas test: downloaded survey maps (re-downloadable, ~58 MB; sources in sparc/gas3d/RESULTS_3D_gas_test.md) and raw model run outputs
+sparc/gas3d/raw/
+sparc/gas3d/runs/
