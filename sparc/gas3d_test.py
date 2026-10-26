@@ -50,7 +50,7 @@ def load_profiles(gal):
     return dict(R=d[:, 0], HI=d[:, 1], H2=d[:, 3], clump_tot=d[:, 7])
 
 
-def make_density_fn(prof, alpha_scale=1.0, f_ion=F_ION):
+def make_density_fn(prof, alpha_scale=1.0, f_ion=F_ION, phases=("HI", "H2", "ion")):
     """Returns fn(R_m, Z_m, Theta_m) -> gas particle density [m^-3] for run_sparc_dm_brute_cgm(supplied_gas_density=...)."""
     def fn(R_m, Z_m, Theta_m):
         R_kpc = R_m[:, 0, 0] / kpc_to_m
@@ -61,7 +61,9 @@ def make_density_fn(prof, alpha_scale=1.0, f_ion=F_ION):
         S_H2 = alpha_scale * np.interp(R_kpc, prof["R"], prof["H2"]) * 1e4
         S_ion = f_ion * S_HI
         n = np.zeros(R_m.shape[:2])
-        for S, h in ((S_HI, h_HI_kpc(R_kpc)), (S_H2, np.full_like(R_kpc, H_H2_KPC)), (S_ion, np.full_like(R_kpc, H_ION_KPC))):
+        for phase, S, h in (("HI", S_HI, h_HI_kpc(R_kpc)), ("H2", S_H2, np.full_like(R_kpc, H_H2_KPC)), ("ion", S_ion, np.full_like(R_kpc, H_ION_KPC))):
+            if phase not in phases:
+                continue
             w = np.exp(-np.abs(z_kpc)[None, :] / h[:, None])
             # normalise on the actual (non-uniform) z layers so each phase keeps exactly its measured column
             w /= np.sum(w * dz[None, :], axis=1)[:, None] * kpc_to_m
@@ -70,10 +72,10 @@ def make_density_fn(prof, alpha_scale=1.0, f_ion=F_ION):
     return fn
 
 
-def run_variant(name, use_measured, core_density, alpha_scale=1.0, f_ion=F_ION, graphs=False):
+def run_variant(name, use_measured, core_density, alpha_scale=1.0, f_ion=F_ION, graphs=False, phases=("HI", "H2", "ion")):
     supplied = None
     if use_measured:
-        supplied = {gal: make_density_fn(load_profiles(gal), alpha_scale, f_ion) for gal in GALAXIES}
+        supplied = {gal: make_density_fn(load_profiles(gal), alpha_scale, f_ion, phases) for gal in GALAXIES}
     core = dict(CORE, add_core_gas_central_density=core_density)
     _, _, gals = run_sparc_dm_brute_cgm(**core, **NO_CGM, num_minutes=NUM_MINUTES, output_graphs=graphs, power_override=POWER,
                                         supplied_gas_density=supplied, only_galaxies=GALAXIES,
@@ -121,6 +123,11 @@ if __name__ == "__main__":
         "b_no_ionized":        run_variant("b_no_ionized", True, 0.0, f_ion=0.0),
     }
 
+    # Newtonian gas velocity of each measured phase on its own (no core), so the H2 and ionized contributions can be seen in the plots.
+    # (The summed gas line adds in quadrature, so a 15 km/s H2 curve under a 35 km/s HI curve barely shows.)
+    phase_runs = {ph: run_variant(f"phase_{ph}", True, 0.0, phases=(ph,)) for ph in ("HI", "H2", "ion")}
+    core_runs = run_variant("phase_core_only", True, core0, phases=())
+
     # core gas scan: how much core gas does each gas model want? (n0 = add_core + correction(M_b), so start above the correction)
     scan_values = [0.15, 0.3, 0.45, 0.6, 0.8, 1.0, 1.3]
     scan = {"sparc": {}, "measured": {}}
@@ -167,6 +174,13 @@ if __name__ == "__main__":
             ax.plot(g['R_grid_kpc'], V_dm_grid, 'm--', linewidth=0.8, label='dark mass')
             ax.plot(g['R_grid_kpc'], g['Vgas_test_grid_kms'], 'g', linewidth=0.8, label='gas (as used, 3D)')
             ax.plot(g['R'], g['Vgas'], 'g', linestyle='dotted', linewidth=0.7, label='gas (Lelli)')
+            if name != "a_sparc_core":
+                for ph, col in (("HI", 'darkgreen'), ("H2", 'blue'), ("ion", 'orange')):
+                    gp = phase_runs[ph][gal]
+                    ax.plot(gp['R_grid_kpc'], gp['Vgas_test_grid_kms'], color=col, linestyle='--', linewidth=0.8, label=f'{ph} only (measured)')
+            if name != "b_measured_nocore":
+                gp = core_runs[gal]
+                ax.plot(gp['R_grid_kpc'], gp['Vgas_test_grid_kms'], color='brown', linestyle=':', linewidth=1.0, label='core gas only')
             ax.plot(g['R'], g['Vdisk'], 'violet', linestyle='dashdot', linewidth=0.7, label='disk (Lelli)')
             if np.any(g['Vbul'] > 0):
                 ax.plot(g['R'], g['Vbul'], 'red', linestyle='dashed', linewidth=0.7, label='bulge (Lelli)')
@@ -178,7 +192,8 @@ if __name__ == "__main__":
             ax.set_xlim(0, max(g['R']) * 1.02)
             ax.grid(True, linewidth=0.5, alpha=0.7)
         axes[0].set_ylabel('Velocity (km/s)')
-        axes[0].legend(fontsize='x-small', frameon=False)
+        for ax in axes:
+            ax.legend(fontsize='x-small', frameon=False)
         plt.savefig(os.path.join(OUT_DIR, f"{gal}_3dgas_variants.png"), bbox_inches='tight', dpi=150)
         plt.close()
 
