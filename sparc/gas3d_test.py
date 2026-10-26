@@ -21,7 +21,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm, core_gas_density_correction
 
-GALAXIES = ["NGC6946", "NGC2403"]
+# all SPARC galaxies with THINGS HI + HERACLES CO maps, except NGC 4214 (inclination 15 deg) and NGC 2366 (SPARC quality 3)
+GALAXIES = ["NGC6946", "NGC2403", "NGC2841", "NGC2903", "NGC2976", "NGC3198", "NGC3521", "NGC5055", "NGC7331", "DDO154"]
 POWER = 9.2
 CORE = dict(add_core_gas_central_density=0.60, add_core_gas_beta=1.93, r_core_factor_gas=2.5)
 NO_CGM = dict(add_real_cgm_central_density=0.0, r_core_factor_cgm=0.20, cgm_beta=0.50)
@@ -45,9 +46,30 @@ H_ION_KPC = 1.0
 F_ION = 0.25
 
 
+MIN_HI_COVERAGE = 0.6  # beyond the last ring with this much azimuthal THINGS coverage, use the SPARC Sigma_gas column for HI
+
+
+def read_sparc_sigma(gal):
+    R, S = [], []
+    with open("./sparc/MassModels_Lelli2016_SigmaGas.mrt") as f:
+        for line in f:
+            parts = line.split()
+            if len(parts) == 11 and parts[0] == gal:
+                R.append(float(parts[2]))
+                S.append(float(parts[10]))
+    return np.array(R), np.array(S)
+
+
 def load_profiles(gal):
     d = np.genfromtxt(os.path.join(OUT_DIR, f"{gal}_profiles.csv"), delimiter=",", skip_header=2)
-    return dict(R=d[:, 0], HI=d[:, 1], H2=d[:, 3], clump_tot=d[:, 7])
+    R, HI, cov = d[:, 0], d[:, 1].copy(), d[:, 2]
+    full = R[cov >= MIN_HI_COVERAGE]
+    R_edge = full.max() if len(full) else 0.0
+    outside = R > R_edge
+    if np.any(outside):
+        R_s, S_s = read_sparc_sigma(gal)
+        HI[outside] = np.interp(R[outside], R_s, S_s, right=0.0)
+    return dict(R=R, HI=HI, H2=np.clip(d[:, 3], 0, None), clump_tot=d[:, 7], R_hi_edge=R_edge)
 
 
 def make_density_fn(prof, alpha_scale=1.0, f_ion=F_ION, phases=("HI", "H2", "ion")):
@@ -109,6 +131,28 @@ def gas_mass_inside_rmax(g):
     return float(g['sum_all_gas_particles'] * m_p * 1.33 / M_sun)
 
 
+def plot_core_summary(results, order):
+    plt.figure(figsize=(7, 6))
+    for gal in order:
+        bs, bm = results[gal]["best_core_sparc"], results[gal]["best_core_measured"]
+        x, y = max(bs['core_mass_Msun'], 1e7), max(bm['core_mass_Msun'], 1e7)
+        plt.scatter(x, y, color='r' if bm['core_mass_Msun'] < bs['core_mass_Msun'] else 'k', zorder=3)
+        plt.annotate(gal, (x, y), fontsize=8, xytext=(4, 2), textcoords='offset points')
+    lim = [1e7, 3e11]
+    plt.plot(lim, lim, 'k--', linewidth=0.8, label='same core gas needed')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlim(lim)
+    plt.ylim(lim)
+    plt.xlabel('best-fit core gas mass inside R_max, SPARC gas disk (M$_\\odot$)')
+    plt.ylabel('best-fit core gas mass inside R_max, measured gas (M$_\\odot$)')
+    plt.title(f'Core gas still needed after adding measured gas (P = {POWER} W)\n(points at 1e7 = no core gas wanted)')
+    plt.grid(True, which='both', linewidth=0.5, alpha=0.5)
+    plt.legend(fontsize='small')
+    plt.savefig(os.path.join(OUT_DIR, "summary_core_gas.png"), bbox_inches='tight', dpi=150)
+    plt.close()
+
+
 if __name__ == "__main__":
     os.makedirs(RUN_DIR, exist_ok=True)
     core0 = CORE['add_core_gas_central_density']
@@ -129,7 +173,7 @@ if __name__ == "__main__":
     core_runs = run_variant("phase_core_only", True, core0, phases=())
 
     # core gas scan: how much core gas does each gas model want? (n0 = add_core + correction(M_b), so start above the correction)
-    scan_values = [0.15, 0.3, 0.45, 0.6, 0.8, 1.0, 1.3]
+    scan_values = [0.15, 0.2, 0.25, 0.3, 0.38, 0.45, 0.6, 0.8, 1.0, 1.3, 1.7, 2.2]
     scan = {"sparc": {}, "measured": {}}
     for v in scan_values:
         scan["sparc"][v] = run_variant(f"scan_sparc_{v}", False, v)
@@ -153,9 +197,12 @@ if __name__ == "__main__":
             rows = []
             for v in scan_values:
                 g = scan[kind][v][gal]
+                n0 = v + float(core_gas_density_correction(g['gas_plus_tl']))
+                if n0 <= 0.0:  # the mass correction is negative for massive galaxies; skip unphysical negative core densities
+                    continue
                 V_tot, _, _ = curves_at_obs(g)
                 r = residuals(g, V_tot)
-                rows.append(dict(add_core=v, n0_cm3=v + float(core_gas_density_correction(g['gas_plus_tl'])),
+                rows.append(dict(add_core=v, n0_cm3=n0,
                                  mae=r['mae'], gas_mass_inside_rmax_Msun=gas_mass_inside_rmax(g)))
             nocore = res["a0_sparc_nocore" if kind == "sparc" else "b_measured_nocore"]
             rows.insert(0, dict(add_core=0.0, n0_cm3=0.0, mae=nocore['mae'], gas_mass_inside_rmax_Msun=nocore['gas_mass_inside_rmax_Msun']))
@@ -212,6 +259,35 @@ if __name__ == "__main__":
         plt.savefig(os.path.join(OUT_DIR, f"{gal}_core_scan.png"), bbox_inches='tight', dpi=150)
         plt.close()
 
+    # ---- summary across galaxies: fit table and the core gas each gas model wants ----
+    for gal in GALAXIES:
+        res = results[gal]
+        for kind in ("sparc", "measured"):
+            rows = res["core_scan"][kind]
+            best = min(rows, key=lambda r_: r_['mae'])
+            best["at_scan_edge"] = best is rows[-1]
+            best["core_mass_Msun"] = best['gas_mass_inside_rmax_Msun'] - rows[0]['gas_mass_inside_rmax_Msun']
+            res["best_core_" + kind] = best
+        res["Vflat"] = float(np.max(runs["a_sparc_core"][gal]['Vobs']))
+
+    order = sorted(GALAXIES, key=lambda gal: results[gal]["Vflat"])
+    lines = ["| galaxy | Vmax | a0 SPARC, no core | a SPARC + core | b measured, no core | c measured + core | MOND | "
+             "best n0 SPARC (MAE) | best n0 measured (MAE) | core mass SPARC | core mass measured | gas mass SPARC disk | gas mass measured |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for gal in order:
+        r_ = results[gal]
+        bs, bm = r_["best_core_sparc"], r_["best_core_measured"]
+        edge = lambda b: "≥" if b["at_scan_edge"] else ""
+        lines.append(f"| {gal} | {r_['Vflat']:.0f} | {r_['a0_sparc_nocore']['mae']:.1f} | {r_['a_sparc_core']['mae']:.1f} | "
+                     f"{r_['b_measured_nocore']['mae']:.1f} | {r_['c_measured_core']['mae']:.1f} | {r_['MOND_sparc_gas']['mae']:.1f} | "
+                     f"{edge(bs)}{bs['n0_cm3']:.2f} ({bs['mae']:.1f}) | {edge(bm)}{bm['n0_cm3']:.2f} ({bm['mae']:.1f}) | "
+                     f"{bs['core_mass_Msun']:.1e} | {bm['core_mass_Msun']:.1e} | "
+                     f"{r_['a0_sparc_nocore']['gas_mass_inside_rmax_Msun']:.1e} | {r_['b_measured_nocore']['gas_mass_inside_rmax_Msun']:.1e} |")
+    with open(os.path.join(OUT_DIR, "summary_table.md"), "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    plot_core_summary(results, order)
+
     with open(os.path.join(OUT_DIR, "results.json"), "w") as f:
         json.dump(results, f, indent=1)
-    print(json.dumps(results, indent=1))
+    print("\n".join(lines))

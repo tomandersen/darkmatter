@@ -27,19 +27,40 @@ HE_FACTOR_H2 = 1.36  # alpha_CO includes helium; strip it so we count hydrogen o
 
 MSUN_PC2_TO_H_CM2 = 1.98847e33 / (3.0857e18**2) / 1.6726e-24   # 1 Msun/pc^2 of pure hydrogen = 1.249e20 H/cm^2
 
-# Galaxy geometry. Centre, inclination and PA from de Blok et al. 2008 (AJ 136, 2648) Table 2 (THINGS);
-# distance from SPARC (Lelli et al. 2016) so radii line up with the SPARC rotation curve.
+# Galaxy geometry. Centre, inclination and PA from de Blok et al. 2008 (AJ 136, 2648) Table 2 (THINGS).
+# Distance and R_max come from SPARC (Lelli et al. 2016) so radii line up with the SPARC rotation curve (see sparc_D_rmax).
+# D_things: THINGS/Leroy+2008 distance, only used to rescale the Leroy+2008 radii in the check plots.
 # beam (arcsec) for the THINGS natural-weighted maps from the AIPS CLEAN BMAJ/BMIN header history.
+# All 12 SPARC galaxies with THINGS + HERACLES maps except NGC 4214 (inclination 15 deg) and NGC 2366 (SPARC quality 3).
 GALAXIES = {
-    "NGC2403": dict(ra="07h36m51.1s", dec="+65d36m02.9s", inc=62.9, pa=123.7, D_mpc=3.16,
-                    hi="NGC_2403_NA_MOM0_THINGS.FITS", co="ngc2403_heracles_mom0.fits.gz", r_max_kpc=22.0),
-    "NGC6946": dict(ra="20h34m52.2s", dec="+60d09m14.4s", inc=32.6, pa=242.7, D_mpc=5.52,
-                    hi="NGC_6946_NA_MOM0_THINGS.FITS", co="ngc6946_heracles_mom0.fits.gz", r_max_kpc=22.0),
+    "NGC2403": dict(ra="07h36m51.1s", dec="+65d36m02.9s", inc=62.9, pa=123.7, D_things=3.2, hi="NGC_2403_NA_MOM0_THINGS.FITS", co="ngc2403_heracles_mom0.fits.gz"),
+    "NGC6946": dict(ra="20h34m52.2s", dec="+60d09m14.4s", inc=32.6, pa=242.7, D_things=5.9, hi="NGC_6946_NA_MOM0_THINGS.FITS", co="ngc6946_heracles_mom0.fits.gz"),
+    "NGC2841": dict(ra="09h22m02.6s", dec="+50d58m35.4s", inc=73.7, pa=152.6, D_things=14.1, hi="NGC_2841_NA_MOM0_THINGS.FITS", co="ngc2841_heracles_mom0.fits.gz"),
+    "NGC2903": dict(ra="09h32m10.1s", dec="+21d30m04.3s", inc=65.2, pa=204.3, D_things=8.9, hi="NGC_2903_NA_MOM0_THINGS.FITS", co="ngc2903_heracles_mom0.fits.gz"),
+    "NGC2976": dict(ra="09h47m15.3s", dec="+67d55m00.0s", inc=64.5, pa=334.5, D_things=3.6, hi="NGC_2976_NA_MOM0_THINGS.FITS", co="ngc2976_heracles_mom0.fits.gz"),
+    "NGC3198": dict(ra="10h19m55.0s", dec="+45d32m58.9s", inc=71.5, pa=215.0, D_things=13.8, hi="NGC_3198_NA_MOM0_THINGS.FITS", co="ngc3198_heracles_mom0.fits.gz"),
+    "NGC3521": dict(ra="11h05m48.6s", dec="-00d02m09.2s", inc=72.7, pa=339.8, D_things=10.7, hi="NGC_3521_NA_MOM0_THINGS.FITS", co="ngc3521_heracles_mom0.fits.gz"),
+    "NGC5055": dict(ra="13h15m49.2s", dec="+42d01m45.3s", inc=59.0, pa=101.8, D_things=10.1, hi="NGC_5055_NA_MOM0_THINGS.FITS", co="ngc5055_heracles_mom0.fits.gz"),
+    "NGC7331": dict(ra="22h37m04.1s", dec="+34d24m56.5s", inc=75.8, pa=167.7, D_things=14.7, hi="NGC_7331_NA_MOM0_THINGS.FITS", co="ngc7331_heracles_mom0.fits.gz"),
+    "DDO154":  dict(ra="12h54m05.7s", dec="+27d09m09.9s", inc=66.0, pa=229.7, D_things=4.3, hi="DDO154_NA_MOM0_THINGS.FITS",   co="ddo154_heracles_mom0.fits.gz"),
 }
 
-RING_WIDTH_KPC = 0.25
+N_RINGS = 90            # ring width = r_max / N_RINGS (so small dwarfs get fine rings too)
+R_MAX_FACTOR = 1.15     # profiles go out to this times the last SPARC rotation curve point
 N_SECTORS = 36          # azimuthal coverage is measured as the fraction of 10 degree sectors that have pixels
-MIN_COVERAGE = 0.6      # rings with less azimuthal coverage than this are flagged (the model then falls back to SPARC Sigma_gas)
+MIN_COVERAGE = 0.6      # CO rings with less azimuthal coverage than this are set to zero; HI rings below it are flagged and
+                        # gas3d_test.py falls back to the SPARC Sigma_gas column there
+
+
+def sparc_D_rmax(gal):
+    D = None
+    with open("./sparc/SPARC_Lelli2016c.mrt.txt") as f:
+        for line in f:
+            parts = line.split()
+            if len(parts) >= 12 and parts[0] == gal and parts[1].lstrip('-').isdigit():
+                D = float(parts[2])
+    R, _ = read_sparc_sigma(gal)
+    return D, float(np.max(R))
 
 
 def beam_from_history(header):
@@ -94,6 +115,9 @@ def ring_profile(R_kpc, phi, values, r_edges):
 
 
 def build(gal, cfg):
+    cfg = dict(cfg)
+    cfg["D_mpc"], r_max_sparc = sparc_D_rmax(gal)
+    cfg["r_max_kpc"] = R_MAX_FACTOR * r_max_sparc
     cos_i = np.cos(np.deg2rad(cfg["inc"]))
 
     # ---- HI (THINGS) ----
@@ -115,7 +139,7 @@ def build(gal, cfg):
     N_H2_face = Sigma_H2_msun * MSUN_PC2_TO_H_CM2                    # H nuclei / cm^2 (2 per molecule)
     R_co, phi_co, _, _ = galaxy_plane_coords(wcs_co, co.shape, cfg)
 
-    r_edges = np.arange(0.0, cfg["r_max_kpc"] + RING_WIDTH_KPC, RING_WIDTH_KPC)
+    r_edges = np.linspace(0.0, cfg["r_max_kpc"], N_RINGS + 1)
     r_mid = 0.5 * (r_edges[1:] + r_edges[:-1])
     hi_mean, hi_cov, hi_clump = ring_profile(R_hi, phi_hi, N_HI_face, r_edges)
     h2_mean, h2_cov, h2_clump = ring_profile(R_co, phi_co, N_H2_face, r_edges)
@@ -161,7 +185,8 @@ def read_leroy(gal):
         for line in f:
             if line[0:8].strip() == name:
                 R.append(float(line[9:13]))
-                HI.append(float(line[19:24]))
+                hi = line[19:24].strip()
+                HI.append(float(hi) if hi else np.nan)
                 h2 = line[29:35].strip()
                 H2.append(float(h2) if h2 else np.nan)
     return np.array(R), np.array(HI), np.array(H2)
@@ -172,6 +197,7 @@ if __name__ == "__main__":
         r, hi, hi_cov, h2 = build(gal, cfg)
         R_s, S_s = read_sparc_sigma(gal)
         R_l, HI_l, H2_l = read_leroy(gal)
+        R_l = R_l * sparc_D_rmax(gal)[0] / cfg["D_things"]  # Leroy radii are at the THINGS distance
         to_msun = 1.36 / MSUN_PC2_TO_H_CM2  # plot in Msun/pc^2 including helium, like Leroy et al. 2008
         plt.figure(figsize=(8, 5))
         ok = hi_cov >= MIN_COVERAGE
@@ -179,7 +205,7 @@ if __name__ == "__main__":
         plt.plot(r[~ok], hi[~ok] * to_msun, 'g:', label='HI THINGS, partial coverage')
         plt.plot(r, h2 * to_msun, 'r-', label=f'H2 HERACLES, alpha_CO={ALPHA_CO_10}, R21={R21}')
         plt.plot(R_s, S_s * to_msun, 'k--', label='SPARC Sigma_gas (from Vgas)')
-        plt.plot(R_l, HI_l, 'g.', markersize=3, label='HI Leroy+2008')
+        plt.plot(R_l, HI_l, 'g.', markersize=3, label='HI Leroy+2008 (radii rescaled to SPARC D)')
         plt.plot(R_l, H2_l, 'r.', markersize=3, label='H2 Leroy+2008 (alpha=4.4, R21=0.8)')
         plt.yscale('log')
         plt.ylim(0.05, 1000)
