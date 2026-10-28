@@ -35,7 +35,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
     USE_LINEAR_ERROR = True
-    USE_INTERPOLATED_FIT = True # Added boolean to switch between fits
+    USE_INTERPOLATED_FIT = False # Added boolean to switch between fits
 
     # control the length of time it takes to calculate everything. 
     num_points = int(num_minutes*3e5) 
@@ -939,13 +939,13 @@ def core_gas_density_correction(total_mass):
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
     err_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
-        add_core_gas_central_density=0.6, #0.60, #0.60
-        add_core_gas_beta=1.93, 
+        add_core_gas_central_density=0.45, #0.60, #0.60
+        add_core_gas_beta=2.4, 
         r_core_factor_gas=2.5, 
-        add_real_cgm_central_density=0.00,  # 0.026
+        add_real_cgm_central_density=0.026,  # 0.026
         r_core_factor_cgm=0.20, 
         cgm_beta = 0.50,
-        num_minutes=3, 
+        num_minutes=8, 
         output_graphs=True,
         power_override = 0.0,
         min_mass = 0,
