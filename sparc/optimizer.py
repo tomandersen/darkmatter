@@ -6,12 +6,12 @@ from pathlib import Path
 # 1. Define your objective function
 def objective(trial):
     # Suggest 6 floating-point variables with predefined bounds
-    add_core_gas_central_density = trial.suggest_float("add_core_gas_central_density", 0.3, 0.7)
-    add_core_gas_beta = 2.5# trial.suggest_float("add_core_gas_beta", 1.7, 3.0)
+    add_core_gas_central_density = trial.suggest_float("add_core_gas_central_density", 0.5, 1.0)
+    add_core_gas_beta = trial.suggest_float("add_core_gas_beta", 1.7, 3.0)
     r_core_factor_gas = 2.5# trial.suggest_float("r_core_factor_gas", 1, 5) 
-    add_real_cgm_central_density = 0.03 #0.026 #trial.suggest_float("add_real_cgm_central_density", 0,  0.1)
+    add_real_cgm_central_density = 0.00 #0.026 #trial.suggest_float("add_real_cgm_central_density", 0,  0.1)
     r_core_factor_cgm = 0.2 #trial.suggest_float("r_core_factor_cgm", 0.1, 0.5)
-    cgm_beta = trial.suggest_float("cgm_beta", 0.5, 0.7)
+    cgm_beta = 0.7 #trial.suggest_float("cgm_beta", 0.5, 1.0)
 
     num_minutes = 4 
     output_graphs = False
@@ -28,7 +28,7 @@ def objective(trial):
     return result, power # Optuna will try to minimize or maximize this
 
 # 2. Use a persistent SQLite database so you can stop/resume anytime
-study_name = "dark_mass_opt_" + Path(__file__).resolve().parent.parent.name + "TPE-core-gas2.5-corebeta2.5-cgm0.03-corefactorcgm0.2"
+study_name = "dark_mass_opt_" + Path(__file__).resolve().parent.parent.name + "TPE-CHI-core-gas2.5-NOCGM"
 study = optuna.create_study(
     study_name=study_name, 
     storage="sqlite:///optimization.db", 

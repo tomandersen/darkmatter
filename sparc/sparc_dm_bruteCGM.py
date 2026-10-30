@@ -29,13 +29,14 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     warnings.filterwarnings("ignore")
 
     Upsilon_disk = 0.5   
-    Upsilon_bulge = 0.6  # 0.6 seems to work a little better
+    Upsilon_bulge = 0.7  # 0.6 seems to work a little better
 
     sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
     sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
 
-    USE_LINEAR_ERROR = True
+    USE_LINEAR_ERROR = False
     USE_INTERPOLATED_FIT = False # Added boolean to switch between fits
+    kLelliVerr = 0.15 # 15% error on velocity measurements
 
     # control the length of time it takes to calculate everything. 
     num_points = int(num_minutes*3e5) 
@@ -82,18 +83,24 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     rd_dict = {}
     HIMass_dict = {}
     TL_dict = {}
+    Inclination_dict = {}
+    Quality_dict = {}
     with open(properties_file, 'r') as f:
         for line in f:
             parts = line.split()
             if len(parts) >= 12 and parts[1].lstrip('-').isdigit():
                 gal_name = parts[0]
                 try:
+                    inclination = float(parts[7])
+                    Inclination_dict[gal_name] = inclination
                     r_d = float(parts[11])
                     rd_dict[gal_name] = r_d
                     t_luminosity = float(parts[7])
                     TL_dict[gal_name] = t_luminosity
                     hi_mass = float(parts[13])
                     HIMass_dict[gal_name] = hi_mass
+                    quality = int(parts[17])
+                    Quality_dict[gal_name] = quality
                 except ValueError:
                     continue
 
@@ -162,7 +169,13 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         if (total_mass < min_mass or total_mass > max_mass):
             del galaxies[gal]
             continue
- 
+        if Quality_dict[gal] > 2:
+            del galaxies[gal]
+            continue
+        # if Inclination_dict[gal] < 30:
+        #     del galaxies[gal]
+        #     continue
+
 
         g_data = galaxies[gal]
         R_obs_kpc = g_data['R']
@@ -368,7 +381,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
                 if USE_LINEAR_ERROR:
                     the_err = np.sum(np.abs(g['Vobs_grid'][i0:i1] - V_tot_test_grid[i0:i1]))
                 else:
-                    the_err = np.sum(((g['Vobs_grid'][i0:i1] - V_tot_test_grid[i0:i1]) / g['eVobs_grid'][i0:i1])**2)
+                    chi_err = np.sqrt((V_tot_test_grid[i0:i1]*kLelliVerr)**2 + g['eVobs_grid'][i0:i1]**2)
+                    the_err = np.sum(((g['Vobs_grid'][i0:i1] - V_tot_test_grid[i0:i1]) / chi_err)**2)
             else:
                 V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
                 
@@ -382,7 +396,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
                 if USE_LINEAR_ERROR:
                     the_err = np.sum(np.abs(g['Vobs'] - V_tot_test))
                 else:
-                    the_err = np.sum(((g['Vobs'] - V_tot_test) / g['eVobs'])**2) 
+                    chi_err = np.sqrt((V_tot_test*kLelliVerr)**2 + g['eVobs']**2)
+                    the_err = np.sum(((g['Vobs'] - V_tot_test) / chi_err)**2) 
                     
             total_err += the_err
       
@@ -589,12 +604,12 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write("--- GLOBAL OPTIMIZATION RESULTS ---\n")
             log_file.write(f"  USE_LINEAR_ERROR = {USE_LINEAR_ERROR}\n")
             log_file.write(f"  USE_INTERPOLATED_FIT = {USE_INTERPOLATED_FIT}\n")
-            log_file.write(f"  Best Global P: {best_global_P:.4f} W\n")
+            log_file.write(f"  Best Global P: {best_global_P:.4f} W for {len(galaxies)} galaxies\n")
             
             number_of_points = np.sum([len(galaxies[gal]['Vobs']) for gal in galaxies]) 
             number_of_grid_points = np.sum([len(galaxies[gal]['Vobs_grid']) for gal in galaxies]) 
             
-            log_file.write(f"  DM Chi^2 Total (Obs): {dm_chi2_total:.2f}\n")
+            log_file.write(f"  DM Chi^2 Total (Obs): {dm_chi2_total:.2f} per point: {dm_chi2_total/number_of_points:.2f}\n")
             log_file.write(f"  DM Linear Total Error (Weighted Obs): {dm_linear_total_err:.2f}\n")
             log_file.write(f"  DM Linear Total Error (Unweighted Obs): {dm_linear_total:.2f} km/s, per point: {dm_linear_total/number_of_points:.2f} km/s\n\n")
             
@@ -602,7 +617,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write(f"  DM Linear Total Error (Interpolated Grid): {dm_grid_linear_total:.2f} km/s, per point: {dm_grid_linear_total/number_of_grid_points:.2f} km/s\n\n")
             
             log_file.write("--- MOND (Simple) PREDICTION ERRORS ---\n")
-            log_file.write(f"  MOND Chi^2 Total: {mond_chi2_total:.2f}\n")
+            log_file.write(f"  MOND Chi^2 Total: {mond_chi2_total:.2f} per point: {mond_chi2_total/number_of_points:.2f}\n")
             log_file.write(f"  MOND Linear Total Error (Weighted): {mond_linear_total_err:.2f}\n")
             log_file.write(f"  MOND Linear Total Error (Unweighted): {mond_linear_total:.2f} km/s, per point: {mond_linear_total/number_of_points:.2f} km/s\n\n")
             log_file.write(f"  MOND Linear Total Error via grid (Unweighted): {mond_linear_total_grid:.2f} km/s, per point: {mond_linear_total_grid/number_of_grid_points:.2f} km/s\n\n")
@@ -939,12 +954,12 @@ def core_gas_density_correction(total_mass):
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
     err_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
-        add_core_gas_central_density=0.45, #0.60, #0.60
-        add_core_gas_beta=2.4, 
+        add_core_gas_central_density=0.55, #0.60, #0.60
+        add_core_gas_beta=2.3, 
         r_core_factor_gas=2.5, 
-        add_real_cgm_central_density=0.026,  # 0.026
+        add_real_cgm_central_density=0.025,  # 0.025
         r_core_factor_cgm=0.20, 
-        cgm_beta = 0.50,
+        cgm_beta = 0.68,
         num_minutes=8, 
         output_graphs=True,
         power_override = 0.0,
