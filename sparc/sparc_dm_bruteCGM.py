@@ -169,9 +169,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         if (total_mass < min_mass or total_mass > max_mass):
             del galaxies[gal]
             continue
-        if Quality_dict[gal] > 2:
-            del galaxies[gal]
-            continue
+        # if Quality_dict[gal] > 2:
+        #     del galaxies[gal]
+        #     continue
         # if Inclination_dict[gal] < 30:
         #     del galaxies[gal]
         #     continue
@@ -403,12 +403,12 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
       
         return total_err
 
-    result = minimize_scalar(global_fit_err, bounds=(0.5, 100.0), method='bounded')
-    print(f"Found best power: {result.x:.3f} (± {result.fun:.3e})")
-
-    best_global_P = result.x
-    min_found_err = result.fun
-    if (power_override > 0.0):
+    if (power_override == 0.0):
+        result = minimize_scalar(global_fit_err, bounds=(0.5, 100.0), method='bounded')
+        print(f"Found best power: {result.x:.3f} (± {result.fun:.3e})")
+        best_global_P = result.x
+        min_found_err = result.fun
+    else:
         best_global_P = power_override
         min_found_err = 0
 
@@ -821,7 +821,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             plt.xlabel('Radius (kpc)')
             plt.ylabel('Velocity (km/s)')
-            plt.title(f'{gal} Kinematics (Universal P = {best_global_P:.2f} W)')
+            plt.title(f'{gal} Kinematics (Universal P = {best_global_P:.2f} W, gas:{add_core_gas_central_density:.2f}/cc)')
             leg = plt.legend(fontsize="small")
             leg.get_frame().set_linewidth(0.0) 
 
@@ -966,6 +966,7 @@ if __name__ == "__main__":
         min_mass = 0,
         max_mass = 1e99
     )
+    
     print(f"Done.")
     print(f"Err per point: {err_per_point}")
     print(f"Best power: {best_power}\n")
