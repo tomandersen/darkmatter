@@ -70,7 +70,7 @@ def optimize_individual_galaxies():
 
     # Database file: optimize_individual_YYYY_MM_DD.db
     date_str = datetime.now().strftime("%Y_%m_%d")
-    db_file = Path(__file__).parent / f"optimize_individual_central_gas_cc_{date_str}.db"
+    db_file = Path(__file__).parent / f"optimize_individual_central_gas_{date_str}.db"
     storage_url = f"sqlite:///{db_file.resolve()}"
     print(f"Optuna database storage: {storage_url}")
 
@@ -80,7 +80,7 @@ def optimize_individual_galaxies():
     add_real_cgm_central_density = 0.025
     r_core_factor_cgm = 0.20
     cgm_beta = 0.68
-    num_minutes = 8
+    num_minutes = 9
     output_graphs = False
     power_override = 16.0
     min_mass = 0
@@ -89,7 +89,7 @@ def optimize_individual_galaxies():
     n_trials_target = 20
 
     core_densities = {}
-    output_file = Path(__file__).parent / "core_densities.txt"
+    output_file = Path(__file__).parent / "core_densities_fresh.txt"
     if output_file.exists():
         with open(output_file, "r") as f:
             for line in f:
@@ -123,7 +123,7 @@ def optimize_individual_galaxies():
 
         def objective(trial):
             # One variable to vary
-            add_core_gas_central_density = trial.suggest_float("add_core_gas_central_density", 0.0, 2.5)
+            add_core_gas_central_density = trial.suggest_float("add_core_gas_central_density", 0.0, 3.0)
             # Redirect stdout to os.devnull (the system's "black hole")
             with open(os.devnull, 'w') as fnull:
                 with redirect_stdout(fnull):

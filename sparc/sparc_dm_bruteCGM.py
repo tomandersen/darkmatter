@@ -11,8 +11,30 @@ import warnings
 import gc 
 
 
+def load_core_densities(core_file=None):
+    """Load per-galaxy core gas central densities from core_densities.txt."""
+    if core_file is None:
+        core_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "core_densities.txt")
+        if not os.path.exists(core_file):
+            core_file = "./sparc/core_densities.txt"
+    file_core_densities = {}
+    if os.path.exists(core_file):
+        with open(core_file, 'r') as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) >= 2:
+                    try:
+                        file_core_densities[parts[0]] = float(parts[1])
+                    except ValueError:
+                        pass
+        print(f"Loaded core densities for {len(file_core_densities)} galaxies from {core_file}")
+    else:
+        print(f"Warning: core_densities.txt not found at {core_file}")
+    return file_core_densities
+
+
 def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True, power_override = 9.0, min_mass=0, max_mass=1e99,
-                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None):
+                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False):
     # supplied_gas_density: optional dict {galaxy_name: fn(R_m, Z_m, Theta_m) -> gas particle density [m^-3]}
     #   For those galaxies the 3D gas grid comes from fn instead of the axisymmetric Sigma_gas column (core gas / CGM are still added on top).
     #   fn gets the 3D meshgrid arrays (indexing='ij', shape R x Z x Theta) in metres / radians.
@@ -21,6 +43,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     # return_galaxies: if True also return the per-galaxy dict (curves etc) as a fourth value
     # z_stretch_kpc: if set, z layers are spaced as z = A*sinh(u) with A = z_stretch_kpc (u uniform), so layers are
     #   ~A*du thick near the mid-plane and coarse far out. Needed for thin (~50 pc) molecular layers. Default: uniform z.
+    # use_core_gas_file: if True, load per-galaxy core gas central densities from core_densities.txt in /sparc (overrides input add_core_gas_central_density, hides MOND in plots)
     # Record start time and date
     start_time = time.time()
     start_datetime = datetime.now()
@@ -158,6 +181,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     M_sun = 1.98847e30     
 
     # 3. Pre-calculate Base Integrals (P=1 Watt) for ALL galaxies
+    file_core_densities = load_core_densities() if use_core_gas_file else {}
+
     print(f"Pre-calculating base arrays for {len(galaxies)} galaxies via continuous 3D brute force...")
 
     # we may delete galaxies in this loop, filtering them out..
@@ -178,6 +203,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
 
         g_data = galaxies[gal]
+        gal_core_gas_density = file_core_densities[gal] if (use_core_gas_file and gal in file_core_densities) else add_core_gas_central_density
+        g_data['core_gas_central_density'] = gal_core_gas_density
         R_obs_kpc = g_data['R']
         R_m_obs = R_obs_kpc * kpc_to_m
         V_gas_ms = g_data['Vgas'] * 1000.0
@@ -278,8 +305,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         # core gas density correction: I have determined that I need to add (9.5 - log10(TL))*0.2 to the core gas density.
         # Determined by fitting.
         #print(f"{gal} core_gas_density_correction {core_gas_density_correction(total_mass)} total mass: {total_mass/1e9}")
-        if add_core_gas_central_density > 0.0:
-            n_0_cgs = add_core_gas_central_density + core_gas_density_correction(total_mass)
+        if gal_core_gas_density > 0.0:
+            n_0_cgs = gal_core_gas_density + core_gas_density_correction(total_mass)
             n_0_m3 =  n_0_cgs * (100)**3
             exponent = -add_core_gas_beta 
             gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_gas_m**2)**exponent
@@ -386,8 +413,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             else:
                 V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
                 
+                gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
                 gas_to_use = 'Vgas'
-                if add_core_gas_central_density > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
+                if gal_core_gas > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
                     gas_to_use = 'Vgas_test'
 
                 V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g[gas_to_use] * np.abs(g[gas_to_use]), 0, None) 
@@ -426,8 +454,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     for gal in galaxies:
         g = galaxies[gal]
 
+        gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
         gas_to_use = 'Vgas'
-        if add_core_gas_central_density > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
+        if gal_core_gas > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
             gas_to_use = 'Vgas_test'
 
         V_dm_final_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
@@ -548,8 +577,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
         n_0_m3 = 0
         total_mass = (TL_dict[name] + HIMass_dict[name])*1e9
-        if add_core_gas_central_density > 0.0:
-            n_0_1_cgs = add_core_gas_central_density + core_gas_density_correction(total_mass) 
+        gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
+        if gal_core_gas > 0.0:
+            n_0_1_cgs = gal_core_gas + core_gas_density_correction(total_mass) 
             n_0_1_m3 =  n_0_1_cgs * (100)**3
             exponent1 = -add_core_gas_beta 
         
@@ -592,7 +622,10 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write(f"  Total 3D grid points per galaxy = {NUM_R_BINS * NUM_BLOBS_THETA * NUM_LAYERS_Z/1e6:.2f} million\n")
             log_file.write(f"  R_GRID_SCALE_FACTOR = {R_GRID_SCALE_FACTOR}\n")
             log_file.write(f"  USE_EXPONENTIAL_DISK = {USE_EXPONENTIAL_DISK}\n")
-            log_file.write(f"  add_core_gas_central_density = {add_core_gas_central_density}\n")
+            if use_core_gas_file:
+                log_file.write(f"  add_core_gas_central_density = loaded from core_densities.txt\n")
+            else:
+                log_file.write(f"  add_core_gas_central_density = {add_core_gas_central_density}\n")
             log_file.write(f"  add_core_gas_beta = {add_core_gas_beta}\n")
             log_file.write(f"  add_real_cgm_central_density = {add_real_cgm_central_density}\n")
             log_file.write(f"  cgm_beta = {cgm_beta}\n")
@@ -784,8 +817,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         for gal in galaxies:
             g = galaxies[gal]
             
+            gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
             gas_to_use = 'Vgas'
-            if add_core_gas_central_density > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
+            if gal_core_gas > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
                 gas_to_use = 'Vgas_test'
 
             V_dm_final_obs_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
@@ -815,13 +849,14 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             max_r = max(g['R'])
             plt.xlim(0.0, max_r + max_r*0.02) 
-            plt.plot(g['R'], g['V_mond_kms'], 'c-.', linewidth=1, label='MOND')
+            if not use_core_gas_file:
+                plt.plot(g['R'], g['V_mond_kms'], 'c-.', linewidth=1, label='MOND')
         
             plt.errorbar(g['R'], g['Vobs'], yerr=g['eVobs'], fmt='ko', label='observed', capsize=1.5, capthick=1.0, markersize=2, elinewidth=0.6)
             
             plt.xlabel('Radius (kpc)')
             plt.ylabel('Velocity (km/s)')
-            plt.title(f'{gal} Kinematics (Universal P = {best_global_P:.2f} W, gas:{add_core_gas_central_density:.2f}/cc)')
+            plt.title(f'{gal} Kinematics (Universal P = {best_global_P:.2f} W, gas:{gal_core_gas:.3f}/cc)')
             leg = plt.legend(fontsize="small")
             leg.get_frame().set_linewidth(0.0) 
 
@@ -857,8 +892,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             R_m = g['R'] * kpc_to_m
             valid = R_m > 0 
             
+            gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
             gas_to_use = 'Vgas'
-            if add_core_gas_central_density > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
+            if gal_core_gas > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
                 gas_to_use = 'Vgas_test'
 
             V_dm_final_sq = best_global_P * g['V_dm_sq_base_kms']
@@ -960,11 +996,12 @@ if __name__ == "__main__":
         add_real_cgm_central_density=0.025,  # 0.025
         r_core_factor_cgm=0.20, 
         cgm_beta = 0.68,
-        num_minutes=8, 
+        num_minutes=25, 
         output_graphs=True,
-        power_override = 0.0,
+        power_override = 16.00,
         min_mass = 0,
-        max_mass = 1e99
+        max_mass = 1e99,
+        use_core_gas_file=True
     )
     
     print(f"Done.")
