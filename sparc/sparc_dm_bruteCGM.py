@@ -114,7 +114,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             if len(parts) >= 12 and parts[1].lstrip('-').isdigit():
                 gal_name = parts[0]
                 try:
-                    inclination = float(parts[7])
+                    inclination = float(parts[5])
                     Inclination_dict[gal_name] = inclination
                     r_d = float(parts[11])
                     rd_dict[gal_name] = r_d
@@ -198,8 +198,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         #     del galaxies[gal]
         #     continue
         # if Inclination_dict[gal] < 30:
-        #     del galaxies[gal]
-        #     continue
+        #     del galaxies[gal] 
+        #     continue 
 
 
         g_data = galaxies[gal]
@@ -302,13 +302,10 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         r_core_cgm_m = (r_core_kpc * r_core_factor_cgm) * kpc_to_m
         r_squared = X_blob**2 + Y_blob**2 + Z_blob**2
 
-        # core gas density correction: I have determined that I need to add (9.5 - log10(TL))*0.2 to the core gas density.
-        # Determined by fitting.
-        #print(f"{gal} core_gas_density_correction {core_gas_density_correction(total_mass)} total mass: {total_mass/1e9}")
         if gal_core_gas_density > 0.0:
-            n_0_cgs = gal_core_gas_density + core_gas_density_correction(total_mass)
+            n_0_cgs = gal_core_gas_density
             n_0_m3 =  n_0_cgs * (100)**3
-            exponent = -add_core_gas_beta 
+            exponent = -add_core_gas_beta
             gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_gas_m**2)**exponent
         if add_real_cgm_central_density > 0.0:
             n_0_cgs = add_real_cgm_central_density  
@@ -579,7 +576,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         total_mass = (TL_dict[name] + HIMass_dict[name])*1e9
         gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
         if gal_core_gas > 0.0:
-            n_0_1_cgs = gal_core_gas + core_gas_density_correction(total_mass) 
+            n_0_1_cgs = gal_core_gas
             n_0_1_m3 =  n_0_1_cgs * (100)**3
             exponent1 = -add_core_gas_beta 
         
@@ -979,26 +976,20 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         return returned_fit, best_global_P, global_stats['Unobserved_gas_fraction'], galaxies
     return returned_fit, best_global_P, global_stats['Unobserved_gas_fraction']
 
-# core gas density correction: I have determined that I need to add (9.5 - log10(TL))*0.10 to the core gas density.
-# Determined by fitting.
-def core_gas_density_correction(total_mass):
-    core_gas_density_correction = (9.5 - np.log10(total_mass)) * 0.09
-    return core_gas_density_correction
-
 
 
 if __name__ == "__main__":
     # You can adjust these default values as needed when running from the terminal
     err_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
         add_core_gas_central_density=0.55, #0.60, #0.60
-        add_core_gas_beta=2.3, 
+        add_core_gas_beta=2.25, 
         r_core_factor_gas=2.5, 
         add_real_cgm_central_density=0.025,  # 0.025
         r_core_factor_cgm=0.20, 
         cgm_beta = 0.68,
-        num_minutes=25, 
+        num_minutes=260, 
         output_graphs=True,
-        power_override = 16.00,
+        power_override = 0.0,
         min_mass = 0,
         max_mass = 1e99,
         use_core_gas_file=True
