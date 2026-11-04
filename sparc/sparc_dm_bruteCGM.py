@@ -34,7 +34,7 @@ def load_core_densities(core_file=None):
 
 
 def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True, power_override = 9.0, min_mass=0, max_mass=1e99,
-                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False):
+                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False, upsilon_factor=1.0):
     # supplied_gas_density: optional dict {galaxy_name: fn(R_m, Z_m, Theta_m) -> gas particle density [m^-3]}
     #   For those galaxies the 3D gas grid comes from fn instead of the axisymmetric Sigma_gas column (core gas / CGM are still added on top).
     #   fn gets the 3D meshgrid arrays (indexing='ij', shape R x Z x Theta) in metres / radians.
@@ -51,8 +51,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     # Suppress integration warnings for highly dense inner rings
     warnings.filterwarnings("ignore")
 
-    Upsilon_disk = 0.5   
-    Upsilon_bulge = 0.7  # 0.6 seems to work a little better
+    Upsilon_disk = 0.5*upsilon_factor   
+    Upsilon_bulge = 0.7*upsilon_factor  # 0.6 seems to work a little better
 
     sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
     sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
@@ -79,6 +79,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     # to speed it up, maybe dont bother with heatmaps
     DO_HEATMAPS = output_graphs
+    if num_minutes < 12.0:
+        DO_HEATMAPS = False # don't bother on faster runs
 
     # as per the litrature, I think Lelli 2016 uses this
     def get_sparc_galaxy_scale_height(radius_kpc, R_d):
@@ -853,7 +855,10 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             plt.xlabel('Radius (kpc)')
             plt.ylabel('Velocity (km/s)')
-            plt.title(f'{gal} Kinematics (Universal P = {best_global_P:.2f} W, gas:{gal_core_gas:.3f}/cc)')
+            title = f'{gal} Kinematics (Universal P = {best_global_P:.2f} W, gas:{gal_core_gas:.3f}/cc)'
+            if upsilon_factor != 1.0:
+                title += rf'$\Upsilon_f$:{upsilon_factor:.2f}'
+            plt.title(title)
             leg = plt.legend(fontsize="small")
             leg.get_frame().set_linewidth(0.0) 
 
@@ -978,23 +983,41 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
 
 
+
+
+
 if __name__ == "__main__":
-    # You can adjust these default values as needed when running from the terminal
+
+    # plan is to set thigs up so that it all runs from here making the graphs for the paper
+    paper_core_gas_density=-0.3
+    paper_core_gas_beta=2.25
+    paper_core_gas_factor=2.5
+
+    paper_cgm_density=0.025
+    paper_cgm_beta=0.68
+    paper_cgm_factor=0.20
+
+    num_minutes = 2 
+
+    paper_power = 40.0 # watts
+
+    # use the core densities made with optimize_individual_galaxies.py
+    output_dir = "./sparc/dm_mass_direct"
     err_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
-        add_core_gas_central_density=0.55, #0.60, #0.60
-        add_core_gas_beta=2.25, 
-        r_core_factor_gas=2.5, 
-        add_real_cgm_central_density=0.025,  # 0.025
-        r_core_factor_cgm=0.20, 
-        cgm_beta = 0.68,
-        num_minutes=260, 
+        add_core_gas_central_density=paper_core_gas_density, # ignored as we are using the file
+        add_core_gas_beta=paper_core_gas_beta, 
+        r_core_factor_gas=paper_core_gas_factor,
+        add_real_cgm_central_density=paper_cgm_density,  
+        cgm_beta = paper_cgm_beta,
+        r_core_factor_cgm=paper_cgm_factor, 
+        num_minutes=num_minutes, 
         output_graphs=True,
-        power_override = 0.0,
-        min_mass = 0,
-        max_mass = 1e99,
-        use_core_gas_file=True
+        power_override = paper_power,
+        use_core_gas_file=False,
+        output_dir_override=output_dir
     )
-    
+
+
     print(f"Done.")
     print(f"Err per point: {err_per_point}")
     print(f"Best power: {best_power}\n")
