@@ -7,7 +7,7 @@ import optuna
 from contextlib import redirect_stdout
 
 
-output_dir = "./sparc/dm_mass_individual_neg_gas"
+output_dir = "./sparc/dm_mass_individual_core_gas_prod"
 
 
 # Optimize: Run through all the galaxies (load the galaxy names from the MassModels_Lelli2016c.mrt file)
@@ -80,7 +80,7 @@ def optimize_individual_galaxies():
 
     # Database file: optimize_individual_YYYY_MM_DD.db
     date_str = datetime.now().strftime("%Y_%m_%d")
-    db_file = Path(__file__).parent / f"optimize_individual_central_gas_upsilon_neg_gas{date_str}.db"
+    db_file = Path(__file__).parent / f"optimize_individual_central_gas_{date_str}.db"
     storage_url = f"sqlite:///{db_file.resolve()}"
     print(f"Optuna database storage: {storage_url}")
 
@@ -90,13 +90,13 @@ def optimize_individual_galaxies():
     add_real_cgm_central_density = 0.025
     r_core_factor_cgm = 0.20
     cgm_beta = 0.68
-    num_minutes = 4
+    num_minutes = 20
     output_graphs = False
     power_override = 16.0
     min_mass = 0
     max_mass = 1e99
 
-    n_trials_target = 50
+    n_trials_target = 40
 
     core_densities = {}
     upsilon_factors = {}
@@ -141,8 +141,8 @@ def optimize_individual_galaxies():
 
         def objective(trial):
             # One variable to vary
-            add_core_gas_central_density = trial.suggest_float("add_core_gas_central_density", -2.0, 3.0)
-            upsilon_factor = trial.suggest_float("upsilon_factor", 0.6, 1.4)
+            add_core_gas_central_density = trial.suggest_float("add_core_gas_central_density", 0.0, 6.0)
+            upsilon_factor = 1.0  #trial.suggest_float("upsilon_factor", 0.6, 1.4) # allowing Upsilon factor can work for galaxies with inner maximal disks. (1 means mult both Upsilons by a factor of 1)
             # Redirect stdout to os.devnull (the system's "black hole")
             with open(os.devnull, 'w') as fnull:
                 with redirect_stdout(fnull):
@@ -174,9 +174,11 @@ def optimize_individual_galaxies():
         print(f"Completed {gal_name} -> Best chi2/pt: {study.best_value:.4f}, Best params: {study.best_params}")
         
         # Record best parameter in core_densities dict and write core_densities.txt
+        best_upsilon_factor = 1.0
         core_densities[gal_name] = study.best_params["add_core_gas_central_density"]
         if "upsilon_factor" in study.best_params:
             upsilon_factors[gal_name] = study.best_params["upsilon_factor"]
+            best_upsilon_factor  = study.best_params["upsilon_factor"]
         write_core_densities_file(core_densities, upsilon_factors, output_file)
 
         # ok - now use the best parameters and turn graphs ON
@@ -194,7 +196,7 @@ def optimize_individual_galaxies():
                 max_mass=max_mass,
                 only_galaxies=[gal_name],
                 output_dir_override=output_dir,
-                upsilon_factor=study.best_params["upsilon_factor"]
+                upsilon_factor=best_upsilon_factor
             )
 
     write_core_densities_file(core_densities, upsilon_factors, output_file)

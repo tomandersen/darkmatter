@@ -9,7 +9,7 @@ paper_cgm_density=0.025
 paper_cgm_beta=0.68
 paper_cgm_factor=0.20
 
-num_minutes = 40 
+num_minutes = 60 # per run - about 5 runs.
 
 paper_power = 16.0 # watts
 

@@ -4,9 +4,9 @@
 # plus a stated warm ionized layer), each phase with its own vertical profile, does the rotation curve get better,
 # and how much of the invented spherical core gas is still needed?
 #
-# Variants (all at fixed P = 9.2 W, CGM off, same grid):
+# Variants (all at fixed P = 16 W, CGM off, same grid):
 #   a0: SPARC Sigma_gas column (from Vgas), no core gas
-#   a : SPARC Sigma_gas column + core gas (0.6 / beta 1.93 / r_core_factor 2.5)   <- the current canonical model
+#   a : SPARC Sigma_gas column + core gas (0.6 / beta 2.25 / r_core_factor 2.5)   <- the current canonical model
 #   b : measured HI + H2 + ionized, no core gas
 #   c : measured HI + H2 + ionized + core gas
 # plus sensitivity runs (alpha_CO x0.5 and x2, no ionized gas) and a scan of the core gas central density.
@@ -21,14 +21,14 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))  # the model lives in sparc/
-from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm, core_gas_density_correction
+from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 # all SPARC galaxies with THINGS HI + HERACLES CO maps, except NGC 4214 (inclination 15 deg) and NGC 2366 (SPARC quality 3)
 GALAXIES = ["NGC6946", "NGC2403", "NGC2841", "NGC2903", "NGC2976", "NGC3198", "NGC3521", "NGC5055", "NGC7331", "DDO154"]
-POWER = 9.2
-CORE = dict(add_core_gas_central_density=0.60, add_core_gas_beta=1.93, r_core_factor_gas=2.5)
-NO_CGM = dict(add_real_cgm_central_density=0.0, r_core_factor_cgm=0.20, cgm_beta=0.50)
-NUM_MINUTES = 8
+POWER = 16.0
+CORE = dict(add_core_gas_central_density=0.60, add_core_gas_beta=2.25, r_core_factor_gas=2.5)
+NO_CGM = dict(add_real_cgm_central_density=0.0, r_core_factor_cgm=0.25, cgm_beta=0.68)
+NUM_MINUTES = 5
 Z_STRETCH_KPC = 0.02   # sinh-spaced z layers: ~2 pc thick at the mid-plane, ~1 kpc at |z| = 10 kpc
 OUT_DIR = "./sparc/gas3d"
 RUN_DIR = os.path.join(OUT_DIR, "runs")
@@ -199,7 +199,7 @@ if __name__ == "__main__":
             rows = []
             for v in scan_values:
                 g = scan[kind][v][gal]
-                n0 = v + float(core_gas_density_correction(g['gas_plus_tl']))
+                n0 = v
                 if n0 <= 0.0:  # the mass correction is negative for massive galaxies; skip unphysical negative core densities
                     continue
                 V_tot, _, _ = curves_at_obs(g)
@@ -252,7 +252,7 @@ if __name__ == "__main__":
             rows = res["core_scan"][kind]
             plt.plot([r_['n0_cm3'] for r_ in rows], [r_['mae'] for r_ in rows], col + 'o-', label=f"{kind} gas")
         plt.axhline(res['MOND_sparc_gas']['mae'], color='c', linestyle='-.', label='MOND (SPARC gas)')
-        plt.axvline(core0 + float(core_gas_density_correction(ref['gas_plus_tl'])), color='grey', linestyle=':', label='canonical core n0')
+        plt.axvline(core0, color='grey', linestyle=':', label='canonical core n0')
         plt.xlabel('core gas central density n0 (cm$^{-3}$)')
         plt.ylabel('mean |Vobs - Vmodel| at observed radii (km/s)')
         plt.title(f'{gal}: how much core gas does each gas model want? (P = {POWER} W)')

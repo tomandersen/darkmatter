@@ -1,3 +1,4 @@
+from PIL.ImagePalette import negative
 from cgm_integral import evaluate_dm_mass_integral
 import numpy as np
 import os
@@ -304,7 +305,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         r_core_cgm_m = (r_core_kpc * r_core_factor_cgm) * kpc_to_m
         r_squared = X_blob**2 + Y_blob**2 + Z_blob**2
 
-        if gal_core_gas_density > 0.0:
+        if gal_core_gas_density != 0.0:
             n_0_cgs = gal_core_gas_density
             n_0_m3 =  n_0_cgs * (100)**3
             exponent = -add_core_gas_beta
@@ -414,7 +415,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
                 
                 gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
                 gas_to_use = 'Vgas'
-                if gal_core_gas > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
+                if gal_core_gas != 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
                     gas_to_use = 'Vgas_test'
 
                 V_bar_sq_kms = np.clip(g['Vdisk']**2 + g['Vbul']**2 + g[gas_to_use] * np.abs(g[gas_to_use]), 0, None) 
@@ -455,7 +456,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
         gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
         gas_to_use = 'Vgas'
-        if gal_core_gas > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
+        if gal_core_gas != 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
             gas_to_use = 'Vgas_test'
 
         V_dm_final_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
@@ -577,7 +578,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         n_0_m3 = 0
         total_mass = (TL_dict[name] + HIMass_dict[name])*1e9
         gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
-        if gal_core_gas > 0.0:
+        if gal_core_gas != 0.0:
             n_0_1_cgs = gal_core_gas
             n_0_1_m3 =  n_0_1_cgs * (100)**3
             exponent1 = -add_core_gas_beta 
@@ -699,6 +700,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
 
     def generate_mass_scatter_plots(output_dir, stats):
+        if add_core_gas_central_density < 0.0:
+            return
         m_b = np.array([s['M_b'] for s in stats])
         gas_plus_tl = np.array([s['Gas_Plus_TL'] for s in stats])
         tot_gas = np.array([s['R_max_Gas_Mass'] for s in stats])
@@ -818,7 +821,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
             gas_to_use = 'Vgas'
-            if gal_core_gas > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
+            if gal_core_gas != 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
                 gas_to_use = 'Vgas_test'
 
             V_dm_final_obs_kms = np.sqrt(best_global_P * g['V_dm_sq_base_kms'])
@@ -896,7 +899,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
             gas_to_use = 'Vgas'
-            if gal_core_gas > 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
+            if gal_core_gas != 0.0 or add_real_cgm_central_density > 0.0 or gal in supplied_gas_density:
                 gas_to_use = 'Vgas_test'
 
             V_dm_final_sq = best_global_P * g['V_dm_sq_base_kms']
@@ -989,7 +992,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 if __name__ == "__main__":
 
     # plan is to set thigs up so that it all runs from here making the graphs for the paper
-    paper_core_gas_density=-0.3
+    paper_core_gas_density=-1.55
     paper_core_gas_beta=2.25
     paper_core_gas_factor=2.5
 
@@ -1002,7 +1005,7 @@ if __name__ == "__main__":
     paper_power = 40.0 # watts
 
     # use the core densities made with optimize_individual_galaxies.py
-    output_dir = "./sparc/dm_mass_direct"
+    output_dir = "./sparc/dm_mass_py_file"
     err_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
         add_core_gas_central_density=paper_core_gas_density, # ignored as we are using the file
         add_core_gas_beta=paper_core_gas_beta, 
