@@ -794,23 +794,24 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     galaxy_stats, global_stats = compute_galaxy_stats(galaxies, best_global_P)
 
-    write_run_log(
-        output_dir=output_dir,
-        best_global_P=best_global_P,
-        dm_chi2_total=dm_chi2_total,
-        dm_linear_total_err=dm_linear_total_err,
-        dm_linear_total=dm_linear_total,
-        dm_grid_chi2_total=dm_grid_chi2_total,
-        dm_grid_linear_total=dm_grid_linear_total,
-        mond_chi2_total=mond_chi2_total,
-        mond_linear_total_err=mond_linear_total_err,
-        mond_linear_total=mond_linear_total,
-        mond_linear_total_grid=mond_linear_total_grid,
-        global_stats=global_stats,
-        galaxy_stats=galaxy_stats
-    )
-
     if output_graphs:
+        # Only log on graphing runs: parallel optimizer workers run with graphs off and share output_dir
+        write_run_log(
+            output_dir=output_dir,
+            best_global_P=best_global_P,
+            dm_chi2_total=dm_chi2_total,
+            dm_linear_total_err=dm_linear_total_err,
+            dm_linear_total=dm_linear_total,
+            dm_grid_chi2_total=dm_grid_chi2_total,
+            dm_grid_linear_total=dm_grid_linear_total,
+            mond_chi2_total=mond_chi2_total,
+            mond_linear_total_err=mond_linear_total_err,
+            mond_linear_total=mond_linear_total,
+            mond_linear_total_grid=mond_linear_total_grid,
+            global_stats=global_stats,
+            galaxy_stats=galaxy_stats
+        )
+
         # 5. Generate Output Plots
         print("\nGenerating individual galaxy plots and master summary...")
         all_V_obs = []

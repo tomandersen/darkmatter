@@ -1,4 +1,5 @@
     # plan is to set thigs up so that it all runs from here making the graphs for the paper
+from datetime import datetime
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 paper_core_gas_density=0.55
@@ -9,11 +10,13 @@ paper_cgm_density=0.025
 paper_cgm_beta=0.68
 paper_cgm_factor=0.20
 
-num_minutes = 60 # per run - about 5 runs.
+num_minutes = 10 # per run - about 5 runs.
 
 paper_power = 16.0 # watts
 
 #path_suffix = "_test"
+date_str = datetime.now().strftime("%Y_%m_%d")
+path_suffix = f"_{date_str}"
 
 # use the core densities made with optimize_individual_galaxies.py
 output_dir = "./sparc/dm_mass_core_file" + path_suffix
