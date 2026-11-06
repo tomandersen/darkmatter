@@ -60,7 +60,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     USE_LINEAR_ERROR = False
     USE_INTERPOLATED_FIT = False # Added boolean to switch between fits
-    kLelliVerr = 0.15 # 15% error on velocity measurements
+    CHI_ERR_V_TOT = 0.15 # 30% error on velocity measurements
 
     # control the length of time it takes to calculate everything. 
     num_points = int(num_minutes*3e5) 
@@ -408,7 +408,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
                 if USE_LINEAR_ERROR:
                     the_err = np.sum(np.abs(g['Vobs_grid'][i0:i1] - V_tot_test_grid[i0:i1]))
                 else:
-                    chi_err = np.sqrt((V_tot_test_grid[i0:i1]*kLelliVerr)**2 + g['eVobs_grid'][i0:i1]**2)
+                    chi_err = np.sqrt((V_tot_test_grid[i0:i1]*CHI_ERR_V_TOT)**2 + g['eVobs_grid'][i0:i1]**2)
                     the_err = np.sum(((g['Vobs_grid'][i0:i1] - V_tot_test_grid[i0:i1]) / chi_err)**2)
             else:
                 V_dm_test_sq = P_test * g['V_dm_sq_base_kms']
@@ -424,7 +424,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
                 if USE_LINEAR_ERROR:
                     the_err = np.sum(np.abs(g['Vobs'] - V_tot_test))
                 else:
-                    chi_err = np.sqrt((V_tot_test*kLelliVerr)**2 + g['eVobs']**2)
+                    chi_err = np.sqrt((V_tot_test*CHI_ERR_V_TOT)**2 + g['eVobs']**2)
                     the_err = np.sum(((g['Vobs'] - V_tot_test) / chi_err)**2) 
                     
             total_err += the_err
@@ -464,7 +464,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         V_tot_final_kms = np.sqrt(V_bar_sq_kms + V_dm_final_kms**2)
         
         # Original Data Points
-        dm_chi2_total += np.sum(((g['Vobs'] - V_tot_final_kms) / g['eVobs'])**2)
+        chi_err = np.sqrt((V_tot_final_kms*CHI_ERR_V_TOT)**2 + g['eVobs']**2)
+        dm_chi2_total += np.sum(((g['Vobs'] - V_tot_final_kms) / chi_err)**2)
         dm_linear_total_err += np.sum(np.abs(g['Vobs'] - V_tot_final_kms) / g['eVobs'])
         dm_linear_total += np.sum(np.abs(g['Vobs'] - V_tot_final_kms)) 
 
@@ -477,7 +478,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         dm_grid_linear_total += np.sum(np.abs(g['Vobs_grid'] - V_tot_final_grid_kms))
 
         # MOND
-        mond_chi2_total += np.sum(((g['Vobs'] - g['V_mond_kms']) / g['eVobs'])**2)
+        chi_err_mond = np.sqrt((g['V_mond_kms']*CHI_ERR_V_TOT)**2 + g['eVobs']**2)
+        mond_chi2_total += np.sum(((g['Vobs'] - g['V_mond_kms']) / chi_err_mond)**2)
         mond_linear_total_err += np.sum(np.abs(g['Vobs'] - g['V_mond_kms']) / g['eVobs'])
         mond_linear_total += np.sum(np.abs(g['Vobs'] - g['V_mond_kms']))
         mond_linear_total_grid += np.sum(np.abs(g['Vobs_grid'] - g['V_mond_grid_kms'])) 
@@ -993,20 +995,20 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 if __name__ == "__main__":
 
     # plan is to set thigs up so that it all runs from here making the graphs for the paper
-    paper_core_gas_density=-1.55
-    paper_core_gas_beta=2.25
+    paper_core_gas_density=0.40
+    paper_core_gas_beta=2.7
     paper_core_gas_factor=2.5
 
     paper_cgm_density=0.025
     paper_cgm_beta=0.68
     paper_cgm_factor=0.20
 
-    num_minutes = 2 
+    num_minutes = 5 
 
-    paper_power = 40.0 # watts
+    paper_power = 20.0 # watts
 
     # use the core densities made with optimize_individual_galaxies.py
-    output_dir = "./sparc/dm_mass_py_file"
+    output_dir = "./sparc/dm_mass_py_file_bigger_error"
     err_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
         add_core_gas_central_density=paper_core_gas_density, # ignored as we are using the file
         add_core_gas_beta=paper_core_gas_beta, 

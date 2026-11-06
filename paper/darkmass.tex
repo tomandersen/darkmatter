@@ -1,28 +1,39 @@
-\documentclass[twocolumn]{aastex63}
+\documentclass[fleqn,usenatbib]{mnras}
 %\documentclass[twocolumn]{aastex63} %
 
-\newcommand{\vdag}{(v)^\dagger}
-\newcommand\aastex{AAS\TeX}
-\newcommand\latex{L\textsubscript{E}\TeX}
+% MNRAS requires these font packages to look correct:
+\usepackage{newtxtext,newtxmath}
+\usepackage[T1]{fontenc}
 
-\shorttitle{A One-parameter, Purely Baryon Driven, Dark Matter Density Profile}
-\shorttitle{Galactic Rotation Curves from a Singular Parameter}
-\shortauthors{Thomas C. Andersen}
-\graphicspath{{./images}{../path/to/paper/results}}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+
+\graphicspath{{./images/}}
+
+\title[Rotation Curves from a Singular Parameter]{A One-parameter, Purely Baryon Driven, Dark Matter Density Profile}
+
+% ORCID 0000-0003-1614-4124: mnras.cls has no ORCID field; it is entered in the submission system.
+\author[T. C. Andersen]{Thomas C. Andersen$^{1}$\\
+$^{1}$nSCIr, Ontario, Canada}
+
+\date{Accepted XXX. Received YYY; in original form ZZZ}
+
+\pubyear{2026}
 
 \begin{document}
 
-\title{A One-parameter, Purely Baryon Driven, Dark Matter Density Profile}
-
-\author[0000-0003-1614-4124]{Thomas C. Andersen}
-\affiliation{nSCIr \\
-Ontario, Canada}
+\label{firstpage}
+\pagerange{\pageref{firstpage}--\pageref{lastpage}}
+\maketitle
 
 \begin{abstract}
 We present a novel empirical equation for the dark matter derived only from galactic (gas) kinematics. It is defined simply and entirely by the one-parameter scaling relation $\rho_{\text{dm}} = P/c^3 \cdot n_b^{2/3}$, where $n_b$ is the local volumetric particle density and $P$ is a universal global constant in units of power. To evaluate its applicability, we optimize and test this relation against the complete Spitzer Photometry and Accurate Rotation Curves (SPARC) database, with over 3000 data points across 175 morphologically diverse galaxies. The combination of $P$ and the  $2/3$ scaling law of dark mass density results in dark mass starting to be substantial when baryons are about a millimetre apart. The model generates rotation curves that are very similar to MOND, but has the advantage that it generates dark mass. With broadly accepted density functions for the circumgalactic medium (CGM) gas, it simultaneously produces appropriate dark matter halo masses as well. The best fit for $P$ surprisingly makes $P/c$ equal to the atomic unit of force, the possible importance of this is also discussed.    
 \end{abstract}
 
-\keywords{Dark matter, Dark mass, SPARC, Rotation curves}
+\begin{keywords}
+dark matter -- galaxies: kinematics and dynamics -- galaxies: haloes
+\end{keywords}
 
 \section{Introduction} \label{sec:intro}
 
@@ -37,7 +48,7 @@ There are currently two primary paths of investigation in galactic dynamics. The
 Rather than approaching this problem from the bottom up by inventing novel particle physics models or modifying gravitational field equations, this paper approaches the dark mass problem from the opposite direction: top-down phenomenological mapping. Historically, when fundamental microphysics are unknown, progress can be driven by identifying the exact geometric and empirical laws mandated by observation - much as Kepler's laws mapping planetary orbits paved the structural path for Newton's universal gravitation. Thus, we largely avoid investigating the 'why' of our dark matter model here. 
 
 We propose a dark matter density profile governed by a universal geometric scaling relation: $\rho_{\text{dm}} = P/c^3 \cdot n_b^{2/3}$, where $n_b$ is the local volumetric particle density and $P$ is our new universal constant, in Watts, (by dimensional analysis).  
-The $2/3$ exponent is what sets this model apart. With our value for $P$, a gas with a particle number density of $10^{-5}cm^{-3}$ would have a dark matter density of about 150 times that of the gas itself, while at $100 cm^{-3}$ the dark mass only adds about $50\%$ to the density of the gas. We posit that this dark mass  has a negligible effect on individual particle dynamics.  
+The $2/3$ exponent is what sets this model apart. With our value for $P$, a gas with a particle number density of $10^{-5}cm^{-3}$ would have a dark matter density of about 150 times that of the gas itself, while at $100 cm^{-3}$ the dark mass only adds about $50\%$ to the density of the gas. We assume that this dark mass  has a negligible effect on individual particle dynamics.  
 
 \section{Data and Methodology} \label{sec:meth}
 We perform 3 runs of our model, each run is over all 175 galaxies.
@@ -54,29 +65,32 @@ We perform 3 runs of our model, each run is over all 175 galaxies.
 
 \subsection{General outline of the fits}
 We determine the acceleration due to gravity at each $R_{obs}$ radius of the SPARC dataset from all baryons with the addition of dark mass from our model. The chosen method uses a 3D volumetric approach where each galaxy is modelled in a cylindrical system with a few million points per galaxy. Note that since the velocity contributions from stars are not modified, the 3D volume model is only used to store a particle density in each cell. Each cell then has an X, Y, Z position, a density of gas particles, and a volume. The gravitational attraction for each of the radial points in the SPARC dataset is determined by summing the millions of individual cell masses at their distance from each radial point. This method thus covers induced acceleration from matter at radii beyond the radial measuring point. Each galaxy is modelled as a disk with thickness as calculated using the same formula as the SPARC 2016\citep{lelliSPARCMassModels2016}: an exponential vertical distribution with scale half height $z_d = 0.196 R_d^{0.633}$. The bulge is ignored for the SPARC gas. Any gas added is done in a spherically symmetric way. The 3D model is large enough (1.1 times $R_{max}$) so that any gas - wether in or outside of the disk will contribute to acceleration and mass. 
-\begin{figure}[ht!]
+\begin{figure}
 \centering
-\label{fig:newton}
-\begin{center}
-
-\includegraphics[width=0.40\textwidth]{NGC0300_gas_heatmap.png} 
-\end{center}
+\includegraphics[width=\columnwidth]{NGC0300_gas_heatmap.png}
 \caption{Gas density plot for NGC 300. The galaxy has an additional $0.9cm^{-3} $ gas particles added at the core, plus a CGM gas halo. The CGM halo extends far beyond the diameter shown here.}
+\label{fig:ngc300_gas}
 \end{figure}
 
 Since our model requires a gas density, and the SPARC dataset only has a gas velocity, a small program was written to determine plausible densities, given the $V_{gas}$ data in SPARC. The problem is under defined, so many solutions are possible. We required the gas distribution to be as smooth as possible while still recreating the $V_{gas}$ from SPARC (which itself was created by analysis of gas density measurements). In run 0 we plotted this gas as a velocity for each galaxy to verify that our calculated gas densities were reasonable. 
 
+\subsection{Error and $\chi^2$ fitting}
+The SPARC data include errors in the observed rotation velocities, but the errors in the other parameters are unknown and uncertain. For instance errors in inclination directly affect the reported $V_{obs}$, and gas density errors effect the $V_{gas}$, etc. In \citep{liFittingRadialAcceleration2018} , the authors fit the 175 SPARC galaxies individually, with up to 4 free parameters per galaxy. Many of the best fit parameters such as inclination are a factor of 2 or more away from accepted values. This is an indication of the uncertainty in the physical layout of our galactic neighbours. 
+
+To capture this uncertainty, we assume a $15\%$ error in the calculated $V_{tot}$. If an error is not assumed fitting algorithims will pour their effort into minimizing the error on a few of the galaxies that have a large number of highly accurate $V_{obs}$. 
+
+In addition to this $\chi^2$ fitting algorithm, other fitting measures were tested, but the overall results only changed best fit outputs by a small amount. 
+
+Error results are shown as per point only, as the the measurements are highly correlated. Due to the exploratory nature of this work, a full Bayesian analysis is outside the scope. 
+
 
 \subsection{Run 0: Zero parameters, Newton}
 With the SPARC gas recreated as a density, we ran our model over all 175 galaxies. As this run completely lacks dark matter or MOND, it serves as a baseline. 
-\begin{figure}[ht!]
+\begin{figure}
 \centering
-\label{fig:newton}
-\begin{center}
-
-\includegraphics[width=0.48\textwidth]{NGC6946_dm_mass_Newton.png} 
-\end{center}
+\includegraphics[width=\columnwidth]{NGC6946_dm_mass_Newton.png}
 \caption{NGC 6946 - Newton. No gas added, our model turned off. This is an example of a check on our gas density recreation. The "baryons + dm" line is directly on top of the blue 'baryons (Lelli)' line which is our test.}
+\label{fig:newton}
 \end{figure}
 
 Result:
@@ -125,7 +139,7 @@ Result:
 	\item chosen core gas beta: 2.25,
 	\item chosen core gas factor $f$: 2.5,
 	\item best fit $n_0$: $0.55 cm^{-3}$,
-	\item $\chi^2_{core_gas} = 81 $ per point.
+	\item $\chi^2_{core\ gas} = 81 $ per point.
 \end{itemize}
 
 \subsection{The MOND fit}
@@ -157,19 +171,15 @@ In fit 3, we ran an optimizer on each galaxy, determining the best fit for $n_0$
 	\item chosen core gas beta: 2.25,
 	\item chosen core gas factor $f$: 2.5,
 	\item best fit $n_0$: $\in [0, 6]cm^{-3}$,
-	\item $\chi^2_{core_gas} = 14 $ per point.
+	\item $\chi^2_{each\ gas} = 14 $ per point.
 \end{itemize}
 
 
-\begin{figure}[ht!]
+\begin{figure}
 \centering
-\label{fig:example fits}
-\begin{center}
-
-\includegraphics[width=0.48\textwidth]{IC2574_dm_mass_variable_gas.png} 
-\includegraphics[width=0.48\textwidth]{NGC2403_dm_mass_variable_gas.png} 
-\end{center}
-\caption{Example individual one parameter per galaxy fit. The only fit parameter 'P' is fixed for all 175 galaxies once it is determined. The purple line shows the total fit by this model. All 175 images are available online. Renzo's rule is honoured at 4 kpc in the IC2574 plot, and at 2 - 5kpc in the NGC 2403 plot.}
+\includegraphics[width=\columnwidth]{IC2574_dm_mass_variable_gas.png}
+\caption{Example individual one parameter per galaxy fit. The only fit parameter 'P' is fixed for all 175 galaxies once it is determined. The purple line shows the total fit by this model. All 175 images are available online. Renzo's rule is honoured at 4 kpc in the IC2574 plot. Note that IC2574 requires almost zero extra core gas for an excellent fit.}
+\label{fig:example_fits}
 \end{figure}
 
 
@@ -209,15 +219,12 @@ The raw data is read in from the SPARC website publically availble data, blah bl
 
 
 
-\begin{figure}[ht!]
+\begin{figure}
 \centering
-\label{fig:newton}
-\begin{center}
-
-\includegraphics[width=0.48\textwidth]{global_predicted_accel_vs_obs_0.55_gas.png} 
-\includegraphics[width=0.48\textwidth]{global_predicted_accel_vs_obs_variable_gas.png} 
-\end{center}
+\includegraphics[width=\columnwidth]{global_predicted_accel_vs_obs_0.55_gas.png}
+\includegraphics[width=\columnwidth]{global_predicted_accel_vs_obs_variable_gas.png}
 \caption{All 3319 SPARC data points are plotted. The acceleration implied by the observed velocity $V_{obs}$ is on the vertical axis, the x axis has the full acceleration from baryons + the dm field introduced in this paper. The red line is a Newtonian expectation, the blue line is a (log) straight line fit to the data. Also: velocity residuals.}
+\label{fig:global_accel}
 \end{figure}
 
 \subsection{The interpretation of Power}
@@ -234,25 +241,21 @@ In several SPARC radial bins, central core gas densities are recorded as zero. T
 
 These two model variations were not used in any of the other discussions in this paper, full results for them and a few others are available online. 
 
-\begin{figure}[ht!]
+\begin{figure}
 \centering
-\label{fig:histogram}
-\begin{center}
-\framebox[0.45\textwidth]{\parbox{0.4\textwidth}{\centering \vspace{2cm} [Figure 1: Overlapping Histogram of Absolute Velocity Residuals for Both Models vs. MOND] \vspace{2cm}}}
-\end{center}
+\framebox[\columnwidth]{\parbox{0.9\columnwidth}{\centering \vspace{2cm} [Figure 1: Overlapping Histogram of Absolute Velocity Residuals for Both Models vs. MOND] \vspace{2cm}}}
 \caption{Distribution of absolute velocity residuals $|V_{\text{obs}} - V_{\text{pred}}|$ evaluated across the 3,391 data points of the SPARC dataset. Vertical dashed lines point out the global MAEs.}
+\label{fig:histogram}
 \end{figure}
 
 \subsection{Core Dynamics and Distribution Tails}
 An analysis of the absolute residual distributions reveals that MOND's localized advantage is concentrated almost entirely in a tight low-error spike between 0 and 15 km/s, corresponding to high-density inner galactic cores. This divergence is physically expected; our model evaluates dark mass generation based purely on the gas density profiles, which frequently drop or fluctuate in stellar-bulge dominated cores. Crucially, in the intermediate and long-range tails ($25\text{ to }100\text{ km/s}$) - representing the low-acceleration, outer-disk environments - the error distributions of our model and MOND track one another identically. This strongly implies that in the highly rarefied outer halo regime, our geometric density relation functions as a direct mathematical dual to MOND's physical behaviour, without requiring complex acceleration interpolations.
 
-\begin{figure}[ht!]
+\begin{figure}
 \centering
-\label{fig:radial_error}
-\begin{center}
-\framebox[0.45\textwidth]{\parbox{0.4\textwidth}{\centering \vspace{2cm} [Figure 2: Absolute Model Error vs. Distance from Galactic Center (Radius in kpc)] \vspace{2cm}}}
-\end{center}
+\framebox[\columnwidth]{\parbox{0.9\columnwidth}{\centering \vspace{2cm} [Figure 2: Absolute Model Error vs. Distance from Galactic Center (Radius in kpc)] \vspace{2cm}}}
 \caption{Moving average trend line showing absolute model errors as a function of radial distance from galactic centers, indicating where core fluctuations stabilize.}
+\label{fig:radial_error}
 \end{figure}
 
 \section{Conclusion} \label{sec:conclusion}
@@ -265,8 +268,14 @@ An analysis of the absolute residual distributions reveals that while MOND maint
 
 By focusing strictly on a data-driven, observational approach, this work side-steps the unconstrained parameter space of particle physics models that have remained undetected across decades of microphysical searches. We do not propose a specific microphysical mechanism for the $2/3$ scaling law, nor do we speculate on the fundamental properties of a constituent particle. Instead, we present this universal relation as an empirical reality mandated by galactic kinematics. We leave it to the particle physics and theoretical communities to engineer a fundamental mechanism---whether rooted in environmental screening, field-baryon interactions, or quantum vacuum geometries---capable of reproducing the strict observational constraints demonstrated here.
 
-\bibliographystyle{aasjournal}
+\section*{Data Availability}
+
+% TODO: MNRAS requires this section. State where the model code, fits and the full set of 175 galaxy plots are hosted.
+The SPARC data underlying this article are publicly available from the SPARC database \citep{lelliSPARCMassModels2016}.
+
+\bibliographystyle{mnras}
 \bibliography{bibtex_tom} % where bibtex_tom.bib file lives
 
-
+\bsp
+\label{lastpage}
 \end{document}
