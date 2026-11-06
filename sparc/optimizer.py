@@ -1,7 +1,9 @@
-"""Global fits with one core gas central density and beta for all galaxies, run through paper.py.
+"""Global fit with one core gas central density and beta for all galaxies, run through paper.py.
 
-run_global_fit: power fixed, minimize chi2. Gives the core gas beta and density for a case.
-run_free_power: power free, minimize chi2 and maximize power. The tradeoff data behind the choice of power.
+run_free_power: power free, minimize chi2 and maximize power. The tradeoff data behind the choice of power,
+core gas beta and central density in paper_params.py.
+run_fixed_power: power fixed at the publication value, minimize chi2. A dense look at beta and density there.
+Neither one feeds later steps: those use the values chosen in paper_params.py.
 """
 import contextlib
 import os
@@ -12,7 +14,7 @@ import optuna
 from optuna.study import MaxTrialsCallback
 from optuna.trial import TrialState
 
-from paper_params import PAPER_PARAMS, cgm_args, fits_dir, path_suffix, save_global_fit
+from paper_params import PAPER_PARAMS, cgm_args, fits_dir, path_suffix
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 n_workers = 4
@@ -57,31 +59,26 @@ def run_study(study_name, case, n_trials_target, power_override, directions):
     return optuna.load_study(study_name=study_name, storage=storage)
 
 
-def at_range_edge(value, value_range):
-    margin = 0.02 * (value_range[1] - value_range[0])
-    return value < value_range[0] + margin or value > value_range[1] - margin
-
-
-def run_global_fit(case):
-    """Best single core gas density and beta at the publication power. Saved for the later steps."""
-    power = PAPER_PARAMS["power_w"]
-    study = run_study(f"global_fit_{case}_P{power}", case, PAPER_PARAMS["effort"]["global_fit_trials"], power, ["minimize"])
-    density = study.best_params["add_core_gas_central_density"]
-    beta = study.best_params["add_core_gas_beta"]
-    fit = {"core_gas_beta": beta, "core_gas_central_density": density, "global_chi2_per_point": study.best_value,
-           "n_trials": len(study.trials), "at_search_limit": at_range_edge(density, DENSITY_RANGE) or at_range_edge(beta, BETA_RANGE)}
-    save_global_fit(case, fit)
-    print(f"Global fit {case}: {fit}")
-    if fit["at_search_limit"]:
-        print(f"WARNING: the {case} global fit is at the edge of its search range, widen DENSITY_RANGE or BETA_RANGE in optimizer.py")
-    return fit
-
-
 def run_free_power(case):
     """Pareto front of chi2 against power. Read it from global_fits.db with optuna-dashboard or best_trials."""
     study = run_study(f"free_power_{case}", case, PAPER_PARAMS["effort"]["free_power_trials"], 0, ["minimize", "maximize"])
     for best_trial in sorted(study.best_trials, key=lambda t: t.values[1]):
         print(f"chi2/pt {best_trial.values[0]:.4f} P {best_trial.values[1]:.2f} W {best_trial.params}")
+    return study
+
+
+def run_fixed_power(case):
+    """Best fits at the publication power, written to a table to compare with the chosen beta and density."""
+    power = PAPER_PARAMS["power_w"]
+    study = run_study(f"fixed_power_{case}_P{power}", case, PAPER_PARAMS["effort"]["fixed_power_trials"], power, ["minimize"])
+    trials = sorted(study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), key=lambda t: t.value)
+    table = f"# Single core gas density and beta at P = {power} W, case {case}, best chi2 first\n"
+    table += f"{'chi2/pt':>9}{'beta':>8}{'density':>9}{'unobserved_gas':>16}\n"
+    for trial in trials:
+        table += (f"{trial.value:>9.4f}{trial.params['add_core_gas_beta']:>8.2f}{trial.params['add_core_gas_central_density']:>9.3f}"
+                  f"{trial.user_attrs['unobserved_gas_fraction']:>16.3f}\n")
+    (fits_dir() / f"fixed_power_{case}.txt").write_text(table)
+    print("".join(table.splitlines(keepends=True)[:12]))
     return study
 
 

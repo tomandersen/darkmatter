@@ -1,11 +1,10 @@
 """Publication numbers for the paper, in one place. Other scripts pull them from here.
 
-PAPER_PARAMS holds what we choose. What the pipeline fits (core gas beta and central density, per-galaxy
-core densities) is written to fits_dir() and read back through case_params() and model_args().
+PAPER_PARAMS holds what we choose, including the core gas beta and central density: picked from the free power
+fit near the publication power, not a best fit. The per-galaxy core densities are fitted and written to fits_dir().
 
 Change run_tag to start a new set of fits and folders. Keeping it lets paper.py resume an interrupted run.
 """
-import json
 from pathlib import Path
 
 from cgm_integral import DM_CUTOFF_DENSITY
@@ -19,13 +18,13 @@ PAPER_PARAMS = {
     "r_core_factor_gas": 2.5,
     "cases": {
         # Set from observed CGM gas, not fitted: inside R_max the fit always prefers less CGM. See cgm_sensitivity.py
-        "cgm": {"cgm_central_density": 2.43e-4, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5},
-        "no_cgm": {"cgm_central_density": 0.0, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5},
+        "cgm": {"cgm_central_density": 2.43e-4, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": 3.0, "core_gas_central_density": 0.24},
+        "no_cgm": {"cgm_central_density": 0.0, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": 3.0, "core_gas_central_density": 0.24},
     },
     "only_galaxies": None,  # None = all SPARC galaxies
     "effort": {
         "free_power_trials": 200,
-        "global_fit_trials": 150,
+        "fixed_power_trials": 80,
         "global_fit_num_minutes": 4,
         "individual_trials": 70,
         "individual_num_minutes": 6,
@@ -51,24 +50,13 @@ def core_densities_file(case):
     return fits_dir() / f"core_densities_{case}.txt"
 
 
-def global_fit_file(case):
-    return fits_dir() / f"global_fit_{case}.json"
-
-
-def save_global_fit(case, fit):
-    global_fit_file(case).write_text(json.dumps(fit, indent=2) + "\n")
-
-
 def case_params(case):
-    """The numbers for one case, with its global fit included once that has been run."""
-    params = dict(PAPER_PARAMS["cases"][case])
-    if global_fit_file(case).exists():
-        params.update(json.loads(global_fit_file(case).read_text()))
-    return params
+    """The numbers for one case."""
+    return dict(PAPER_PARAMS["cases"][case])
 
 
 def cgm_args(case):
-    """Arguments of run_sparc_dm_brute_cgm that don't depend on the core gas fit."""
+    """Arguments of run_sparc_dm_brute_cgm that don't depend on the core gas."""
     params = PAPER_PARAMS["cases"][case]
     return dict(
         r_core_factor_gas=PAPER_PARAMS["r_core_factor_gas"],
@@ -81,7 +69,5 @@ def cgm_args(case):
 
 
 def model_args(case):
-    """cgm_args plus the fitted core gas beta. The global fit for this case must have been run."""
-    if not global_fit_file(case).exists():
-        raise FileNotFoundError(f"No global fit at {global_fit_file(case)}: run the global fit step in paper.py first")
+    """cgm_args plus the core gas beta."""
     return dict(cgm_args(case), add_core_gas_beta=case_params(case)["core_gas_beta"])

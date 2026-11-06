@@ -1,11 +1,11 @@
-"""Runs everything for the paper, in order. Expect about 16 hours for the full run.
+"""Runs everything for the paper, in order. Expect about 12 hours for the full run.
 
-  1. Free power fit: the chi2 against power tradeoff behind the choice of power (with CGM)
-  2. Global fit at the publication power: core gas beta and central density, with and without CGM
-  3. CGM sensitivity: why the CGM is set from observations and not fitted
-  4. Individual galaxy fits: one core densities file for each case
-  5. Tests: the graphs and numbers for the paper
-  6. Added gas and halo tables, the only place R_200 is evaluated
+  1. Free power fit: the chi2 against power tradeoff behind the choice of power, core gas beta and density (with CGM)
+  1b. Fixed power fit: a dense look at core gas beta and density at the publication power (with CGM). Feeds nothing later
+  2. CGM sensitivity: why the CGM is set from observations and not fitted
+  3. Individual galaxy fits: one core densities file for each case
+  4. Tests: the graphs and numbers for the paper
+  5. Added gas and halo tables, the only place R_200 is evaluated
 
 All steps resume: stop it any time, and the same command picks up where it stopped. Numbers are in paper_params.py.
 Fits go to sparc/paper_fits_<run_tag>, runs to the dm_mass_* folders, the same run_tag on the end of each.
@@ -22,7 +22,7 @@ from pathlib import Path
 
 CASES = ("cgm", "no_cgm")
 QUICK_GALAXIES = ["DDO154", "NGC2403", "UGC02953", "NGC0289", "NGC7814"]
-QUICK_EFFORT = dict(free_power_trials=4, global_fit_trials=4, global_fit_num_minutes=0.3, individual_trials=4, individual_num_minutes=0.3,
+QUICK_EFFORT = dict(free_power_trials=4, fixed_power_trials=4, global_fit_num_minutes=0.3, individual_trials=4, individual_num_minutes=0.3,
                     sensitivity_num_minutes=0.1, test_num_minutes=0.3, newton_num_minutes=0.3, table_num_minutes=0.3)
 
 
@@ -57,7 +57,7 @@ def run_tests():
         # the core densities made with optimize_individual_galaxies.py
         run_test(f"core_file_{case}", f"dm_mass_core_file_{case}", add_core_gas_central_density=0.0,  # ignored as we are using the file
                  use_core_gas_file=True, core_file=core_densities_file(case), power_override=power, **model_args(case))
-        # one core gas density for all galaxies, from the global fit
+        # one core gas density for all galaxies, from paper_params.py
         run_test(f"single_gas_{case}", f"dm_mass_single_gas_{case}", add_core_gas_central_density=case_params(case)["core_gas_central_density"],
                  power_override=power, **model_args(case))
 
@@ -90,19 +90,18 @@ def main():
     import added_gas_table
     from cgm_sensitivity import run_cgm_sensitivity
     from optimize_individual_galaxies import optimize_individual_galaxies
-    from optimizer import run_free_power, run_global_fit
+    from optimizer import run_fixed_power, run_free_power
 
     start = time.time()
     if not args.skip_free_power:
         timed_step("Step 1: free power fit, with CGM", run_free_power, "cgm")
+    timed_step("Step 1b: fixed power fit, with CGM", run_fixed_power, "cgm")
+    timed_step("Step 2: CGM sensitivity", run_cgm_sensitivity)
     for case in CASES:
-        timed_step(f"Step 2: global fit, {case}", run_global_fit, case)
-    timed_step("Step 3: CGM sensitivity", run_cgm_sensitivity)
+        timed_step(f"Step 3: individual galaxy fits, {case}", optimize_individual_galaxies, case)
+    timed_step("Step 4: tests", run_tests)
     for case in CASES:
-        timed_step(f"Step 4: individual galaxy fits, {case}", optimize_individual_galaxies, case)
-    timed_step("Step 5: tests", run_tests)
-    for case in CASES:
-        timed_step(f"Step 6: added gas table, {case}", added_gas_table.main, case)
+        timed_step(f"Step 5: added gas table, {case}", added_gas_table.main, case)
 
     print(f"\nAll done in {(time.time() - start) / 3600:.2f} hours. Run tag: {PAPER_PARAMS['run_tag']}")
     for case in CASES:
