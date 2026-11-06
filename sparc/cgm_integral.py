@@ -2,10 +2,26 @@ from scipy.ndimage import morphology
 import numpy as np
 from scipy.integrate import quad
 
-m_p = 1.67262e-27      
+m_p = 1.67262e-27
+
+DM_CUTOFF_DENSITY = 1e-5  # particles per cc, below about this the gas density concept starts to wither
+
+
+def dm_density_term(n, n_cut):
+    """n^(2/3) exp(-(n_cut/n)^2), the gas density part of the dark mass formula. Zero where n <= 0.
+
+    n and n_cut can be in any units, as long as they match. n_cut = 0 turns the cutoff off.
+    """
+    n = np.asarray(n, dtype=float)
+    term = np.zeros_like(n)
+    positive = n > 0
+    with np.errstate(over="ignore"):  # tiny n overflows (n_cut/n)^2 to inf, and exp(-inf) = 0 is the right answer
+        term[positive] = n[positive] ** (2.0 / 3.0) * np.exp(-(n_cut / n[positive]) ** 2)
+    return term
+
 
 # SI units assumed. (I do no units here!)
-def density_integrand(r, gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, exponent2, min_gas_for_dm):
+def density_integrand(r, gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, exponent2, dm_cutoff_m3):
     # first, I need to calulate the density of the gas particles at r:
     # rho(r) = rho_0 [ 1 + (r/rc)^2 ]^(-3beta/2)
     gas_density_at_r = 0
@@ -16,17 +32,14 @@ def density_integrand(r, gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, expone
     if gas_only:
       return 4*np.pi*r**2*gas_density_at_r
 
-    if gas_density_at_r < min_gas_for_dm:
-        gas_density_at_r = 0.0
- 
     # ok now we have the gas density, get the dm density from our formula
-    dm_particle_density = (P/c**3)*(gas_density_at_r)**(2.0/3.0)/m_p
+    dm_particle_density = (P/c**3)*float(dm_density_term(gas_density_at_r, dm_cutoff_m3))/m_p
 
     # ok now we have the dm particle density, get the dm mass from that (need to multiply by volume)
     dm_mass_shell = dm_particle_density * (4*np.pi*r**2)
     return dm_mass_shell
 
-def evaluate_dm_mass_integral(R1, R2, gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, exponent2, min_gas_for_dm):
+def evaluate_dm_mass_integral(R1, R2, gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, exponent2, dm_cutoff_m3):
     """
     Evaluates the integral of our halo(r) from R1 to R2.
     
@@ -36,14 +49,15 @@ def evaluate_dm_mass_integral(R1, R2, gas_only, P, c, rc1, n0_1, exponent1, rc2,
     c    : Speed of light metre/sec
     n0   : Central density parameter, particles per metre^3
     rc   : Core radius - in metres
-    exponent : full (negative) exponent - if you have beta, pass -3/2*beta. 
+    exponent : full (negative) exponent - if you have beta, pass -3/2*beta.
+    dm_cutoff_m3 : gas density in the dark mass cutoff, particles per metre^3. 0 turns the cutoff off.
     """
     # Calculate the constant prefactor outside the integral
     # This prevents potential floating-point underflow/overflow inside the integration loop
     
     # Evaluate the definite integral from 0 to R
     # quad returns a tuple: (integral_value, absolute_error_estimate)
-    integral_val, abs_error = quad(density_integrand, R1, R2, args=(gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, exponent2, min_gas_for_dm))
+    integral_val, abs_error = quad(density_integrand, R1, R2, args=(gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, exponent2, dm_cutoff_m3))
     #print(f"integral_val (unitless)     : {integral_val:.6e}")
     return integral_val, abs_error
 
@@ -68,7 +82,7 @@ if __name__ == "__main__":
     rc2=100000.0
     n0_2=1
     exponent2=beta_val
-    min_gas_for_dm = 0.00003
+    dm_cutoff_m3 = DM_CUTOFF_DENSITY * 100**3
 
-    result, error = evaluate_dm_mass_integral(R1, R2, gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, exponent2, min_gas_for_dm)
+    result, error = evaluate_dm_mass_integral(R1, R2, gas_only, P, c, rc1, n0_1, exponent1, rc2, n0_2, exponent2, dm_cutoff_m3)
     

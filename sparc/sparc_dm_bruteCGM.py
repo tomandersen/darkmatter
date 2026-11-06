@@ -1,5 +1,5 @@
 from PIL.ImagePalette import negative
-from cgm_integral import evaluate_dm_mass_integral
+from cgm_integral import DM_CUTOFF_DENSITY, dm_density_term
 import numpy as np
 import os
 import time
@@ -35,7 +35,8 @@ def load_core_densities(core_file=None):
 
 
 def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True, power_override = 9.0, min_mass=0, max_mass=1e99,
-                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False, upsilon_factor=1.0):
+                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False, upsilon_factor=1.0, dm_cutoff_density=DM_CUTOFF_DENSITY):
+    # dm_cutoff_density: n_c in particles per cc, dark mass density goes as n^(2/3) exp(-(n_c/n)^2). 0 turns the cutoff off.
     # supplied_gas_density: optional dict {galaxy_name: fn(R_m, Z_m, Theta_m) -> gas particle density [m^-3]}
     #   For those galaxies the 3D gas grid comes from fn instead of the axisymmetric Sigma_gas column (core gas / CGM are still added on top).
     #   fn gets the 3D meshgrid arrays (indexing='ij', shape R x Z x Theta) in metres / radians.
@@ -75,8 +76,6 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     # Need to go past R_max as Newton's Shell Theorem does not hold in a thin disk. (And no Jeans stuff is not good either)     
      
     USE_EXPONENTIAL_DISK = True  # without this on, disk is just hard cut at +/- h_z
-
-    MIN_DENSITY_FOR_POWER = 0 # with zero you will get too much cgm on the analytic full halo integrasls... i think. 3e-5
 
     # to speed it up, maybe dont bother with heatmaps
     DO_HEATMAPS = output_graphs
@@ -333,13 +332,12 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         r_max_mask = r_squared < r_max_m**2
         g_data['sum_all_gas_particles'] = np.sum(gas_particle_density_grid[r_max_mask] * dV[r_max_mask])
        
-        n_min_m3 = MIN_DENSITY_FOR_POWER*(100)**3 
-        dm_mask = gas_particle_density_grid >= n_min_m3
-        dm_stat_mask = dm_mask & r_max_mask # for display and output stats only get dm until r_max
-        g_data['gas_density_slice_m3'] = np.where(dm_stat_mask[:, :, 0], gas_particle_density_grid[:, :, 0], 0.0)
-        g_data['sum_dm_mass_integral'] = np.sum((gas_particle_density_grid[dm_stat_mask]**(2.0/3.0)) * dV[dm_stat_mask])
-        dm_base_dm = np.zeros_like(gas_particle_density_grid)
-        dm_base_dm[dm_mask] = (1/c_SI**3) * gas_particle_density_grid[dm_mask]**(2/3) * dV[dm_mask]
+        dm_cutoff_m3 = dm_cutoff_density*(100)**3
+        dm_term_dV = dm_density_term(gas_particle_density_grid, dm_cutoff_m3) * dV
+        # for display and output stats only get dm until r_max
+        g_data['gas_density_slice_m3'] = np.where(r_max_mask[:, :, 0], gas_particle_density_grid[:, :, 0], 0.0)
+        g_data['sum_dm_mass_integral'] = np.sum(dm_term_dV[r_max_mask])
+        dm_base_dm = (1/c_SI**3) * dm_term_dV
 
         V_gas_sq_grid = np.zeros_like(R_grid_m)
         V_dm_sq_base_grid = np.zeros_like(R_grid_m)
@@ -386,7 +384,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
         del R_grid_3d, Z_grid_3d, Theta_grid_3d
         del X_blob, Y_blob, Z_blob
-        del gas_particle_density_grid, dV, dm_gas, dm_base_dm
+        del gas_particle_density_grid, dV, dm_gas, dm_base_dm, dm_term_dV
         gc.collect()
 
     print(f"\nIntegrations complete. Now at {len(galaxies)} galaxies. Optimizing global parameter for Linear Absolute Error...")
@@ -522,7 +520,6 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             dm_ratio_by_galaxy += dm_allbaryons_ratio
             tot_dm_gas_ratio_to_rmax += tot_dm_mass_msun/hi
             unobserved_gas_fraction += (tot_gas_mass_msun-hi)/hi
-            calc_halo_properties(name, g, best_P)
 
             stats.append({
                 'name': name,
@@ -537,12 +534,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
                 'DM_Gas_Ratio': dm_gas_ratio,
                 'DM_AllBaryons_Ratio': dm_allbaryons_ratio,
                 'r_core_kpc': g['r_core_kpc'],
-                'totR200_gas': g['totR200_gas'],
-                'totR200_dm': g['totR200_dm'],
-                'totRMax_gas': g['totRMax_gas'],
-                'totRMax_dm': g['totRMax_dm'],
-                'r_200': g['r_200'],
-                'r_max': g['r_max']
+                'r_max': g['R'][-1]
             })
 
         global_stats = {
@@ -554,58 +546,6 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             'Unobserved_gas_fraction': unobserved_gas_fraction / len(galaxy_dict),
         }
         return stats, global_stats
-
-
-    def calc_halo_properties(name, g, best_P):
-        # I want to get the analytic numbers for the total halo mass we calculate here:
-        # there are two integrals, done until r_200
-        v_last_observed = g['Vobs'][-1]
-        hubble_const = 71.0
-        to_kpc_200 = 100.0
-        r_200 = to_kpc_200 *  v_last_observed/ hubble_const
-        g['r_200'] = r_200
-        r_200_m = r_200 * kpc_to_m
-        r_core_m = g['r_core_kpc'] * kpc_to_m
-        r_core_gas_m = r_core_m * r_core_factor_gas
-        r_core_cgm_m = r_core_m * r_core_factor_cgm
-        # ok, now integrate the functions
-
-        n_0_1_m3 = 0
-        exponent1 = -2.0
-        n_0_2_m3 = 0
-        exponent2 = -2.0
-        min_gas_for_dm = MIN_DENSITY_FOR_POWER*(100)**3
-
-
-        n_0_m3 = 0
-        total_mass = (TL_dict[name] + HIMass_dict[name])*1e9
-        gal_core_gas = g.get('core_gas_central_density', add_core_gas_central_density)
-        if gal_core_gas != 0.0:
-            n_0_1_cgs = gal_core_gas
-            n_0_1_m3 =  n_0_1_cgs * (100)**3
-            exponent1 = -add_core_gas_beta 
-        
-        if add_real_cgm_central_density > 0.0:
-            n_0_2_cgs = add_real_cgm_central_density  
-            n_0_2_m3 =  n_0_2_cgs * (100)**3
-            exponent2 = -3.0*cgm_beta/2.0
-        
-
-        totR200_gas, err_gas = evaluate_dm_mass_integral(0, r_200_m, True, best_P, c_SI, r_core_gas_m, n_0_1_m3, exponent1, r_core_cgm_m, n_0_2_m3, exponent2, min_gas_for_dm)
-        totR200_dm, err_dm = evaluate_dm_mass_integral(0, r_200_m, False, best_P, c_SI, r_core_gas_m, n_0_1_m3, exponent1, r_core_cgm_m, n_0_2_m3, exponent2, min_gas_for_dm)
-      
-        # do the same integrals out to R_max
-        R2 = g['R'][-1] * kpc_to_m
-        totRMax_gas, err_gas = evaluate_dm_mass_integral(0, R2, True, best_P, c_SI, r_core_gas_m, n_0_1_m3, exponent1, r_core_cgm_m, n_0_2_m3, exponent2, min_gas_for_dm)
-        totRMax_dm, err_dm = evaluate_dm_mass_integral(0, R2, False, best_P, c_SI, r_core_gas_m, n_0_1_m3, exponent1, r_core_cgm_m, n_0_2_m3, exponent2, min_gas_for_dm)
-
-        g['totR200_gas'] = totR200_gas*m_p/M_sun
-        g['totR200_dm'] = totR200_dm*m_p/M_sun
-        g['totRMax_gas'] = totRMax_gas*m_p/M_sun
-        g['totRMax_dm'] = totRMax_dm*m_p/M_sun
-        g['r_200'] = r_200
-        g['r_max'] = R2/kpc_to_m
-
 
 
     def write_run_log(output_dir, best_global_P, dm_chi2_total, dm_linear_total_err, dm_linear_total, dm_grid_chi2_total, dm_grid_linear_total, mond_chi2_total, mond_linear_total_err, mond_linear_total, mond_linear_total_grid, global_stats, galaxy_stats):
@@ -630,8 +570,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
                 log_file.write(f"  add_core_gas_central_density = {add_core_gas_central_density}\n")
             log_file.write(f"  add_core_gas_beta = {add_core_gas_beta}\n")
             log_file.write(f"  add_real_cgm_central_density = {add_real_cgm_central_density}\n")
+            log_file.write(f"  r_core_factor_cgm = {r_core_factor_cgm}\n")
             log_file.write(f"  cgm_beta = {cgm_beta}\n")
-            log_file.write(f"  MIN_DENSITY_FOR_POWER = {MIN_DENSITY_FOR_POWER}\n")
+            log_file.write(f"  dm_cutoff_density = {dm_cutoff_density}\n")
             log_file.write(f"  Upsilon_disk = {Upsilon_disk}\n")
             log_file.write(f"  Upsilon_bulge = {Upsilon_bulge}\n\n")
 
@@ -677,14 +618,10 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write("  R_max: DM Mass: Integrated Dark Mass via theory formula [fraction of M_b]\n")
             log_file.write("  R_max: DM Mass/M_b: Ratio of Dark Mass to Total Baryons\n")
             log_file.write("  R_max: DM Mass/Total Gas: Ratio of Dark Mass to Integrated Gas Mass\n")
-            log_file.write("  R_max: DM Mass/Total Baryons: Ratio of Dark Mass to all baryons\n")
-            log_file.write("  analytic:  halo gas added to the baryons in DM calculation, to R_200 [M_sun]\n")
-            log_file.write("  analytic:  halo dm mass added (no truncation, to R_200 [M_sun])\n")
-            log_file.write("  analytic:  halo gas mass added (truncated at R_max [M_sun])\n")
-            log_file.write("  analytic:  halo dm mass added (truncated at R_max [M_sun])\n\n")
-            
-            
-            header = f"{'name':<14} {'M_b(sol)':<11} {'TL(f)':<9} {'HIMass(f)':<9} {'RMaxGas(f)':<9} {'DM/M_b':<9} {'DM/RMaxGs':<9} {'DM/RMaxB':<9} {'r_core_kpc':<9} {'gas(r_200)':<11} {'dm(r_200)':<11} {'gas(R_max)':<11} {'dm(R_max)':<11} {'r_200':<9} {'r_max':<9}\n"
+            log_file.write("  R_max: DM Mass/Total Baryons: Ratio of Dark Mass to all baryons\n\n")
+
+
+            header = f"{'name':<14} {'M_b(sol)':<11} {'TL(f)':<9} {'HIMass(f)':<9} {'RMaxGas(f)':<9} {'DM/M_b':<9} {'DM/RMaxGs':<9} {'DM/RMaxB':<9} {'r_core_kpc':<9} {'r_max':<9}\n"
             log_file.write(header)
             log_file.write("-" * len(header) + "\n")
             
@@ -692,7 +629,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
                 log_file.write(f"{row['name']:<14} {row['M_b']:<11.2e} {row['TL']:<9.3f} {row['HIMass']:<9.3f} "
                                f"{row['R_max_Gas_Mass']/row['M_b']:<9.3f}  "
                                f"{row['DM_Mb_Ratio']:<9.3f} {row['DM_Gas_Ratio']:<9.3f} {row['DM_AllBaryons_Ratio']:<9.3f} {row['r_core_kpc']:<9.3f} "
-                               f"{row['totR200_gas']:<11.2e} {row['totR200_dm']:<11.2e} {row['totRMax_gas']:<11.2e} {row['totRMax_dm']:<11.2e} {row['r_200']:<9.0f} {row['r_max']:<9.1f}\n")
+                               f"{row['r_max']:<9.1f}\n")
             
             log_file.write("========================================================================================================\n\n")
 
@@ -755,9 +692,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             gas_density_m3 = g['gas_density_slice_m3']
             
             gas_density_cm3 = gas_density_m3 / 1e6
-            n_min_m3 = MIN_DENSITY_FOR_POWER*(100)**3 
-            dm_mask = gas_density_m3 >= n_min_m3
-            dm_density_kg_m3 = np.where(dm_mask, best_P * (1/c_SI**3) * (gas_density_m3**(2/3)), 0.0)
+            dm_density_kg_m3 = best_P * (1/c_SI**3) * dm_density_term(gas_density_m3, dm_cutoff_density*(100)**3)
             dm_density_cm3 = dm_density_kg_m3 / (m_p * 1e6)
             
             R_mesh, Z_mesh = np.meshgrid(R_kpc, Z_kpc, indexing='ij')
@@ -999,13 +934,13 @@ if __name__ == "__main__":
     paper_core_gas_beta=2.7
     paper_core_gas_factor=2.5
 
-    paper_cgm_density=0.025
-    paper_cgm_beta=0.68
-    paper_cgm_factor=0.20
+    paper_cgm_density=2.43e-4
+    paper_cgm_beta=0.5
+    paper_cgm_factor=6.0
 
-    num_minutes = 5 
+    num_minutes = 5
 
-    paper_power = 20.0 # watts
+    paper_power = 24.7 # watts, atomic unit of force * c
 
     # use the core densities made with optimize_individual_galaxies.py
     output_dir = "./sparc/dm_mass_py_file_bigger_error"

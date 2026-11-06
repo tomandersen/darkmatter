@@ -115,7 +115,7 @@ def optimize_individual_galaxies():
 
     # Database file: optimize_individual_YYYY_MM_DD.db
     date_str = datetime.now().strftime("%Y_%m_%d")
-    db_file = Path(__file__).parent / f"optimize_individual_central_gas_chi_{date_str}.db"
+    db_file = Path(__file__).parent / f"optimize_individual_central_gas_chi_cgm_cut_{date_str}.db"
     storage_url = f"sqlite:///{db_file.resolve()}"
     print(f"Optuna database storage: {storage_url}")
 
@@ -123,11 +123,11 @@ def optimize_individual_galaxies():
     fixed_args = dict(
         add_core_gas_beta=2.7,
         r_core_factor_gas=2.5,
-        add_real_cgm_central_density=0.025,
-        r_core_factor_cgm=0.20,
-        cgm_beta=0.68,
+        add_real_cgm_central_density=2.43e-4,
+        r_core_factor_cgm=6.0,
+        cgm_beta=0.5,
         num_minutes=6,
-        power_override=20.0,
+        power_override=24.7,  # atomic unit of force * c
         min_mass=0,
         max_mass=1e99,
         output_dir_override=output_dir,

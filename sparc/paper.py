@@ -3,16 +3,16 @@ from datetime import datetime
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 paper_core_gas_density=0.55
-paper_core_gas_beta=2.25
+paper_core_gas_beta=2.7
 paper_core_gas_factor=2.5
 
-paper_cgm_density=0.025
-paper_cgm_beta=0.68
-paper_cgm_factor=0.20
+paper_cgm_density=2.43e-4
+paper_cgm_beta=0.5
+paper_cgm_factor=6.0
 
 num_minutes = 10 # per run - about 5 runs.
 
-paper_power = 16.0 # watts
+paper_power = 24.7 # watts, atomic unit of force * c
 
 #path_suffix = "_test"
 date_str = datetime.now().strftime("%Y_%m_%d")
@@ -34,7 +34,7 @@ err_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
     output_dir_override=output_dir
 )
 
-# do a run with no gas added, and let global P vary (or hold to 16?)
+# do a run with no gas added, and let global P vary
 output_dir = "./sparc/dm_mass_no_gas" + path_suffix
 err_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
     add_core_gas_central_density=0.0,

@@ -7,7 +7,7 @@ Column 3 of core_densities.txt (upsilon factor) is ignored: it is left over from
 The densities in there were fitted with Upsilon 0.5 / 0.7.
 
 Dark mass inside R_200 has two parts:
-  - the analytic integral over the added gas, as in calc_halo_properties() in sparc_dm_bruteCGM.py
+  - the analytic integral over the added gas, with the dark mass cutoff
   - disk dark mass = grid dark mass inside R_max - analytic dark mass inside R_max, all treated as enclosed
 The grid values need a model run of a few minutes, so they are cached in OUTPUT_DIR. The cache is
 rebuilt when core_densities.txt or the parameters change.
@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import brentq
 
-from cgm_integral import evaluate_dm_mass_integral
+from cgm_integral import DM_CUTOFF_DENSITY, evaluate_dm_mass_integral
 
 SPARC_DIR = Path(__file__).resolve().parent
 CORE_DENSITIES_FILE = SPARC_DIR / "core_densities.txt"
@@ -33,14 +33,14 @@ OUTPUT_DIR = SPARC_DIR / "dm_mass_added_gas"
 GRID_CACHE_FILE = OUTPUT_DIR / "grid_dm_r_max.txt"
 
 # Must match the run that produced core_densities.txt (see fixed_args in optimize_individual_galaxies.py)
-POWER_W = 20.0
+POWER_W = 24.7                  # atomic unit of force * c
 CORE_GAS_BETA = 2.7
 CORE_GAS_EXPONENT = -CORE_GAS_BETA  # add_core_gas_beta is used directly as the exponent
 R_CORE_FACTOR_GAS = 2.5
-CGM_CENTRAL_DENSITY = 0.025     # particles per cc
-CGM_BETA = 0.68
+CGM_CENTRAL_DENSITY = 2.43e-4   # particles per cc
+CGM_BETA = 0.5
 CGM_EXPONENT = -3.0 * CGM_BETA / 2.0
-R_CORE_FACTOR_CGM = 0.20
+R_CORE_FACTOR_CGM = 6.0
 GRID_NUM_MINUTES = 6            # grid resolution of the model run, same as the fits
 
 UPSILON_DISK = 0.5
@@ -96,7 +96,7 @@ def load_last_points(path):
 
 def load_grid_dark_mass():
     """Returns {galaxy: model grid dark mass inside R_max in 10^9 Msun}, disk gas included. Runs the model if not cached."""
-    params = (POWER_W, CORE_GAS_BETA, R_CORE_FACTOR_GAS, CGM_CENTRAL_DENSITY, CGM_BETA, R_CORE_FACTOR_CGM, GRID_NUM_MINUTES)
+    params = (POWER_W, CORE_GAS_BETA, R_CORE_FACTOR_GAS, CGM_CENTRAL_DENSITY, CGM_BETA, R_CORE_FACTOR_CGM, DM_CUTOFF_DENSITY, GRID_NUM_MINUTES)
     cache_key = f"{params} {hashlib.sha256(CORE_DENSITIES_FILE.read_bytes()).hexdigest()}"
 
     if GRID_CACHE_FILE.exists():
@@ -137,7 +137,7 @@ def integrate(r_kpc, gas_only, n0_core, rc_core_kpc, n0_cgm, rc_cgm_kpc):
     value, _ = evaluate_dm_mass_integral(
         0, r_kpc * KPC_TO_M, gas_only, POWER_W, C_SI,
         rc_core_kpc * KPC_TO_M, n0_core * PER_CC_TO_M3, CORE_GAS_EXPONENT,
-        rc_cgm_kpc * KPC_TO_M, n0_cgm * PER_CC_TO_M3, CGM_EXPONENT, 0.0)
+        rc_cgm_kpc * KPC_TO_M, n0_cgm * PER_CC_TO_M3, CGM_EXPONENT, DM_CUTOFF_DENSITY * PER_CC_TO_M3)
     return value
 
 
@@ -223,7 +223,7 @@ def build_row(name, n0_core, properties, last_points, grid_dark_mass):
 def write_table(rows, path):
     columns = list(rows[0].keys())
     with open(path, "w") as f:
-        f.write(f"# Masses in 10^9 Msun, radii in kpc, n0_core in particles/cc. P = {POWER_W} W, H0 = {HUBBLE}.\n")
+        f.write(f"# Masses in 10^9 Msun, radii in kpc, n0_core in particles/cc. P = {POWER_W} W, H0 = {HUBBLE}, dark mass cutoff n_c = {DM_CUTOFF_DENSITY}/cc.\n")
         f.write("# Gas = 1.33 HI. Mass = 0.5 L_disk + 0.7 L_bulge + Gas. Added gas includes the 1.33 helium factor.\n")
         f.write("# R200: mean enclosed density of Tot_R200 = 200 rho_crit. R200_V: the old 100 V_last / H0 estimate.\n")
         f.write("# Add/Gas and Add/Mass use Add_Rmax. Vflat 0 = not measured.\n")

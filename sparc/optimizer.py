@@ -6,7 +6,7 @@ from optuna.trial import TrialState
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 from pathlib import Path
 
-study_name = "dark_mass_opt_" + Path(__file__).resolve().parent.parent.name + "TPE-CHI-NO-CGM"
+study_name = "dark_mass_opt_" + Path(__file__).resolve().parent.parent.name + "TPE-CHI-CGM-CUT"
 storage = "sqlite:///optimization.db"
 n_workers = 4
 n_trials_target = 1000  # total across all workers, including trials already in the study
@@ -18,9 +18,9 @@ def objective(trial):
     add_core_gas_central_density = trial.suggest_float("add_core_gas_central_density", 0.2, 1.0)
     add_core_gas_beta = trial.suggest_float("add_core_gas_beta", 1.7, 3.0)
     r_core_factor_gas = 2.5# trial.suggest_float("r_core_factor_gas", 1, 5)
-    add_real_cgm_central_density = 0.00 #0.026 #trial.suggest_float("add_real_cgm_central_density", 0,  0.1)
-    r_core_factor_cgm = 0.2 #trial.suggest_float("r_core_factor_cgm", 0.1, 0.5)
-    cgm_beta = 0.68 #trial.suggest_float("cgm_beta", 0.5, 1.0)
+    add_real_cgm_central_density = 2.43e-4 #trial.suggest_float("add_real_cgm_central_density", 0,  0.1)
+    r_core_factor_cgm = 6.0 #trial.suggest_float("r_core_factor_cgm", 0.1, 0.5)
+    cgm_beta = 0.5 #trial.suggest_float("cgm_beta", 0.5, 1.0)
 
     num_minutes = 4
     output_graphs = False
