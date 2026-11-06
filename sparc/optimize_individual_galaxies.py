@@ -1,7 +1,5 @@
 import os
 import sys
-import time
-from datetime import datetime
 from pathlib import Path
 import joblib
 import optuna
@@ -10,32 +8,12 @@ from optuna.study import MaxTrialsCallback
 from optuna.trial import TrialState
 
 
-output_dir = "./sparc/dm_mass_individual_core_gas_prod"
 n_workers = 4
 
 
-# Optimize: Run through all the galaxies (load the galaxy names from the MassModels_Lelli2016c.mrt file)
-# Keep the same function call parameters, and let core gas density (ie one variable vary)
-# make a new database file called optimize_individual_YYYY_MM_DD.db 
-# the study names will be galaxyname
-# So there will be about 175 galaxies to fit, each one has a study. 
-# I need to record the chi squares per point for each run in a study.
-# Try 100 trials per galaxy. 
-# vary
-#     add_core_gas_central_density = trial.suggest_float("add_core_gas_central_density", 0.0, 2.0)
-# Fix the power - 16.0
-# add_core_gas_beta - 2.25
-#         add_core_gas_beta=2.3, 
-        # r_core_factor_gas=2.5, 
-        # add_real_cgm_central_density=0.025,  # 0.025
-        # r_core_factor_cgm=0.20, 
-        # cgm_beta = 0.68,
-        # num_minutes=8, 
-        # output_graphs=False,
-        # power_override = 16.0,
-        # min_mass = 0,
-        # max_mass = 1e99
-# there is an argument to run_sparc_dm_brute_cgm which allows setting the galaxies to work on.
+# Fit one core gas central density per galaxy, with everything else fixed from paper_params.py.
+# Each galaxy is one study in the case's database. Pass the case (cgm or no_cgm) on the command line.
+# Run the global fit for the case first (see paper.py): it sets the core gas beta.
 
 # Ensure sparc directory is in sys.path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -45,6 +23,7 @@ repo_root = Path(__file__).resolve().parent.parent
 if (repo_root / "sparc").exists():
     os.chdir(repo_root)
 
+from paper_params import PAPER_PARAMS, core_densities_file, fits_dir, model_args, path_suffix
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 
@@ -86,7 +65,7 @@ def run_worker(gal_name, storage_url, n_trials_target, fit_args):
         # Redirect stdout to os.devnull (the system's "black hole")
         with open(os.devnull, 'w') as fnull:
             with redirect_stdout(fnull):
-                chi2_per_point, best_power, dm_to_hi_ratio = run_sparc_dm_brute_cgm(
+                chi2_per_point, best_power, unobserved_gas_fraction = run_sparc_dm_brute_cgm(
                     add_core_gas_central_density=add_core_gas_central_density,
                     output_graphs=False,
                     upsilon_factor=upsilon_factor,
@@ -96,7 +75,7 @@ def run_worker(gal_name, storage_url, n_trials_target, fit_args):
         # Record chi squares per point and additional statistics
         trial.set_user_attr("chi2_per_point", float(chi2_per_point))
         trial.set_user_attr("power", float(best_power))
-        trial.set_user_attr("dm_to_hi_ratio", float(dm_to_hi_ratio))
+        trial.set_user_attr("unobserved_gas_fraction", float(unobserved_gas_fraction))
 
         return float(chi2_per_point)
 
@@ -106,38 +85,29 @@ def run_worker(gal_name, storage_url, n_trials_target, fit_args):
     study.optimize(objective, callbacks=[max_trials_callback])
 
 
-def optimize_individual_galaxies():
+def optimize_individual_galaxies(case):
     mrt_file = Path(__file__).parent / "MassModels_Lelli2016c.mrt"
-    galaxy_names = load_galaxy_names(mrt_file)
-    print(f"Loaded {len(galaxy_names)} galaxies from {mrt_file.name}")
+    galaxy_names = PAPER_PARAMS["only_galaxies"] or load_galaxy_names(mrt_file)
+    print(f"Fitting {len(galaxy_names)} galaxies for the {case} case")
 
-
-
-    # Database file: optimize_individual_YYYY_MM_DD.db
-    date_str = datetime.now().strftime("%Y_%m_%d")
-    db_file = Path(__file__).parent / f"optimize_individual_central_gas_chi_cgm_cut_{date_str}.db"
+    db_file = fits_dir() / f"individual_{case}.db"
     storage_url = f"sqlite:///{db_file.resolve()}"
     print(f"Optuna database storage: {storage_url}")
 
-    # Fixed parameters from specifications
     fixed_args = dict(
-        add_core_gas_beta=2.7,
-        r_core_factor_gas=2.5,
-        add_real_cgm_central_density=2.43e-4,
-        r_core_factor_cgm=6.0,
-        cgm_beta=0.5,
-        num_minutes=6,
-        power_override=24.7,  # atomic unit of force * c
+        model_args(case),
+        num_minutes=PAPER_PARAMS["effort"]["individual_num_minutes"],
+        power_override=PAPER_PARAMS["power_w"],
         min_mass=0,
         max_mass=1e99,
-        output_dir_override=output_dir,
+        output_dir_override=f"./sparc/dm_mass_individual_core_gas_{case}{path_suffix()}",
     )
 
-    n_trials_target = 70
+    n_trials_target = PAPER_PARAMS["effort"]["individual_trials"]
 
     core_densities = {}
     upsilon_factors = {}
-    output_file = Path(__file__).parent / "core_densities_fresh.txt"
+    output_file = core_densities_file(case)
     if output_file.exists():
         with open(output_file, "r") as f:
             for line in f:
@@ -207,4 +177,4 @@ def optimize_individual_galaxies():
 
 
 if __name__ == "__main__":
-    optimize_individual_galaxies()
+    optimize_individual_galaxies(sys.argv[1] if len(sys.argv) > 1 else "cgm")

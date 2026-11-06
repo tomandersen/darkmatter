@@ -245,3 +245,6 @@ Thumbs.db
 sparc/gas3d/raw/
 sparc/gas3d/runs/
 *.db
+
+# paper.py --quick smoke test output
+sparc/paper_fits_quick/

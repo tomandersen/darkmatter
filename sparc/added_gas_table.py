@@ -3,18 +3,19 @@
 Reads core_densities.txt and the two Lelli 2016 files, writes a table and graphs to OUTPUT_DIR.
 Masses in the table are in 10^9 solar masses, the units of the Lelli table.
 
-Column 3 of core_densities.txt (upsilon factor) is ignored: it is left over from an earlier fit.
-The densities in there were fitted with Upsilon 0.5 / 0.7.
+Runs for one case of paper_params.py (cgm or no_cgm, on the command line), after that case's fits are done.
+Column 3 of the core densities file (upsilon factor) is ignored. The densities are fitted with Upsilon 0.5 / 0.7.
 
 Dark mass inside R_200 has two parts:
   - the analytic integral over the added gas, with the dark mass cutoff
   - disk dark mass = grid dark mass inside R_max - analytic dark mass inside R_max, all treated as enclosed
 The grid values need a model run of a few minutes, so they are cached in OUTPUT_DIR. The cache is
-rebuilt when core_densities.txt or the parameters change.
+rebuilt when the core densities or the parameters change.
 """
 import contextlib
 import hashlib
 import os
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -23,25 +24,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import brentq
 
-from cgm_integral import DM_CUTOFF_DENSITY, evaluate_dm_mass_integral
+from cgm_integral import evaluate_dm_mass_integral
+from paper_params import PAPER_PARAMS, core_densities_file, model_args, path_suffix
 
 SPARC_DIR = Path(__file__).resolve().parent
-CORE_DENSITIES_FILE = SPARC_DIR / "core_densities.txt"
 PROPERTIES_FILE = SPARC_DIR / "SPARC_Lelli2016c.mrt.txt"
 MASS_MODELS_FILE = SPARC_DIR / "MassModels_Lelli2016c.mrt"
-OUTPUT_DIR = SPARC_DIR / "dm_mass_added_gas"
-GRID_CACHE_FILE = OUTPUT_DIR / "grid_dm_r_max.txt"
-
-# Must match the run that produced core_densities.txt (see fixed_args in optimize_individual_galaxies.py)
-POWER_W = 24.7                  # atomic unit of force * c
-CORE_GAS_BETA = 2.7
-CORE_GAS_EXPONENT = -CORE_GAS_BETA  # add_core_gas_beta is used directly as the exponent
-R_CORE_FACTOR_GAS = 2.5
-CGM_CENTRAL_DENSITY = 2.43e-4   # particles per cc
-CGM_BETA = 0.5
-CGM_EXPONENT = -3.0 * CGM_BETA / 2.0
-R_CORE_FACTOR_CGM = 6.0
-GRID_NUM_MINUTES = 6            # grid resolution of the model run, same as the fits
 
 UPSILON_DISK = 0.5
 UPSILON_BULGE = 0.7
@@ -60,6 +48,26 @@ MPC_TO_M = KPC_TO_M * 1000.0
 RHO_CRIT = 3.0 * (HUBBLE * 1000.0 / MPC_TO_M) ** 2 / (8.0 * np.pi * G_SI)  # kg/m^3
 TO_1E9_MSUN = 1.0 / (M_SUN * 1e9)
 PER_CC_TO_M3 = 100.0 ** 3
+
+
+def use_case(case):
+    """Sets the parameters and paths below from paper_params.py for one case."""
+    global CORE_DENSITIES_FILE, OUTPUT_DIR, GRID_CACHE_FILE, POWER_W, DM_CUTOFF_DENSITY, CORE_GAS_BETA, CORE_GAS_EXPONENT
+    global R_CORE_FACTOR_GAS, CGM_CENTRAL_DENSITY, CGM_BETA, CGM_EXPONENT, R_CORE_FACTOR_CGM, GRID_NUM_MINUTES
+    args = model_args(case)
+    CORE_DENSITIES_FILE = core_densities_file(case)
+    OUTPUT_DIR = SPARC_DIR / f"dm_mass_added_gas_{case}{path_suffix()}"
+    GRID_CACHE_FILE = OUTPUT_DIR / "grid_dm_r_max.txt"
+    POWER_W = PAPER_PARAMS["power_w"]
+    DM_CUTOFF_DENSITY = args["dm_cutoff_density"]
+    CORE_GAS_BETA = args["add_core_gas_beta"]
+    CORE_GAS_EXPONENT = -CORE_GAS_BETA  # add_core_gas_beta is used directly as the exponent
+    R_CORE_FACTOR_GAS = args["r_core_factor_gas"]
+    CGM_CENTRAL_DENSITY = args["add_real_cgm_central_density"]  # particles per cc
+    CGM_BETA = args["cgm_beta"]
+    CGM_EXPONENT = -3.0 * CGM_BETA / 2.0
+    R_CORE_FACTOR_CGM = args["r_core_factor_cgm"]
+    GRID_NUM_MINUTES = PAPER_PARAMS["effort"]["table_num_minutes"]  # grid resolution of the model run
 
 
 def load_core_densities(path):
@@ -94,7 +102,7 @@ def load_last_points(path):
     return last_points
 
 
-def load_grid_dark_mass():
+def load_grid_dark_mass(galaxy_names):
     """Returns {galaxy: model grid dark mass inside R_max in 10^9 Msun}, disk gas included. Runs the model if not cached."""
     params = (POWER_W, CORE_GAS_BETA, R_CORE_FACTOR_GAS, CGM_CENTRAL_DENSITY, CGM_BETA, R_CORE_FACTOR_CGM, DM_CUTOFF_DENSITY, GRID_NUM_MINUTES)
     cache_key = f"{params} {hashlib.sha256(CORE_DENSITIES_FILE.read_bytes()).hexdigest()}"
@@ -110,7 +118,7 @@ def load_grid_dark_mass():
     from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
     with contextlib.redirect_stdout(open(os.devnull, "w")):
         _, _, _, galaxies = run_sparc_dm_brute_cgm(
-            add_core_gas_central_density=0.0,  # ignored, the densities come from core_densities.txt
+            add_core_gas_central_density=0.0,  # ignored, the densities come from the core densities file
             add_core_gas_beta=CORE_GAS_BETA,
             r_core_factor_gas=R_CORE_FACTOR_GAS,
             add_real_cgm_central_density=CGM_CENTRAL_DENSITY,
@@ -121,6 +129,9 @@ def load_grid_dark_mass():
             power_override=POWER_W,
             output_dir_override=str(OUTPUT_DIR / "grid_run"),
             use_core_gas_file=True,
+            core_file=CORE_DENSITIES_FILE,
+            only_galaxies=galaxy_names,
+            dm_cutoff_density=DM_CUTOFF_DENSITY,
             return_galaxies=True,
         )
     grid_dark_mass = {name: POWER_W / C_SI ** 3 * g["sum_dm_mass_integral"] * TO_1E9_MSUN for name, g in galaxies.items()}
@@ -341,12 +352,13 @@ def make_graphs(rows):
     save(fig, "6_r200_vs_old_estimate.png")
 
 
-def main():
+def main(case="cgm"):
+    use_case(case)
     core_densities = load_core_densities(CORE_DENSITIES_FILE)
     properties = load_properties(PROPERTIES_FILE)
     last_points = load_last_points(MASS_MODELS_FILE)
     OUTPUT_DIR.mkdir(exist_ok=True)
-    grid_dark_mass = load_grid_dark_mass()
+    grid_dark_mass = load_grid_dark_mass(list(core_densities))
     rows = [build_row(name, n0, properties, last_points, grid_dark_mass) for name, n0 in core_densities.items()]
 
     table_file = OUTPUT_DIR / "added_gas_table.txt"
@@ -361,4 +373,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1] if len(sys.argv) > 1 else "cgm")

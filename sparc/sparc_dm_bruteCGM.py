@@ -35,7 +35,8 @@ def load_core_densities(core_file=None):
 
 
 def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True, power_override = 9.0, min_mass=0, max_mass=1e99,
-                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False, upsilon_factor=1.0, dm_cutoff_density=DM_CUTOFF_DENSITY):
+                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False, upsilon_factor=1.0, dm_cutoff_density=DM_CUTOFF_DENSITY, core_file=None):
+    # core_file: with use_core_gas_file, read the per-galaxy core densities from this file instead of core_densities.txt
     # dm_cutoff_density: n_c in particles per cc, dark mass density goes as n^(2/3) exp(-(n_c/n)^2). 0 turns the cutoff off.
     # supplied_gas_density: optional dict {galaxy_name: fn(R_m, Z_m, Theta_m) -> gas particle density [m^-3]}
     #   For those galaxies the 3D gas grid comes from fn instead of the axisymmetric Sigma_gas column (core gas / CGM are still added on top).
@@ -183,7 +184,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     M_sun = 1.98847e30     
 
     # 3. Pre-calculate Base Integrals (P=1 Watt) for ALL galaxies
-    file_core_densities = load_core_densities() if use_core_gas_file else {}
+    file_core_densities = load_core_densities(core_file) if use_core_gas_file else {}
 
     print(f"Pre-calculating base arrays for {len(galaxies)} galaxies via continuous 3D brute force...")
 
@@ -929,18 +930,20 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
 if __name__ == "__main__":
 
-    # plan is to set thigs up so that it all runs from here making the graphs for the paper
+    # A quick single run. The full set of runs for the paper is in paper.py
+    from paper_params import PAPER_PARAMS
+
     paper_core_gas_density=0.40
     paper_core_gas_beta=2.7
-    paper_core_gas_factor=2.5
+    paper_core_gas_factor=PAPER_PARAMS["r_core_factor_gas"]
 
-    paper_cgm_density=2.43e-4
-    paper_cgm_beta=0.5
-    paper_cgm_factor=6.0
+    paper_cgm_density=PAPER_PARAMS["cases"]["cgm"]["cgm_central_density"]
+    paper_cgm_beta=PAPER_PARAMS["cases"]["cgm"]["cgm_beta"]
+    paper_cgm_factor=PAPER_PARAMS["cases"]["cgm"]["r_core_factor_cgm"]
 
     num_minutes = 5
 
-    paper_power = 24.7 # watts, atomic unit of force * c
+    paper_power = PAPER_PARAMS["power_w"]
 
     # use the core densities made with optimize_individual_galaxies.py
     output_dir = "./sparc/dm_mass_py_file_bigger_error"
