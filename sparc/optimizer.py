@@ -14,12 +14,12 @@ import optuna
 from optuna.study import MaxTrialsCallback
 from optuna.trial import TrialState
 
-from paper_params import PAPER_PARAMS, cgm_args, run_dir, working_dir
+from paper_params import PAPER_PARAMS, cgm_args, fits_db_url, run_dir, working_dir
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 n_workers = 4
 DENSITY_RANGE = (0.05, 1.5)
-BETA_RANGE = (1.5, 6.0)  # used directly as the exponent. A top of 3.0 was limiting the fit near 24.7 W
+BETA_RANGE = (1.5, 5.0)  # used directly as the exponent. A top of 3.0 was limiting the fit near 24.7 W
 
 
 def objective(trial, fit_args, power_override):
@@ -48,7 +48,7 @@ def run_worker(study_name, storage, n_trials_target, fit_args, power_override):
 
 def run_study(study_name, case, n_trials_target, power_override, directions):
     """Runs the study up to n_trials_target, or just loads it if it is already there."""
-    storage = f"sqlite:///{(run_dir() / 'global_fits.db').resolve()}"
+    storage = fits_db_url("global_fits")
     study = optuna.create_study(study_name=study_name, storage=storage, load_if_exists=True, sampler=make_sampler(), directions=directions)
     done = len(study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.FAIL)))
     if done < n_trials_target:
