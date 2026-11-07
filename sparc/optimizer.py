@@ -14,7 +14,7 @@ import optuna
 from optuna.study import MaxTrialsCallback
 from optuna.trial import TrialState
 
-from paper_params import PAPER_PARAMS, cgm_args, fits_dir, path_suffix
+from paper_params import PAPER_PARAMS, cgm_args, run_dir, working_dir
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 n_workers = 4
@@ -48,12 +48,12 @@ def run_worker(study_name, storage, n_trials_target, fit_args, power_override):
 
 def run_study(study_name, case, n_trials_target, power_override, directions):
     """Runs the study up to n_trials_target, or just loads it if it is already there."""
-    storage = f"sqlite:///{(fits_dir() / 'global_fits.db').resolve()}"
+    storage = f"sqlite:///{(run_dir() / 'global_fits.db').resolve()}"
     study = optuna.create_study(study_name=study_name, storage=storage, load_if_exists=True, sampler=make_sampler(), directions=directions)
     done = len(study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.FAIL)))
     if done < n_trials_target:
         fit_args = dict(cgm_args(case), num_minutes=PAPER_PARAMS["effort"]["global_fit_num_minutes"],
-                        output_dir_override=f"./sparc/dm_mass_global_fit_{case}{path_suffix()}")
+                        output_dir_override=working_dir(f"global_fit_{case}"))
         joblib.Parallel(n_jobs=n_workers)(
             joblib.delayed(run_worker)(study_name, storage, n_trials_target, fit_args, power_override) for _ in range(n_workers))
     return optuna.load_study(study_name=study_name, storage=storage)
@@ -77,7 +77,7 @@ def run_fixed_power(case):
     for trial in trials:
         table += (f"{trial.value:>9.4f}{trial.params['add_core_gas_beta']:>8.2f}{trial.params['add_core_gas_central_density']:>9.3f}"
                   f"{trial.user_attrs['unobserved_gas_fraction']:>16.3f}\n")
-    (fits_dir() / f"fixed_power_{case}.txt").write_text(table)
+    (run_dir() / f"fixed_power_{case}.txt").write_text(table)
     print("".join(table.splitlines(keepends=True)[:12]))
     return study
 

@@ -1,10 +1,14 @@
 """Publication numbers for the paper, in one place. Other scripts pull them from here.
 
 PAPER_PARAMS holds what we choose, including the core gas beta and central density: picked from the free power
-fit near the publication power, not a best fit. The per-galaxy core densities are fitted and written to fits_dir().
+fit near the publication power, not a best fit. The per-galaxy core densities are fitted and written to run_dir().
 
-Change run_tag to start a new set of fits and folders. Keeping it lets paper.py resume an interrupted run.
+Everything from a run goes to sparc/results/<run_tag>: fits and tables at the top, model runs in subfolders, and the
+optimizer runs that leave only empty folders in working/. A copy of this file goes there too, as the record of the run.
+Change run_tag to start a new run. Keeping it lets paper.py resume an interrupted run, but only while this file is unchanged.
 """
+import json
+import shutil
 from pathlib import Path
 
 from cgm_integral import DM_CUTOFF_DENSITY
@@ -36,18 +40,45 @@ PAPER_PARAMS = {
 }
 
 
-def path_suffix():
-    return f"_{PAPER_PARAMS['run_tag']}"
+RESULTS_DIR = SPARC_DIR / "results"
 
 
-def fits_dir():
-    path = SPARC_DIR / f"paper_fits{path_suffix()}"
-    path.mkdir(exist_ok=True)
+def run_dir():
+    """sparc/results/<run_tag>: fits, tables and the record of the parameters."""
+    path = RESULTS_DIR / PAPER_PARAMS["run_tag"]
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def output_dir(name):
+    """A model run's folder in the run folder, as a string for output_dir_override."""
+    return str(run_dir() / name)
+
+
+def working_dir(name):
+    """For the optimizer runs, which write no graphs and leave only empty folders."""
+    return str(run_dir() / "working" / name)
+
+
+def start_run(fresh=False):
+    """Records the parameters in the run folder. Stops if this file changed since the run started. fresh empties the folder first."""
+    path = RESULTS_DIR / PAPER_PARAMS["run_tag"]
+    if fresh and path.exists():
+        shutil.rmtree(path)
+    path.mkdir(parents=True, exist_ok=True)
+    source = Path(__file__).read_text()
+    record = path / "paper_params.py"
+    if record.exists() and record.read_text() != source:
+        raise SystemExit(f"paper_params.py has changed since run {PAPER_PARAMS['run_tag']} started (see {record}).\n"
+                         f"Change run_tag to start a new run, or put back the old parameters to resume this one.")
+    record.write_text(source)
+    # what was actually used, including changes made in code, eg by paper.py --quick
+    (path / "params_used.json").write_text(json.dumps(PAPER_PARAMS, indent=2, default=str) + "\n")
     return path
 
 
 def core_densities_file(case):
-    return fits_dir() / f"core_densities_{case}.txt"
+    return run_dir() / f"core_densities_{case}.txt"
 
 
 def case_params(case):

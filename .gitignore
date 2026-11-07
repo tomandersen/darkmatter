@@ -246,5 +246,5 @@ sparc/gas3d/raw/
 sparc/gas3d/runs/
 *.db
 
-# paper.py --quick smoke test output
-sparc/paper_fits_quick/
+# paper.py output, one folder per run_tag
+sparc/results/

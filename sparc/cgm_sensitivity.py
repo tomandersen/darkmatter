@@ -12,7 +12,7 @@ import joblib
 import numpy as np
 from scipy.optimize import minimize_scalar
 
-from paper_params import PAPER_PARAMS, fits_dir, model_args, path_suffix
+from paper_params import PAPER_PARAMS, model_args, run_dir, working_dir
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 n_workers = 4
@@ -58,7 +58,7 @@ def fit_galaxy(galaxy, args):
 
 
 def run_cgm_sensitivity():
-    results_file = fits_dir() / "cgm_sensitivity.jsonl"
+    results_file = run_dir() / "cgm_sensitivity.jsonl"
     results = {}
     if results_file.exists():
         results = {row["name"]: row for row in map(json.loads, results_file.read_text().splitlines())}
@@ -68,7 +68,7 @@ def run_cgm_sensitivity():
     base_args = model_args("cgm")
     base_args.pop("only_galaxies")
     base_args.update(num_minutes=PAPER_PARAMS["effort"]["sensitivity_num_minutes"], power_override=PAPER_PARAMS["power_w"],
-                     output_dir_override=f"./sparc/dm_mass_cgm_sensitivity{path_suffix()}")
+                     output_dir_override=working_dir("cgm_sensitivity"))
 
     with joblib.Parallel(n_jobs=n_workers) as pool:
         for name, (density, factor, beta) in CGM_VARIANTS.items():
@@ -84,7 +84,7 @@ def run_cgm_sensitivity():
             with open(results_file, "a") as f:
                 f.write(json.dumps(results[name]) + "\n")
 
-    table_file = fits_dir() / "cgm_sensitivity.txt"
+    table_file = run_dir() / "cgm_sensitivity.txt"
     with open(table_file, "w") as f:
         f.write(f"# Core density refit per galaxy at P = {PAPER_PARAMS['power_w']} W. Low resolution: compare rows with each other.\n")
         f.write(f"{'CGM':<14}{'n0(/cc)':>10}{'factor':>8}{'beta':>7}{'chi2/pt':>9}{'median':>9}{'mean_n_core':>13}\n")

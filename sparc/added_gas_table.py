@@ -25,7 +25,7 @@ import numpy as np
 from scipy.optimize import brentq
 
 from cgm_integral import evaluate_dm_mass_integral
-from paper_params import PAPER_PARAMS, core_densities_file, model_args, path_suffix
+from paper_params import PAPER_PARAMS, core_densities_file, model_args, output_dir, working_dir
 
 SPARC_DIR = Path(__file__).resolve().parent
 PROPERTIES_FILE = SPARC_DIR / "SPARC_Lelli2016c.mrt.txt"
@@ -56,7 +56,7 @@ def use_case(case):
     global R_CORE_FACTOR_GAS, CGM_CENTRAL_DENSITY, CGM_BETA, CGM_EXPONENT, R_CORE_FACTOR_CGM, GRID_NUM_MINUTES
     args = model_args(case)
     CORE_DENSITIES_FILE = core_densities_file(case)
-    OUTPUT_DIR = SPARC_DIR / f"dm_mass_added_gas_{case}{path_suffix()}"
+    OUTPUT_DIR = Path(output_dir(f"added_gas_{case}"))
     GRID_CACHE_FILE = OUTPUT_DIR / "grid_dm_r_max.txt"
     POWER_W = PAPER_PARAMS["power_w"]
     DM_CUTOFF_DENSITY = args["dm_cutoff_density"]
@@ -127,7 +127,7 @@ def load_grid_dark_mass(galaxy_names):
             num_minutes=GRID_NUM_MINUTES,
             output_graphs=False,
             power_override=POWER_W,
-            output_dir_override=str(OUTPUT_DIR / "grid_run"),
+            output_dir_override=working_dir(f"added_gas_grid_{case}"),
             use_core_gas_file=True,
             core_file=CORE_DENSITIES_FILE,
             only_galaxies=galaxy_names,

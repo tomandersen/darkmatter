@@ -23,7 +23,7 @@ repo_root = Path(__file__).resolve().parent.parent
 if (repo_root / "sparc").exists():
     os.chdir(repo_root)
 
-from paper_params import PAPER_PARAMS, core_densities_file, fits_dir, model_args, path_suffix
+from paper_params import PAPER_PARAMS, core_densities_file, model_args, run_dir, working_dir
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 
@@ -90,7 +90,7 @@ def optimize_individual_galaxies(case):
     galaxy_names = PAPER_PARAMS["only_galaxies"] or load_galaxy_names(mrt_file)
     print(f"Fitting {len(galaxy_names)} galaxies for the {case} case")
 
-    db_file = fits_dir() / f"individual_{case}.db"
+    db_file = run_dir() / f"individual_{case}.db"
     storage_url = f"sqlite:///{db_file.resolve()}"
     print(f"Optuna database storage: {storage_url}")
 
@@ -100,7 +100,7 @@ def optimize_individual_galaxies(case):
         power_override=PAPER_PARAMS["power_w"],
         min_mass=0,
         max_mass=1e99,
-        output_dir_override=f"./sparc/dm_mass_individual_core_gas_{case}{path_suffix()}",
+        output_dir_override=working_dir(f"individual_core_gas_{case}"),
     )
 
     n_trials_target = PAPER_PARAMS["effort"]["individual_trials"]
