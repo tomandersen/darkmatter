@@ -18,8 +18,8 @@ PAPER_PARAMS = {
     "r_core_factor_gas": 2.5,
     "cases": {
         # Set from observed CGM gas, not fitted: inside R_max the fit always prefers less CGM. See cgm_sensitivity.py
-        "cgm": {"cgm_central_density": 2.43e-4, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": 3.0, "core_gas_central_density": 0.24},
-        "no_cgm": {"cgm_central_density": 0.0, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": 3.0, "core_gas_central_density": 0.24},
+        "cgm": {"cgm_central_density": 2.43e-4, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": 3.1, "core_gas_central_density": 0.4},
+        "no_cgm": {"cgm_central_density": 0.0, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": 3.1, "core_gas_central_density": 0.4},
     },
     "only_galaxies": None,  # None = all SPARC galaxies
     "effort": {
