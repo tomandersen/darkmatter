@@ -305,6 +305,11 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         r_core_cgm_m = (r_core_kpc * r_core_factor_cgm) * kpc_to_m
         r_squared = X_blob**2 + Y_blob**2 + Z_blob**2
 
+        # only want sums of gas inside r_max. The observed gas is summed before the core gas and CGM are added
+        r_max_m = max_R_kpc * kpc_to_m
+        r_max_mask = r_squared < r_max_m**2
+        g_data['sum_observed_gas_particles'] = np.sum(gas_particle_density_grid[r_max_mask] * dV[r_max_mask])
+
         if gal_core_gas_density != 0.0:
             n_0_cgs = gal_core_gas_density
             n_0_m3 =  n_0_cgs * (100)**3
@@ -328,9 +333,6 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         gas_particle_mass_He_factor = 1.33  
         dm_gas = gas_particle_density_grid * m_p * gas_particle_mass_He_factor * dV
 
-        # only want the sum of gas inside r_max
-        r_max_m = max_R_kpc * kpc_to_m
-        r_max_mask = r_squared < r_max_m**2
         g_data['sum_all_gas_particles'] = np.sum(gas_particle_density_grid[r_max_mask] * dV[r_max_mask])
        
         dm_cutoff_m3 = dm_cutoff_density*(100)**3
@@ -520,7 +522,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             total_dm_mass += tot_dm_mass_msun 
             dm_ratio_by_galaxy += dm_allbaryons_ratio
             tot_dm_gas_ratio_to_rmax += tot_dm_mass_msun/hi
-            unobserved_gas_fraction += (tot_gas_mass_msun-hi)/hi
+            # added core gas and CGM inside r_max over observed gas (1.33 HI), the Add/Gas of added_gas_table.py
+            added_gas_mass_msun = (g['sum_all_gas_particles'] - g['sum_observed_gas_particles']) * m_p * 1.33 / M_sun
+            unobserved_gas_fraction += added_gas_mass_msun / (1.33 * hi)
 
             stats.append({
                 'name': name,
