@@ -52,11 +52,12 @@ PER_CC_TO_M3 = 100.0 ** 3
 
 def use_case(case):
     """Sets the parameters and paths below from paper_params.py for one case."""
-    global CORE_DENSITIES_FILE, OUTPUT_DIR, GRID_CACHE_FILE, POWER_W, DM_CUTOFF_DENSITY, CORE_GAS_BETA, CORE_GAS_EXPONENT
+    global CORE_DENSITIES_FILE, OUTPUT_DIR, GRID_RUN_DIR, GRID_CACHE_FILE, POWER_W, DM_CUTOFF_DENSITY, CORE_GAS_BETA, CORE_GAS_EXPONENT
     global R_CORE_FACTOR_GAS, CGM_CENTRAL_DENSITY, CGM_BETA, CGM_EXPONENT, R_CORE_FACTOR_CGM, GRID_NUM_MINUTES
     args = model_args(case)
     CORE_DENSITIES_FILE = core_densities_file(case)
     OUTPUT_DIR = Path(output_dir(f"added_gas_{case}"))
+    GRID_RUN_DIR = working_dir(f"added_gas_grid_{case}")
     GRID_CACHE_FILE = OUTPUT_DIR / "grid_dm_r_max.txt"
     POWER_W = PAPER_PARAMS["power_w"]
     DM_CUTOFF_DENSITY = args["dm_cutoff_density"]
@@ -127,7 +128,7 @@ def load_grid_dark_mass(galaxy_names):
             num_minutes=GRID_NUM_MINUTES,
             output_graphs=False,
             power_override=POWER_W,
-            output_dir_override=working_dir(f"added_gas_grid_{case}"),
+            output_dir_override=GRID_RUN_DIR,
             use_core_gas_file=True,
             core_file=CORE_DENSITIES_FILE,
             only_galaxies=galaxy_names,
