@@ -19,7 +19,7 @@ from cgm_integral import DM_CUTOFF_DENSITY
 SPARC_DIR = Path(__file__).resolve().parent
 
 PAPER_PARAMS = {
-    "run_tag": "2026_11_07",
+    "run_tag": "2026_11_08",
     "power_w": None,                         # atomic unit of force * c. From pareto_front.txt
     "dm_cutoff_density": DM_CUTOFF_DENSITY,  # particles per cc
     "r_core_factor_gas": 2.5,
@@ -31,15 +31,15 @@ PAPER_PARAMS = {
     },
     "only_galaxies": None,  # None = all SPARC galaxies
     "effort": {
-        "free_power_trials": 200,
-        "fixed_power_trials": 150,
-        "global_fit_num_minutes": 3,
-        "individual_trials": 60,
-        "individual_num_minutes": 4,
-        "sensitivity_num_minutes": 3,
-        "test_num_minutes": 15,
-        "newton_num_minutes": 15,
-        "table_num_minutes": 15,
+        "free_power_trials": 300,
+        "fixed_power_trials": 130,
+        "global_fit_num_minutes": 1,
+        "individual_trials": 70,
+        "individual_num_minutes": 1,
+        "sensitivity_num_minutes": 5,
+        "test_num_minutes": 12,
+        "newton_num_minutes": 12,
+        "table_num_minutes": 12,
     },
 }
 
