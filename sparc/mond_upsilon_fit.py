@@ -91,24 +91,33 @@ def main():
         at_bound = "low" if f_best <= f_min + F_STEP / 2 else "high" if f_best >= f_max - F_STEP / 2 else ""
         rows.append((name, f_best, c_best, c_one, len(g['R']), at_bound))
 
+    n_total = sum(r[4] for r in rows)
+    chi_best = sum(r[2] for r in rows)
+    chi_one = sum(r[3] for r in rows)
+    fs = np.array([r[1] for r in rows])
+    summary = [
+        f"{len(rows)} galaxies, {n_total} points, f grid [{f_min}, {f_max}], prior {prior_dex} dex",
+        f"MOND chi^2 at f=1:          {chi_one:9.2f}  per point {chi_one / n_total:.3f}",
+        f"MOND chi^2 at per-galaxy f: {chi_best:9.2f}  per point {chi_best / n_total:.3f}",
+        f"f: median {np.median(fs):.3f}, 16-84% {np.percentile(fs, 16):.3f}-{np.percentile(fs, 84):.3f}",
+        f"at low bound: {sum(r[5] == 'low' for r in rows)}, at high bound: {sum(r[5] == 'high' for r in rows)}",
+    ]
+
     with open(OUTPUT_FILE, "w") as out:
         out.write(f"# Per-galaxy Upsilon factor f for simple MOND (a0={A0_MOND}), Upsilon_disk={UPSILON_DISK}*f, Upsilon_bulge={UPSILON_BULGE}*f\n")
         prior_text = f"lognormal prior on f, {prior_dex} dex" if prior_dex > 0 else "no prior on f"
         out.write(f"# {prior_text}; chi2pt is the data chi^2 only (no prior term)\n")
         out.write(f"# grid f in [{f_min}, {f_max}] step {F_STEP}; chi err = sqrt(({CHI_ERR_V_TOT}*V)^2 + eVobs^2). Made by mond_upsilon_fit.py\n")
+        out.write("#\n# Summary (totals over all galaxies, per point = chi^2 total / number of points)\n")
+        for line in summary:
+            out.write(f"#   {line}\n")
+        out.write("#\n")
         out.write(f"# {'galaxy':<18} {'f':>6} {'chi2pt':>8} {'chi2pt_f1':>10} {'n':>4}  bound\n")
         for name, f_best, c_best, c_one, n, at_bound in rows:
             out.write(f"{name:<20} {f_best:6.3f} {c_best / n:8.3f} {c_one / n:10.3f} {n:4d}  {at_bound}\n")
 
-    n_total = sum(r[4] for r in rows)
-    chi_best = sum(r[2] for r in rows)
-    chi_one = sum(r[3] for r in rows)
-    fs = np.array([r[1] for r in rows])
-    print(f"{len(rows)} galaxies, {n_total} points, f grid [{f_min}, {f_max}], prior {prior_dex} dex")
-    print(f"MOND chi^2 at f=1:          {chi_one:9.2f}  per point {chi_one / n_total:.3f}")
-    print(f"MOND chi^2 at per-galaxy f: {chi_best:9.2f}  per point {chi_best / n_total:.3f}")
-    print(f"f: median {np.median(fs):.3f}, 16-84% {np.percentile(fs, 16):.3f}-{np.percentile(fs, 84):.3f}")
-    print(f"at low bound: {sum(r[5] == 'low' for r in rows)}, at high bound: {sum(r[5] == 'high' for r in rows)}")
+    for line in summary:
+        print(line)
     print(f"Wrote {OUTPUT_FILE}")
 
 

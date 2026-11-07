@@ -1,6 +1,14 @@
 # Per-galaxy Upsilon factor f for simple MOND (a0=1.2e-10), Upsilon_disk=0.5*f, Upsilon_bulge=0.7*f
 # lognormal prior on f, 0.1 dex; chi2pt is the data chi^2 only (no prior term)
 # grid f in [0.1, 5.0] step 0.002; chi err = sqrt((0.15*V)^2 + eVobs^2). Made by mond_upsilon_fit.py
+#
+# Summary (totals over all galaxies, per point = chi^2 total / number of points)
+#   175 galaxies, 3391 points, f grid [0.1, 5.0], prior 0.1 dex
+#   MOND chi^2 at f=1:            4163.21  per point 1.228
+#   MOND chi^2 at per-galaxy f:   2229.50  per point 0.657
+#   f: median 0.934, 16-84% 0.712-1.290
+#   at low bound: 0, at high bound: 0
+#
 # galaxy                  f   chi2pt  chi2pt_f1    n  bound
 CamB                  0.504   11.444     13.778    9  
 D512-2                0.854    0.513      0.780    4  
