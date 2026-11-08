@@ -26,18 +26,15 @@ from scipy.optimize import brentq
 
 from cgm_integral import evaluate_dm_mass_integral
 from paper_params import PAPER_PARAMS, core_densities_file, model_args, output_dir, working_dir
-from sparc_data import load_properties, load_rotation_curves
+from sparc_data import lelli_baryonic_mass, load_properties, load_rotation_curves
 
 SPARC_DIR = Path(__file__).resolve().parent
 
-UPSILON_DISK = 0.5
-UPSILON_BULGE = 0.7
 HE_FACTOR = 1.33
 HUBBLE = 71.0                   # km/s/Mpc
 COSMIC_BARYON_FRACTION = 0.157  # Omega_b / Omega_m, Planck 2018
 
 G_SI = 6.67430e-11
-G_KPC = 4.30091e-6              # kpc (km/s)^2 / Msun
 C_SI = 2.9979e8
 M_P = 1.67262e-27
 KPC_TO_M = 3.086e19
@@ -156,13 +153,10 @@ def solve_r200(lelli_mass, disk_dark_mass, n0_core, rc_core_kpc, n0_cgm, rc_cgm_
 
 def build_row(name, n0_core, properties, curves, grid_dark_mass):
     luminosity, hi, v_flat = (properties[name][key] for key in ("L36", "MHI", "Vflat"))
-    r_max, v_last, v_bul = (float(curves[name][key][-1]) for key in ("R", "Vobs", "Vbul"))  # at the last observed radius
+    r_max, v_last = (float(curves[name][key][-1]) for key in ("R", "Vobs"))  # at the last observed radius
 
-    # The bulge is spherical in Lelli and Vbul is for M/L = 1, so V^2 R / G at the last radius is its luminosity
-    bulge_luminosity = min(v_bul ** 2 * r_max / G_KPC / 1e9, luminosity)
-    disk_luminosity = luminosity - bulge_luminosity
     lelli_gas = HE_FACTOR * hi
-    lelli_mass = UPSILON_DISK * disk_luminosity + UPSILON_BULGE * bulge_luminosity + lelli_gas
+    lelli_mass = lelli_baryonic_mass(properties[name], curves[name])
 
     # Same core radius as sparc_dm_bruteCGM.py, which uses L + HI rather than the Upsilon weighted mass
     r_core_kpc = 2.0 * ((luminosity + hi) * 1e9 / 1e11) ** (1.0 / 3.0)

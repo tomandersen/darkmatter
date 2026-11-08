@@ -1,7 +1,7 @@
 from PIL.ImagePalette import negative
-from cgm_integral import DM_CUTOFF_DENSITY, dm_density_term
+from cgm_integral import DM_CUTOFF_DENSITY, dm_density_term, evaluate_dm_mass_integral
 from mond import g_mond
-from sparc_data import load_properties, load_rotation_curves
+from sparc_data import lelli_baryonic_mass, load_properties, load_rotation_curves
 import numpy as np
 import os
 import time
@@ -126,7 +126,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     if not galaxies:
         raise ValueError(f"No galaxies to run: only_galaxies={only_galaxies}, min_mass={min_mass}, max_mass={max_mass}")
 
-    for g in galaxies.values():
+    for gal, g in galaxies.items():
+        g['lelli_baryonic_mass'] = lelli_baryonic_mass(properties[gal], g)  # before Vbul is scaled by Upsilon
         g['Vdisk'] = g['Vdisk'] * sqrt_Upsilon_disk
         g['Vbul'] = g['Vbul'] * sqrt_Upsilon_bulge
 
@@ -137,7 +138,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     pc_to_m = 3.086e16     
     kpc_to_m = pc_to_m * 1000
     a0_mond = 1.2e-10      
-    M_sun = 1.98847e30     
+    M_sun = 1.98847e30
+    ATOMIC_UNIT_POWER_W = 24.6988  # atomic unit of force * c
 
     # 3. Pre-calculate Base Integrals (P=1 Watt) for ALL galaxies
     file_core_densities = load_core_densities(core_file) if use_core_gas_file else {}
@@ -268,7 +270,13 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         # Zero out gas outside the bounding sphere of radius grid_max_m (keeps 3D shape intact)
         # this makes it so our output stats make more sense, we can just sum all the dark mass we made, etc.
         gas_particle_density_grid[r_squared >= grid_max_m**2] = 0.0
-        
+
+        # Added gas inside r_max over the Lelli baryonic mass, the Add/Mass of added_gas_table.py
+        added_gas_particles, _ = evaluate_dm_mass_integral(0, r_max_m, True, 0.0, c_SI,
+            r_core_gas_m, gal_core_gas_density*(100)**3, -add_core_gas_beta,
+            r_core_cgm_m, add_real_cgm_central_density*(100)**3, -3.0*cgm_beta/2.0, 0.0)
+        g_data['added_gas_fraction'] = added_gas_particles * m_p * 1.33 / (M_sun * 1e9) / g_data['lelli_baryonic_mass']
+
 
         g_data['R_grid_kpc'] = R_grid_kpc
         g_data['Z_grid_kpc'] = Z_m / kpc_to_m
@@ -636,43 +644,50 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         plt.close()
 
 
+    def plot_edge_on_heatmap(g, density_cm3, cmap, colorbar_label, title, path):
+        """Whole disk seen edge on, in a square frame out to R_max. The -R half is a mirror of the +R half."""
+        x_kpc = np.concatenate((-g['R_grid_kpc'][::-1], g['R_grid_kpc']))
+        density_full = np.concatenate((density_cm3[::-1, :], density_cm3), axis=0)
+        x_mesh, z_mesh = np.meshgrid(x_kpc, g['Z_grid_kpc'], indexing='ij')
+
+        plt.figure(figsize=(9, 8))
+        vmin = max(density_cm3.max() * 1e-4, 1e-6)
+        pcm = plt.pcolormesh(x_mesh, z_mesh, density_full, shading='auto', cmap=cmap,
+                             norm=mcolors.LogNorm(vmin=vmin, vmax=density_cm3.max()))
+        plt.colorbar(pcm, label=colorbar_label, fraction=0.046, pad=0.04)
+
+        # white lines at each factor of 10. Empty cells are NaN so no line gets drawn around the edge of the sphere
+        levels = 10.0 ** np.arange(np.ceil(np.log10(vmin)), np.floor(np.log10(density_cm3.max())) + 1)
+        if len(levels) > 0:
+            contours = plt.contour(x_mesh, z_mesh, np.where(density_full > 0, density_full, np.nan), levels=levels, colors='white', linewidths=0.8)
+            plt.clabel(contours, fmt='%.0e', fontsize=7)
+
+        r_max_kpc = g['R'].max()
+        plt.xlim(-r_max_kpc, r_max_kpc)
+        plt.ylim(-r_max_kpc, r_max_kpc)
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.xlabel('x (kpc)')
+        plt.ylabel('z (kpc)')
+        plt.title(title)
+        plt.savefig(path, bbox_inches='tight', dpi=200)
+        plt.close()
+
     def generate_density_heatmaps(galaxy_dict, best_P):
         print("\nGenerating 2D Gas and DM Heatmaps...")
         for gal in galaxy_dict:
             g = galaxy_dict[gal]
-            R_kpc = g['R_grid_kpc']
-            Z_kpc = g['Z_grid_kpc']
             gas_density_m3 = g['gas_density_slice_m3']
-            
+
             gas_density_cm3 = gas_density_m3 / 1e6
             dm_density_kg_m3 = best_P * (1/c_SI**3) * dm_density_term(gas_density_m3, dm_cutoff_density*(100)**3)
             dm_density_cm3 = dm_density_kg_m3 / (m_p * 1e6)
-            
-            R_mesh, Z_mesh = np.meshgrid(R_kpc, Z_kpc, indexing='ij')
 
-            plt.figure(figsize=(6, 10))
-            vmin = max(gas_density_cm3.max() * 1e-4, 1e-6)
-            pcm = plt.pcolormesh(R_mesh, Z_mesh, gas_density_cm3, 
-                                 shading='auto', cmap='viridis', 
-                                 norm=mcolors.LogNorm(vmin=vmin, vmax=gas_density_cm3.max()))
-            plt.colorbar(pcm, label='Gas Density (particles / cm$^3$)')
-            plt.xlabel('Radius [x-axis] (kpc)')
-            plt.ylabel('Height [z-axis] (kpc)')
-            plt.title(f'{gal} 2D Gas Density (y=0 slice)')
-            plt.savefig(os.path.join(output_gas_heatmaps, f"{gal}_gas_heatmap.png"), bbox_inches='tight', dpi=200)
-            plt.close()
-
-            plt.figure(figsize=(6, 10))
-            vmin_dm = max(dm_density_cm3.max() * 1e-4, 1e-6)
-            pcm = plt.pcolormesh(R_mesh, Z_mesh, dm_density_cm3, 
-                                 shading='auto', cmap='plasma', 
-                                 norm=mcolors.LogNorm(vmin=vmin_dm, vmax=dm_density_cm3.max()))
-            plt.colorbar(pcm, label='DM Density Equivalent (protons / cm$^3$)')
-            plt.xlabel('Radius [x-axis] (kpc)')
-            plt.ylabel('Height [z-axis] (kpc)')
-            plt.title(f'{gal} 2D Dark Mass Density (y=0 slice)\n$P={best_P:.2f}W$')
-            plt.savefig(os.path.join(output_dm_heatmaps, f"{gal}_dm_heatmap.png"), bbox_inches='tight', dpi=200)
-            plt.close()
+            plot_edge_on_heatmap(g, gas_density_cm3, 'viridis', 'Gas Density (particles / cm$^3$)',
+                                 f'{gal} 2D Gas Density (y=0 slice)',
+                                 os.path.join(output_gas_heatmaps, f"{gal}_gas_heatmap.png"))
+            plot_edge_on_heatmap(g, dm_density_cm3, 'plasma', 'DM Density Equivalent (protons / cm$^3$)',
+                                 f'{gal} 2D Dark Mass Density (y=0 slice)\n$k={best_P/ATOMIC_UNIT_POWER_W:.2f}$',
+                                 os.path.join(output_dm_heatmaps, f"{gal}_dm_heatmap.png"))
 
     if DO_HEATMAPS:
         generate_density_heatmaps(galaxies, best_global_P)
@@ -751,7 +766,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             plt.xlabel('Radius (kpc)')
             plt.ylabel('Velocity (km/s)')
-            title = f'{gal} Kinematics (Universal P = {best_global_P:.2f} W, gas:{gal_core_gas:.3f}/cc)'
+            title = f"{gal} Kinematics (k = {best_global_P/ATOMIC_UNIT_POWER_W:.2f}, added gas: {g['added_gas_fraction']:.3f})"
             if upsilon_factor != 1.0:
                 title += rf'$\Upsilon_f$:{upsilon_factor:.2f}'
             plt.title(title)
@@ -784,6 +799,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
         all_g_obs = []
         all_g_pred = []
+        all_g_labels = []  # which galaxy and radius each point is, to name any point left off the plot
 
         for gal in galaxies:
             g = galaxies[gal]
@@ -806,10 +822,17 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             all_g_obs.extend(g_obs)
             all_g_pred.extend(g_pred)
+            all_g_labels.extend((gal, r) for r in g['R'][valid])
+
+        # same axes on every run, so the graphs can be compared
+        ACCEL_PLOT_MIN = 1e-13
+        ACCEL_PLOT_MAX = 5e-7
 
         g_pred_arr = np.asarray(all_g_pred)
         g_obs_arr = np.asarray(all_g_obs)
-        valid_pts = (g_pred_arr > 0) & (g_obs_arr > 0)
+        valid_pts = (g_pred_arr >= ACCEL_PLOT_MIN) & (g_pred_arr <= ACCEL_PLOT_MAX) & (g_obs_arr >= ACCEL_PLOT_MIN) & (g_obs_arr <= ACCEL_PLOT_MAX)
+        for i in np.flatnonzero(~valid_pts):
+            print(f"Not plotted, outside the axes: {all_g_labels[i][0]} R = {all_g_labels[i][1]:.2f} kpc, g_pred = {g_pred_arr[i]:.2e}, g_obs = {g_obs_arr[i]:.2e}")
         x_pts = g_pred_arr[valid_pts]
         y_pts = g_obs_arr[valid_pts]
 
@@ -830,23 +853,17 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         plt.xscale('log')
         plt.yscale('log')
 
-        # min_val = 10**np.floor(np.log10(min(min(y_pts), min(x_pts))))
-        # max_val = 10**np.ceil(np.log10(max(max(y_pts), max(x_pts))))
-        min_val = min(min(y_pts), min(x_pts))
-        max_val = max(max(y_pts), max(x_pts))
-        min_val = min_val / 1.1
-        max_val = max_val * 1.1
-        plt.plot([min_val, max_val], [min_val, max_val], 'k--', linewidth=1.2, label='Newton')
+        plt.plot([ACCEL_PLOT_MIN, ACCEL_PLOT_MAX], [ACCEL_PLOT_MIN, ACCEL_PLOT_MAX], 'k--', linewidth=1.2, label='Newton')
 
-        plt.xlim(min_val, max_val)
-        plt.ylim(min_val, max_val)
-        plt.axis('square')
+        plt.xlim(ACCEL_PLOT_MIN, ACCEL_PLOT_MAX)
+        plt.ylim(ACCEL_PLOT_MIN, ACCEL_PLOT_MAX)
+        plt.gca().set_aspect('equal', adjustable='box')  # not plt.axis('square'), which autoscales and pads the limits
 
         plt.ylabel('Observed Acceleration $g_{obs}$ (m/s$^2$)', fontsize=12)
         plt.xlabel('Predicted Acceleration $g_{pred}$ (m/s$^2$)', fontsize=12)
         plt.title(f'Global Fit: Dark Mass vs Observed Acceleration\n(Total Points = {len(all_g_obs)}, Universal P = {best_global_P:.2f} W)', fontsize=14)
         plt.legend(fontsize="small", loc="upper left")
-        plt.grid(True, which="both", ls="--", alpha=0.5)
+        plt.grid(True, which="major", ls="--", alpha=0.5)
 
         plt.savefig(os.path.join(output_dir, "global_predicted_accel_vs_obs.png"), bbox_inches='tight', dpi=200)
         plt.close()

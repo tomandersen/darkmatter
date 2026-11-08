@@ -11,6 +11,11 @@ SPARC_DIR = Path(__file__).resolve().parent
 PROPERTIES_FILE = SPARC_DIR / "SPARC_Lelli2016c.mrt.txt"
 KINEMATICS_FILE = SPARC_DIR / "MassModels_Lelli2016_SigmaGas.mrt"  # the Lelli mass models plus a Sigma_gas column, from calc_gas_checkit.py
 
+LELLI_UPSILON_DISK = 0.5
+LELLI_UPSILON_BULGE = 0.7
+LELLI_HE_FACTOR = 1.33
+G_KPC = 4.30091e-6  # kpc (km/s)^2 / Msun
+
 
 def load_properties():
     """Returns {galaxy: {'D' Mpc, 'Inc' deg, 'L36' 10^9 Lsun, 'Rd' kpc, 'MHI' 10^9 Msun, 'Vflat' km/s, 'Q' quality flag}}, in file order."""
@@ -51,6 +56,14 @@ def load_rotation_curves(only_galaxies=None):
             raise ValueError(f"Not in {KINEMATICS_FILE.name}: {unknown}")
         curves = {name: curves[name] for name in only_galaxies}
     return {name: {k: np.array(v) for k, v in g.items()} for name, g in curves.items()}
+
+
+def lelli_baryonic_mass(properties, curve):
+    """Total baryonic mass in 10^9 Msun: 0.5 L_disk + 0.7 L_bulge + 1.33 HI. Takes one galaxy's load_properties entry and its curve, with Vbul still at Upsilon = 1."""
+    # The bulge is spherical in Lelli and Vbul is for M/L = 1, so V^2 R / G at the last radius is its luminosity
+    bulge_luminosity = min(float(curve['Vbul'][-1]) ** 2 * float(curve['R'][-1]) / G_KPC / 1e9, properties['L36'])
+    disk_luminosity = properties['L36'] - bulge_luminosity
+    return LELLI_UPSILON_DISK * disk_luminosity + LELLI_UPSILON_BULGE * bulge_luminosity + LELLI_HE_FACTOR * properties['MHI']
 
 
 def select_galaxies(max_q=None, min_inclination=None):
