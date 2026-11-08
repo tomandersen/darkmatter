@@ -19,7 +19,7 @@ from cgm_integral import DM_CUTOFF_DENSITY
 SPARC_DIR = Path(__file__).resolve().parent
 
 PAPER_PARAMS = {
-    "run_tag": "2026_11_08",
+    "run_tag": "2026_11_08-2",
     "power_w": None,                         # atomic unit of force * c. From pareto_front.txt
     "dm_cutoff_density": DM_CUTOFF_DENSITY,  # particles per cc
     "r_core_factor_gas": 2.5,
@@ -36,7 +36,7 @@ PAPER_PARAMS = {
         "global_fit_num_minutes": 1,
         "individual_trials": 70,
         "individual_num_minutes": 1,
-        "sensitivity_num_minutes": 5,
+        "sensitivity_num_minutes": 1,
         "test_num_minutes": 12,
         "newton_num_minutes": 12,
         "table_num_minutes": 12,

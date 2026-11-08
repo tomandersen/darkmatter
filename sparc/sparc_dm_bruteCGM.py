@@ -74,7 +74,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     R_GRID_SCALE_FACTOR = 1.1 # How far to go past the last R data point. should be 1.1 or 1.2 or 1.3 
     # after R_GRID_SCALE_FACTOR, points at R_max observed should not feel any force from mass beyond R_GRID_SCALE_FACTOR
-    # Need to go past R_max as Newton's Shell Theorem does not hold in a thin disk. (And no Jeans stuff is not good either)     
+    # Need to go past R_max as Newton's Shell Theorem does not hold in a thin disk. (And no, Jeans stuff is not good either)     
      
     USE_EXPONENTIAL_DISK = True  # without this on, disk is just hard cut at +/- h_z
 
