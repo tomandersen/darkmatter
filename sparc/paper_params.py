@@ -20,7 +20,7 @@ from sparc_data import select_galaxies
 SPARC_DIR = Path(__file__).resolve().parent
 
 PAPER_PARAMS = {
-    "run_tag": "2026_11_08_Q2_I30",
+    "run_tag": "2026_11_08_175",
     "power_w": None,                         # atomic unit of force * c. From pareto_front.txt
     "dm_cutoff_density": DM_CUTOFF_DENSITY,  # particles per cc
     "r_core_factor_gas": 2.5,
@@ -30,7 +30,7 @@ PAPER_PARAMS = {
         "cgm": {"cgm_central_density": 2.43e-4, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": None, "core_gas_central_density": None},
         "no_cgm": {"cgm_central_density": 0.0, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": None, "core_gas_central_density": None},
     },
-    "galaxy_cuts": {"max_q": 2, "min_inclination": 30},  # None = no cut. max_q 2 and min_inclination 30 keep 153 of the 175 galaxies
+    "galaxy_cuts": {"max_q": None, "min_inclination": None},  # None = no cut. max_q 2 and min_inclination 30 keep 153 of the 175 galaxies
     "only_galaxies": None,  # a list of names here overrides galaxy_cuts
     "effort": {
         "free_power_trials": 300,
