@@ -36,7 +36,7 @@ PAPER_PARAMS = {
         "global_fit_num_minutes": 1,
         "individual_trials": 70,
         "individual_num_minutes": 1,
-        "sensitivity_num_minutes": 1,
+        "sensitivity_num_minutes": 0.5,
         "test_num_minutes": 12,
         "newton_num_minutes": 12,
         "table_num_minutes": 12,

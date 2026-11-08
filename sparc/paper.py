@@ -28,6 +28,7 @@ import time
 from pathlib import Path
 
 CASES = ("cgm", "no_cgm")
+MOND_UPSILON_FILE = Path(__file__).resolve().parent / "mond_upsilon.txt"  # per-galaxy MOND Upsilon factors, from mond_upsilon_fit.py
 QUICK_GALAXIES = ["DDO154", "NGC2403", "UGC02953", "NGC0289", "NGC7814"]
 QUICK_EFFORT = dict(free_power_trials=4, fixed_power_trials=4, global_fit_num_minutes=0.3, individual_trials=4, individual_num_minutes=0.3,
                     sensitivity_num_minutes=0.1, test_num_minutes=0.3, newton_num_minutes=0.3, table_num_minutes=0.3)
@@ -145,7 +146,7 @@ def run_tests():
     for case in CASES:
         # the core densities made with optimize_individual_galaxies.py
         run_test(f"core_file_{case}", f"core_file_{case}", add_core_gas_central_density=0.0,  # ignored as we are using the file
-                 use_core_gas_file=True, core_file=core_densities_file(case), power_override=power, **model_args(case))
+                 use_core_gas_file=True, core_file=core_densities_file(case), mond_upsilon_file=MOND_UPSILON_FILE, power_override=power, **model_args(case))
         # one core gas density for all galaxies, from paper_params.py
         run_test(f"single_gas_{case}", f"single_gas_{case}", add_core_gas_central_density=case_params(case)["core_gas_central_density"],
                  power_override=power, **model_args(case))

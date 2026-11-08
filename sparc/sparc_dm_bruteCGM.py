@@ -35,8 +35,21 @@ def load_core_densities(core_file=None):
     return file_core_densities
 
 
+def load_mond_upsilon_factors(path):
+    """Per-galaxy MOND Upsilon factors from the file written by mond_upsilon_fit.py: {galaxy: f}."""
+    factors = {}
+    with open(path) as f:
+        for line in f:
+            if line.startswith('#') or not line.strip():
+                continue
+            parts = line.split()
+            factors[parts[0]] = float(parts[1])
+    print(f"Loaded MOND Upsilon factors for {len(factors)} galaxies from {path}")
+    return factors
+
+
 def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True, power_override = 9.0, min_mass=0, max_mass=1e99,
-                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False, upsilon_factor=1.0, dm_cutoff_density=DM_CUTOFF_DENSITY, core_file=None):
+                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False, upsilon_factor=1.0, dm_cutoff_density=DM_CUTOFF_DENSITY, core_file=None, mond_upsilon_file=None):
     # core_file: with use_core_gas_file, read the per-galaxy core densities from this file instead of core_densities.txt
     # dm_cutoff_density: n_c in particles per cc, dark mass density goes as n^(2/3) exp(-(n_c/n)^2). 0 turns the cutoff off.
     # supplied_gas_density: optional dict {galaxy_name: fn(R_m, Z_m, Theta_m) -> gas particle density [m^-3]}
@@ -47,7 +60,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     # return_galaxies: if True also return the per-galaxy dict (curves etc) as a fourth value
     # z_stretch_kpc: if set, z layers are spaced as z = A*sinh(u) with A = z_stretch_kpc (u uniform), so layers are
     #   ~A*du thick near the mid-plane and coarse far out. Needed for thin (~50 pc) molecular layers. Default: uniform z.
-    # use_core_gas_file: if True, load per-galaxy core gas central densities from core_densities.txt in /sparc (overrides input add_core_gas_central_density, hides MOND in plots)
+    # use_core_gas_file: if True, load per-galaxy core gas central densities from core_densities.txt in /sparc (overrides input add_core_gas_central_density, hides MOND in plots unless mond_upsilon_file is given)
+    # mond_upsilon_file: per-galaxy Upsilon factors for MOND only, from mond_upsilon_fit.py. MOND then has one parameter per galaxy, like the core gas file. The dark mass fit is unchanged.
     # Record start time and date
     start_time = time.time()
     start_datetime = datetime.now()
@@ -186,6 +200,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     # 3. Pre-calculate Base Integrals (P=1 Watt) for ALL galaxies
     file_core_densities = load_core_densities(core_file) if use_core_gas_file else {}
+    mond_upsilon_factors = load_mond_upsilon_factors(mond_upsilon_file) if mond_upsilon_file is not None else None
 
     print(f"Pre-calculating base arrays for {len(galaxies)} galaxies via continuous 3D brute force...")
 
@@ -378,7 +393,10 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         g_data['V_dm_sq_base_kms'] = np.interp(R_obs_kpc, R_grid_kpc, V_dm_sq_base_grid / 1e6)
         g_data['Vgas_test'] = np.interp(R_obs_kpc, R_grid_kpc, g_data['Vgas_test_grid_kms'])
         
-        V_bar_sq = np.clip(V_disk_ms**2 + V_bul_ms**2 + V_gas_ms * np.abs(V_gas_ms), 0, None)
+        # Vdisk and Vbul already carry upsilon_factor, so MOND's own factor goes in as a ratio to it
+        g_data['mond_upsilon_factor'] = mond_upsilon_factors[gal] if mond_upsilon_factors is not None else upsilon_factor
+        mond_upsilon_ratio = g_data['mond_upsilon_factor'] / upsilon_factor
+        V_bar_sq = np.clip(mond_upsilon_ratio * (V_disk_ms**2 + V_bul_ms**2) + V_gas_ms * np.abs(V_gas_ms), 0, None)
         g_N = np.zeros_like(R_m_obs)
         g_N[valid_obs] = V_bar_sq[valid_obs] / R_m_obs[valid_obs]
         
@@ -598,6 +616,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write(f"  DM Linear Total Error (Interpolated Grid): {dm_grid_linear_total:.2f} km/s, per point: {dm_grid_linear_total/number_of_grid_points:.2f} km/s\n\n")
             
             log_file.write("--- MOND PREDICTION ERRORS ---\n")
+            if mond_upsilon_file is not None:
+                log_file.write(f"  MOND Upsilon factor per galaxy from: {mond_upsilon_file}\n")
             log_file.write(f"  MOND Chi^2 Total: {mond_chi2_total:.2f} per point: {mond_chi2_total/number_of_points:.2f}\n")
             log_file.write(f"  MOND Linear Total Error (Weighted): {mond_linear_total_err:.2f}\n")
             log_file.write(f"  MOND Linear Total Error (Unweighted): {mond_linear_total:.2f} km/s, per point: {mond_linear_total/number_of_points:.2f} km/s\n\n")
@@ -794,7 +814,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             
             max_r = max(g['R'])
             plt.xlim(0.0, max_r + max_r*0.02) 
-            if not use_core_gas_file:
+            if mond_upsilon_file is not None:
+                plt.plot(g['R'], g['V_mond_kms'], 'c-.', linewidth=1, label=rf"MOND ($\Upsilon_f$:{g['mond_upsilon_factor']:.2f})")
+            elif not use_core_gas_file:
                 plt.plot(g['R'], g['V_mond_kms'], 'c-.', linewidth=1, label='MOND')
         
             plt.errorbar(g['R'], g['Vobs'], yerr=g['eVobs'], fmt='ko', label='observed', capsize=1.5, capthick=1.0, markersize=2, elinewidth=0.6)
