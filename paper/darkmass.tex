@@ -147,18 +147,18 @@ Result:
 
 \subsection{The MOND fit}
 
-The MOND fit in this work is a very simple implementation: Using the MOND formula\citep{famaeyModifiedNewtonianDynamics2005} with Lelli gas only: 
+The MOND fit in this work is a very simple implementation: Using the MOND formula in the form given by \citep{Lelli2017} with Lelli gas only:
 
 \begin{equation}
-    g_N = \frac{V_{\text{disk}}^2 + V_{\text{bul}}^2 + V_{\text{gas}}|V_{\text{gas}}|}{R},
+    g_{\text{bar}} = \frac{V_{\text{disk}}^2 + V_{\text{bul}}^2 + V_{\text{gas}}|V_{\text{gas}}|}{R},
 \end{equation}
 \begin{equation}
-    g_{\text{MOND}} = \frac{g_N + \sqrt{g_N^2 + 4 g_N a_0}}{2},
+    g_{\text{MOND}} = \frac{g_{\text{bar}}}{1 - e^{-\sqrt{g_{\text{bar}} / g_{\dagger}}}},
 \end{equation}
 \begin{equation}
     V_{\text{MOND}} = \sqrt{g_{\text{MOND}}\,R},
     \qquad
-    a_0 = 1.2 \times 10^{-10}\ \text{m\,s}^{-2}.
+    g_{\dagger} = 1.2 \times 10^{-10}\ \text{m\,s}^{-2}.
 \end{equation}
 Result:
 \begin{itemize}

@@ -1,11 +1,11 @@
-"""Fit one Upsilon factor per galaxy for simple MOND, so MOND gets the same one-parameter-per-galaxy freedom as the dark mass fits.
+"""Fit one Upsilon factor per galaxy for MOND, so MOND gets the same one-parameter-per-galaxy freedom as the dark mass fits.
 
 MOND here uses only the Lelli 2016 mass models (Vgas, Vdisk, Vbul), so it needs none of the 3D work in sparc_dm_bruteCGM.py,
 and the result is the same for the cgm and no_cgm cases. Each evaluation is microseconds, so a dense grid scan replaces optuna.
 
 The physics and the chi^2 match sparc_dm_bruteCGM.py:
   Upsilon_disk = 0.5*f, Upsilon_bulge = 0.7*f (f is the same upsilon_factor convention)
-  simple MOND: g = (g_N + sqrt(g_N^2 + 4 g_N a0)) / 2, a0 = 1.2e-10
+  MOND: g = g_N / (1 - exp(-sqrt(g_N / g_dagger))), g_dagger = 1.2e-10 (see mond.py)
   chi err = sqrt((0.15*V_mond)^2 + eVobs^2), eVobs <= 0 set to 1
 
 f has a lognormal prior as in Li, Lelli et al. 2018: the fit minimises chi^2 + (log10 f / PRIOR_DEX)^2, with PRIOR_DEX = 0.1.
@@ -19,7 +19,9 @@ from pathlib import Path
 
 import numpy as np
 
-HERE = Path(__file__).resolve().parent
+from mond import g_mond
+
+HERE =Path(__file__).resolve().parent
 KINEMATICS_FILE = HERE / "MassModels_Lelli2016_SigmaGas.mrt"
 OUTPUT_FILE = HERE / "mond_upsilon.txt"
 
@@ -54,13 +56,12 @@ def load_galaxies(path=KINEMATICS_FILE):
 
 
 def mond_velocity(g, f):
-    """Simple MOND rotation curve [km/s] with Upsilon_disk = 0.5 f, Upsilon_bulge = 0.7 f. f may be an array (returns len(f) x n_points)."""
+    """MOND rotation curve [km/s] with Upsilon_disk = 0.5 f, Upsilon_bulge = 0.7 f. f may be an array (returns len(f) x n_points)."""
     f = np.atleast_1d(f)[:, None]
     V_bar_sq = np.clip(f * (UPSILON_DISK * g['Vdisk']**2 + UPSILON_BULGE * g['Vbul']**2) + g['Vgas'] * np.abs(g['Vgas']), 0, None) * 1e6
     R_m = g['R'] * KPC_TO_M
     g_N = np.divide(V_bar_sq, R_m, out=np.zeros_like(V_bar_sq), where=R_m > 0)
-    g_mond = (g_N + np.sqrt(g_N**2 + 4 * g_N * A0_MOND)) / 2.0
-    return np.sqrt(g_mond * R_m) / 1000.0
+    return np.sqrt(g_mond(g_N, A0_MOND) * R_m) / 1000.0
 
 
 def chi2(g, f):
@@ -104,7 +105,7 @@ def main():
     ]
 
     with open(OUTPUT_FILE, "w") as out:
-        out.write(f"# Per-galaxy Upsilon factor f for simple MOND (a0={A0_MOND}), Upsilon_disk={UPSILON_DISK}*f, Upsilon_bulge={UPSILON_BULGE}*f\n")
+        out.write(f"# Per-galaxy Upsilon factor f for MOND, g = g_N / (1 - exp(-sqrt(g_N / g_dagger))) (g_dagger={A0_MOND}), Upsilon_disk={UPSILON_DISK}*f, Upsilon_bulge={UPSILON_BULGE}*f\n")
         prior_text = f"lognormal prior on f, {prior_dex} dex" if prior_dex > 0 else "no prior on f"
         out.write(f"# {prior_text}; chi2pt is the data chi^2 only (no prior term)\n")
         out.write(f"# grid f in [{f_min}, {f_max}] step {F_STEP}; chi err = sqrt(({CHI_ERR_V_TOT}*V)^2 + eVobs^2). Made by mond_upsilon_fit.py\n")

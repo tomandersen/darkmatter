@@ -22,6 +22,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))  # the model lives in sparc/
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
+from mond import g_mond
 
 # all SPARC galaxies with THINGS HI + HERACLES CO maps, except NGC 4214 (inclination 15 deg) and NGC 2366 (SPARC quality 3)
 GALAXIES = ["NGC6946", "NGC2403", "NGC2841", "NGC2903", "NGC2976", "NGC3198", "NGC3521", "NGC5055", "NGC7331", "DDO154"]
@@ -120,7 +121,7 @@ def mond_from(g, Vgas):
     R_m = g['R'] * kpc_to_m
     V_bar_sq = np.clip(g['Vdisk']**2 + g['Vbul']**2 + Vgas * np.abs(Vgas), 0, None) * 1e6
     g_N = V_bar_sq / R_m
-    return np.sqrt((g_N + np.sqrt(g_N**2 + 4 * g_N * a0)) / 2.0 * R_m) / 1000.0
+    return np.sqrt(g_mond(g_N, a0) * R_m) / 1000.0
 
 
 def residuals(g, V_pred):

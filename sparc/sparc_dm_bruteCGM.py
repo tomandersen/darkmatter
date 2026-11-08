@@ -1,5 +1,6 @@
 from PIL.ImagePalette import negative
 from cgm_integral import DM_CUTOFF_DENSITY, dm_density_term
+from mond import g_mond
 import numpy as np
 import os
 import time
@@ -381,8 +382,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         g_N = np.zeros_like(R_m_obs)
         g_N[valid_obs] = V_bar_sq[valid_obs] / R_m_obs[valid_obs]
         
-        g_mond = (g_N + np.sqrt(g_N**2 + 4 * g_N * a0_mond)) / 2.0
-        g_data['V_mond_kms'] = np.sqrt(g_mond * R_m_obs) / 1000.0
+        g_data['V_mond_kms'] = np.sqrt(g_mond(g_N, a0_mond) * R_m_obs) / 1000.0
         g_data['V_mond_grid_kms'] = np.interp(R_grid_kpc, R_obs_kpc, g_data['V_mond_kms']) 
 
         del R_grid_3d, Z_grid_3d, Theta_grid_3d
@@ -597,7 +597,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write(f"  DM Chi^2 Total (Interpolated Grid): {dm_grid_chi2_total:.2f}\n")
             log_file.write(f"  DM Linear Total Error (Interpolated Grid): {dm_grid_linear_total:.2f} km/s, per point: {dm_grid_linear_total/number_of_grid_points:.2f} km/s\n\n")
             
-            log_file.write("--- MOND (Simple) PREDICTION ERRORS ---\n")
+            log_file.write("--- MOND PREDICTION ERRORS ---\n")
             log_file.write(f"  MOND Chi^2 Total: {mond_chi2_total:.2f} per point: {mond_chi2_total/number_of_points:.2f}\n")
             log_file.write(f"  MOND Linear Total Error (Weighted): {mond_linear_total_err:.2f}\n")
             log_file.write(f"  MOND Linear Total Error (Unweighted): {mond_linear_total:.2f} km/s, per point: {mond_linear_total/number_of_points:.2f} km/s\n\n")
