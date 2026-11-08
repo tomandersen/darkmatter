@@ -26,7 +26,7 @@ from scipy.optimize import brentq
 
 from cgm_integral import evaluate_dm_mass_integral
 from paper_params import PAPER_PARAMS, core_densities_file, model_args, output_dir, working_dir
-from sparc_data import lelli_baryonic_mass, load_properties, load_rotation_curves
+from sparc_data import GRAPH_DPI, lelli_baryonic_mass, load_properties, load_rotation_curves
 
 SPARC_DIR = Path(__file__).resolve().parent
 
@@ -258,7 +258,7 @@ def ratio_lines(ax, x, y, ratios):
 
 def save(fig, name):
     fig.tight_layout()
-    fig.savefig(OUTPUT_DIR / name, dpi=200, facecolor=fig.get_facecolor())
+    fig.savefig(OUTPUT_DIR / name, dpi=GRAPH_DPI, facecolor=fig.get_facecolor())
     plt.close(fig)
 
 

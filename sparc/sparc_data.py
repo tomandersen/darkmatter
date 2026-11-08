@@ -16,6 +16,8 @@ LELLI_UPSILON_BULGE = 0.7
 LELLI_HE_FACTOR = 1.33
 G_KPC = 4.30091e-6  # kpc (km/s)^2 / Msun
 
+GRAPH_DPI = 300  # every saved graph
+
 
 def load_properties():
     """Returns {galaxy: {'D' Mpc, 'Inc' deg, 'L36' 10^9 Lsun, 'Rd' kpc, 'MHI' 10^9 Msun, 'Vflat' km/s, 'Q' quality flag}}, in file order."""

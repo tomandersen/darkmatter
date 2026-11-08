@@ -1,7 +1,7 @@
 from PIL.ImagePalette import negative
 from cgm_integral import DM_CUTOFF_DENSITY, dm_density_term, evaluate_dm_mass_integral
 from mond import g_mond
-from sparc_data import lelli_baryonic_mass, load_properties, load_rotation_curves
+from sparc_data import GRAPH_DPI, lelli_baryonic_mass, load_properties, load_rotation_curves
 import numpy as np
 import os
 import time
@@ -616,7 +616,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         plt.ylabel('R_max Dark Mass [$M_{\\odot}$]', fontsize=11)
         plt.title('Baryon Mass $M_b$ vs Dark Mass (to R_max)', fontsize=12)
         plt.grid(True, which="both", ls="--", alpha=0.5)
-        plt.savefig(os.path.join(output_dir, "mb_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=200)
+        plt.savefig(os.path.join(output_dir, "mb_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=GRAPH_DPI)
         plt.close()
         
         plt.figure(figsize=(8, 6))
@@ -628,7 +628,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         plt.ylabel('R_max Dark Mass [$M_{\\odot}$]', fontsize=11)
         plt.title('Gas + Stellar Mass vs Total Dark Mass (to R_max)', fontsize=12)
         plt.grid(True, which="both", ls="--", alpha=0.5)
-        plt.savefig(os.path.join(output_dir, "gas_plus_tl_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=200)
+        plt.savefig(os.path.join(output_dir, "gas_plus_tl_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=GRAPH_DPI)
         plt.close()
         
         plt.figure(figsize=(8, 6))
@@ -640,7 +640,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         plt.ylabel('R_max Dark Mass [$M_{\\odot}$]', fontsize=11)
         plt.title('Gas Mass vs Total Dark Mass (to R_max)', fontsize=12)
         plt.grid(True, which="both", ls="--", alpha=0.5)
-        plt.savefig(os.path.join(output_dir, "gas_mass_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=200)
+        plt.savefig(os.path.join(output_dir, "gas_mass_vs_R_max_DM_Mass.png"), bbox_inches='tight', dpi=GRAPH_DPI)
         plt.close()
 
 
@@ -669,7 +669,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         plt.xlabel('x (kpc)')
         plt.ylabel('z (kpc)')
         plt.title(title)
-        plt.savefig(path, bbox_inches='tight', dpi=200)
+        plt.savefig(path, bbox_inches='tight', dpi=GRAPH_DPI)
         plt.close()
 
     def generate_density_heatmaps(galaxy_dict, best_P):
@@ -764,8 +764,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         
             plt.errorbar(g['R'], g['Vobs'], yerr=g['eVobs'], fmt='ko', label='observed', capsize=1.5, capthick=1.0, markersize=2, elinewidth=0.6)
             
-            plt.xlabel('Radius (kpc)')
-            plt.ylabel('Velocity (km/s)')
+            plt.xlabel('kpc', fontsize=12)
+            plt.ylabel('km/s', fontsize=12)
             title = f"{gal} Kinematics (k = {best_global_P/ATOMIC_UNIT_POWER_W:.2f}, added gas: {g['added_gas_fraction']:.3f})"
             if upsilon_factor != 1.0:
                 title += rf'$\Upsilon_f$:{upsilon_factor:.2f}'
@@ -775,7 +775,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
             plt.grid(True, linewidth=0.5, alpha=0.7)
             
-            plt.savefig(os.path.join(output_galaxies, f"{gal}_dm_mass.png"), bbox_inches='tight', dpi=300)
+            plt.savefig(os.path.join(output_galaxies, f"{gal}_dm_mass.png"), bbox_inches='tight', dpi=GRAPH_DPI)
             plt.close()
 
         plt.figure(figsize=(9, 9))
@@ -792,7 +792,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         plt.xlim(0, max_val + 20)
         plt.ylim(0, max_val + 20)
 
-        plt.savefig(os.path.join(output_dir, "global_fit_vs_obs.png"), bbox_inches='tight', dpi=300)
+        plt.savefig(os.path.join(output_dir, "global_fit_vs_obs.png"), bbox_inches='tight', dpi=GRAPH_DPI)
         plt.close()
 
         print("\nGenerating global acceleration scatter plot...")
@@ -865,7 +865,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         plt.legend(fontsize="small", loc="upper left")
         plt.grid(True, which="major", ls="--", alpha=0.5)
 
-        plt.savefig(os.path.join(output_dir, "global_predicted_accel_vs_obs.png"), bbox_inches='tight', dpi=200)
+        plt.savefig(os.path.join(output_dir, "global_predicted_accel_vs_obs.png"), bbox_inches='tight', dpi=GRAPH_DPI)
         plt.close()
 
 
