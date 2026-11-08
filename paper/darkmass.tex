@@ -56,93 +56,93 @@ The density of dark matter is obtained by this relation, where $k$ is scaling co
 \end{equation}
 $d$ is the mean particle spacing in normal matter, $a_B$ is the Bohr radius, $\alpha$ is the fine structure constant, and $m_e$ the electron mass.
 
-The $1/d^2$ can also be thought of as the $n^{2/3}$, where $n$ is the number density of matter particles. Thus, as a gas becomes more rarefied, the amount of dark matter as compared to the density of the particles increases. It in fact increases without limit in equation (\ref{mainEquation}). This is an issue for intergalactic levels of particle densities, so for densities less than $n_0 = 10^{-5}/cc$ we turn off the effect with an exponential switch. This effect cutoff has no effect on Galacitic rotation curve fitting, but is used to turn off our model at the halo - intergalactic boundary near $R_{200}$. The physical justification for this (if there is one), is that $n_0$ is about where gas particles stop behaving like a gas and are instead ballistic.  
+The $1/d^2$ can also be written as  $n^{2/3}$, where $n$ is the number density of matter particles. Thus, as a gas becomes more rarefied, the amount of dark matter 'generated' by our model as compared to the density of the particles increases. It in fact increases without limit in equation (\ref{mainEquation}). This is an issue for intergalactic levels of particle densities, so for densities less than $n_{cut} = 10^{-5}/cc$ we turn off the effect with an exponential switch. This effect cutoff has no effect on galactic rotation curve fitting, but is used to turn off our model at the halo - intergalactic boundary near $R_{200}$. The physical justification for this (if there is one), is that $n_{cut}$ is about where gas particles stop behaving like a gas and are instead ballistic.  
 
 With $k \approx	1$, a gas with a particle number density of $10^{-5}cm^{-3}$ would have a dark matter density of about 150 times that of the gas itself, while at $100 cm^{-3}$ our equation (\ref{mainEquation}) only adds about $50\%$ to the density of the gas. (\ref{mainEquation}) might even hold in the everyday matter around us, for example for water, this formula would add about 0.001g to 0.1g to a ton of water. We assume that this dark mass has a negligible effect on individual particle dynamics. 
 
-During the investigation, we determined that many SPARC galaxies have 'HI holes' near the core, which is a physically real phenomenon. There is more gas in galaxies than exists in the SPARC database, which is mostly HI gas. 
+During the investigation, we determined that many SPARC galaxies have 'HI holes' near the core, which is a physically real phenomenon. There is more gas in galaxies than the HI gas listed in the SPARC database. 
 
 \begin{itemize}
 	\item \textbf{CGM gas}: Not in SPARC: our model makes it contribute some mass even inside $R_{max}$. Outside $R_{max}$ the CGM gas combined with equation (\ref{mainEquation}) constructs a dark matter halo. 
-	\item \textbf{H2/Molecular}: Included in SPARC, but hidden in the stellar masses. We require particle densities.
-	\item \textbf{Electrons}: equation (\ref{mainEquation}) has no reference to baryons, ionized gas might therefore count twice.
+	\item \textbf{H2/Molecular}: Included in SPARC, but hidden in the stellar masses. We require particle densities to make equation (\ref{mainEquation}) work. 
+	\item \textbf{Others}: . 
+	\item \textbf{Electrons}: equation (\ref{mainEquation}) has no reference to baryons, ionized gas might therefore count twice. We don't consider this effect in our model. It would serve to cut the required added mass of ionized gas by approximately 1/2.
 \end{itemize}
 
+The extent and mass of some of these particle densities is unknown in detail. Most fits of our model add gas in to replace this hidden gas.
  
+The SPARC dataset only includes HI gas measurements. There are other sources of gas in a galaxy. In addition, the centres of many galaxies are opaque to some gas measurements\citep{saintongeColdInterstellarMedium2022}, so the gas composition and densities at the cores of galaxies are not well known, especially for the purposes of our model, where hidden gas in the galactic core cannot be subsumed into a minor dynamical change in the stellar luminosity parameter, $\Sigma_{bulge}$ \citep{lelliSPARCMassModels2016}.
 
-\section{Data and Methodology} \label{sec:meth}
+\section{Methodology} \label{sec:meth}
 In this paper, references to 'Lelli' are referring to the \textit{Lelli, McGaugh, and Schombert - SPARC: Mass Models for 175 Disk Galaxies with Spitzer Photometry and Accurate Rotation Curves.} \citep{lelliSPARCMassModels2016}. When we refer to Lelli, we are using unmodified data, etc from that paper. 
 
 We perform 5 runs of our model, each run is over all 175 galaxies.
 
 \begin{itemize}
-	\item \textbf{Newton}: A check on our model. 	
-	\item \textbf{Best k}: A fit to determine the best scaling factor $k$, using only the gas in SPARC dataset.
-	\item \textbf{Core Gas Global}: a single global parameter is used to add  gas to each galaxy. (one parameter)
-	\item \textbf{Core Gas Individual}: each galaxy is fitted with one parameter, the amount of gas to add. (175 parameters)
-	\item \textbf{CGM}: Both core gas fits have a circumgalactic medium (CGM) gas added, which models the dark matter halo.
+	\item \label{Newton}\textbf{Newton}: A check on our model. 	
+	\item \label{bestk}\textbf{Best k}: A fit to determine the best scaling factor $k$, using only the gas in SPARC dataset.
+	\item \label{coregasglobal}\textbf{Core Gas Global}: a single global parameter is used to add  gas to each galaxy. (one parameter)
+	\item \label{coregasindividual}\textbf{Core Gas Individual}: each galaxy is fitted with one parameter, the amount of gas to add. (175 parameters)
+	\item \label{cgmrun}\textbf{CGM}: Both core gas fits have a circumgalactic medium (CGM) gas added, which models the dark matter halo.
 \end{itemize}
 
+\subsubsection{Stellar Mass Luminosity Ratio}
+The Stellar Mass Luminosity Ratio($\Upsilon$ or $M_\odot/L_\odot$) is the ratio of the total mass of a stellar population (or galaxy) to its total luminosity.
+Following \citet{lelliSPARCMassModels2016}, we adopt $\Upsilon_\mathrm{disk}=0.5$ and $\Upsilon_\mathrm{bul}=0.7$. The SPARC gas term includes only H\,\textsc{i} (scaled by 1.33 for helium); molecular gas is neglected, and where it follows the stars it is implicitly part of $\Upsilon_\star$. This matters most in the inner regions of bulge galaxies, where H$_2$ often replaces a central H\,\textsc{i} depression, so some of the mass attributed to the bulge there may be gas, which our added core gas models. 
+
+\subsubsection{SPARC gas density}
+Since our model requires a gas density, and the SPARC dataset only has a gas velocity, a small program was written to determine plausible densities, given the $V_{gas}$ data in SPARC. The problem is under-defined. We required the gas distribution to be as smooth as possible while still recreating the $V_{gas}$ from SPARC (which itself was created by analysis of gas density measurements). In run 0 we plotted this gas as a velocity for each galaxy to verify that our calculated gas densities were reasonable. 
+
+
 \subsection{General outline of the fits}
-We determine the acceleration due to gravity at each $R_{obs}$ radius of the SPARC dataset from all baryons with the addition of dark mass from our model. The chosen method uses a 3D volumetric approach where each galaxy is modelled in a cylindrical system with a few million cells per galaxy. Note that since the velocity contributions from stars are not modified, the 3D volume model is only used to store particle densities in each cell. Each cell then has an X, Y, Z position, a density of gas particles, and a volume. The gravitational attraction for each of the radial points in the SPARC dataset is determined by summing the millions of individual cell masses at their distance from each radial point. This method thus covers induced acceleration from matter at radii beyond the radial measuring point. Each galaxy is modelled as a disk with thickness as calculated using the same formula as the SPARC 2016\citep{lelliSPARCMassModels2016}: an exponential vertical distribution with scale half height $z_d = 0.196 R_d^{0.633}$. The bulge is ignored for the SPARC gas. Any gas added is done in a spherically symmetric way. The 3D model is large enough (1.1 times $R_{max}$) so that any gas—whether in or outside of the disk—will contribute to acceleration and mass. 
+One of the main goals was to deviate from the parameters and methods in Lelli only when required. 
+\subsubsection{3D volumetric approach}
+We determine the acceleration due to gravity at each $R_{obs}$ radius of the SPARC dataset from all baryons with the addition of dark mass from our model. The chosen method uses a 3D volumetric approach where each galaxy is modelled in a cylindrical system with a few million cells per galaxy. Note that since the velocity contributions from stars are not modified, the 3D volume model is only used to store particle densities in each cell. Each cell then has an X, Y, Z position, a density of gas particles, and a volume. The gravitational attraction for each of the radial points in the SPARC dataset is determined by summing the millions of individual cell masses at their distance from each radial test point. This method thus covers induced acceleration from matter at radii beyond the radial measuring point. Each galaxy is modelled as a disk with thickness as calculated using the same formula as the SPARC 2016\citep{lelliSPARCMassModels2016}: an exponential vertical distribution with scale half height $z_d = 0.196 R_d^{0.633}$. The bulge is ignored for the reconstructed SPARC gas. Any gas added beyond our SPARC reconstruction is done in a spherically symmetric way. The 3D model is large enough (1.1 times $R_{max}$) so that any gas—whether in or outside of the disk—will contribute to acceleration and mass. 
 \begin{figure}
 \centering
-\includegraphics[width=\columnwidth]{NGC0300_gas_heatmap.png}
+\includegraphics[width=0.5\columnwidth]{NGC0300_gas_heatmap.png}
 \caption{Gas density plot for NGC 300. The galaxy has an additional $0.9cm^{-3} $ gas particles added at the core, plus a CGM gas halo. The CGM halo extends far beyond the diameter shown here, which is 1.1 times $R_{max}$.}
 \label{fig:ngc300_gas}
 \end{figure}
 
-Since our model requires a gas density, and the SPARC dataset only has a gas velocity, a small program was written to determine plausible densities, given the $V_{gas}$ data in SPARC. The problem is under defined, so many solutions are possible. We required the gas distribution to be as smooth as possible while still recreating the $V_{gas}$ from SPARC (which itself was created by analysis of gas density measurements). In run 0 we plotted this gas as a velocity for each galaxy to verify that our calculated gas densities were reasonable. 
 
 \subsection{Error and $\chi^2$ fitting}
 The SPARC data include errors in the observed rotation velocities, but the errors in the other parameters are unknown and uncertain. For instance errors in inclination directly affect the reported $V_{obs}$, and gas density errors effect the $V_{gas}$, etc. In \citep{liFittingRadialAcceleration2018} , the authors fit the 175 SPARC galaxies individually, with up to 4 free parameters per galaxy. Many of the best fit parameters such as inclination are a factor of 2 or more away from accepted values. This is an indication of the uncertainty in the physical layout of our galactic neighbours. 
 
-To capture this uncertainty, we assume a $15\%$ error in the calculated $V_{tot}$. If an error is not assumed fitting algorithims will pour their effort into minimizing the error on a few of the galaxies that have a large number of highly accurate $V_{obs}$. Our model also magnifies uncertainties - the dark mass contribution in our model has a higher uncertainty. Changing the assumed error by doubling it or halving it only made marginal changes to the derived fit parameters.  
+To capture this uncertainty, we assume a $15\%$ error in the calculated $V_{tot}$. If an error is not assumed fitting algorithims will pour their effort into minimizing the error on a few of the galaxies that have a large number of highly accurate $V_{obs}$. Our model also magnifies uncertainties - the dark mass contribution in our model has a higher uncertainty. Changing the assumed error by doubling it or halving it only made marginal changes to the derived fit parameters. \citep{schombertStellarMasstolightRatios2022} quote a 10\% error on gas components.  
 
 In addition to this $\chi^2$ fitting algorithm, other fitting measures were tested, but the overall results only changed best fit outputs by a small amount. 
 
 Error results are shown as per point only, as the the measurements are highly correlated. Due to the exploratory nature of this work, a full Bayesian analysis is outside the scope. 
 
+\section{Data} \label{sec:data}
+We discuss the runs. Data is shown in table \ref{fitTable}.
+Images for each galaxy, detailed run statistics and more are available online: (git url with commit hash)
+\subsection{Newton run}
+With the SPARC gas recreated as a density, we ran our model over all 175 galaxies. As this run completely lacks our dark matter model, it serves as a baseline. A single galaxy is shown in Figure \ref{fig:Newton}.
 
-\subsection{Run 0: Zero parameters, Newton}
-With the SPARC gas recreated as a density, we ran our model over all 175 galaxies. As this run completely lacks dark matter or MOND, it serves as a baseline. 
-\begin{figure}
+\begin{figure}\label{fig:Newton}
 \centering
 \includegraphics[width=\columnwidth]{NGC6946_dm_mass_Newton.png}
-\caption{NGC 6946 - Newton. No gas added, our model turned off. This is an example of a check on our gas density recreation. The "baryons + dm" line is directly on top of the blue 'baryons (Lelli)' line which is our test. in addition, our 'as used' gas line is on top of the Lelli gas line, which shows the accuracy of our gas density recreation.}
+\caption{NGC 6946 - Newton run. No gas added, our model turned off. This is an example of a check on our gas density recreation. The "baryons + dm" line is directly on top of the blue 'baryons (Lelli)' line which is our test. in addition, our 'as used' gas line is (almost) on top of the Lelli gas line, which shows the accuracy of our gas density recreation.}
 \label{fig:newton}
 \end{figure}
 
-Result:
-\begin{itemize}
-	\item $\chi^2_{Newton} = 578$ per point.
-\end{itemize}
 
-
-
-\subsection{Run 1: 1 global parameter, fit P}
+\subsection{Best k}
 We obtainied a dark mass for each cell by using our model on the supplied SPARC gas. The entire 175 galaxy set, with 3319 data points was fitted to obtain a best power.
 
-Result:
-\begin{itemize}
-	\item best fit power: $36$ Watts,
-	\item $\chi^2_{Power} = 179$ per point.
-\end{itemize}
+The fit generated one value, $k = blah$
 
-
-\subsection{Run 2: 2 global parameters, fit P, central density}
-
-The SPARC dataset only includes HI gas measurements. There are other sources of gas in a galaxy. In addition, the centres of many galaxies are opaque to some gas measurements\citep{saintongeColdInterstellarMedium2022}, so the gas composition and densities at the cores of galaxies are not well known, especially for the purposes of our model, where hidden gas in the galactic core cannot be subsumed into a minor dynamical change in the stellar luminosity parameter, $\Sigma_{bulge}$ \citep{lelliSPARCMassModels2016}. 
-	
-In order to add a gas core to every galaxy in the dataset, we needed to scale
-the added gas to the mass and/or size of the galaxy. The additional gas is added
+\subsection{Core Gas Global}
+In order to add a gas core to every galaxy in the dataset, we needed to scale the added gas to the mass and/or size of the galaxy. The additional gas is added
 via this formula:
 \begin{equation}
     n_{\text{core}}(r) = n_0 \left[ 1 + \left( \frac{r}{f\,r_s} \right)^2 \right]^{-\beta}.
     \qquad
 \end{equation}
 
-Where $r$ is the spherical radius from the galactic centre, $n_0$ is the central
+Where $n_{\text{core}}(r)$ is the added density of gas at the spherical radius r. $n_0$ is the central
 particle density, $\beta = 2.25$, $f = 2.5$, and
 $M_{\text{gal}} = \left( L_{[3.6]}/L_\odot + M_{\text{HI}}/M_\odot \right) M_\odot$ and: 
 \begin{equation}
@@ -151,16 +151,30 @@ $M_{\text{gal}} = \left( L_{[3.6]}/L_\odot + M_{\text{HI}}/M_\odot \right) M_\od
 
 Note: $L_{[3.6]}$ and $M_{\text{HI}}$ are directly from SPARC database columns.
 
-The only free parameter is $n_0$. In this fit, a single best $n_0$ was found by minimizing the error while at the same time maximizing the power, P. A larger P is better as it requires les s gas. A power of 16 Watts was chosen. 
+The only free parameter is $n_0$. In this fit, a single best $n_0$ was found by minimizing the error while at the same time optimizing the scaling constant, $k$ to be near 1.  
  
 Result:
 \begin{itemize}
-	\item chosen power: $16$ Watts,
-	\item chosen core gas beta: 2.25,
-	\item chosen core gas factor $f$: 2.5,
+	\item chosen $k$: xxxx,
+	\item chosen core gas beta: xxxx,
+	\item chosen core gas factor xxxx:,
 	\item best fit $n_0$: $0.55 cm^{-3}$,
-	\item $\chi^2_{core\ gas} = 81 $ per point.
+	\item $\chi^2_{core\ gas} = xxx $ per point.
 \end{itemize}
+
+Thus there are 1 - 5 paramters added in total, depending on how one counts the gas addition equation parameters. 
+
+\subsection{Core Gas Individual}
+In this fit, we ran with the same parameters as the Core Gas Global fit, with the one difference being an optimizer on each galaxy, determining the best fit for $n_0$ for each of the 175 galaxies individually. The physical argument for adding 175 parameters to the fit, is that the unknown gas in a galaxy will naturally vary between individual galaxies. 
+\begin{itemize}
+	\item chosen k: xxxx,
+	\item chosen core gas beta: xxxx,
+	\item chosen core gas factor $f$: xxx,
+	\item best fit $n_0$: $\in [0, 6]cm^{-3}$,
+	\item $\chi^2_{each\ gas} = xxx $ per point.
+\end{itemize}
+
+
 
 \subsection{The MOND fit}
 
@@ -182,17 +196,6 @@ Result:
 	\item $\chi^2_{MOND} = 50 $ per point.
 \end{itemize}
 
-
-\subsection{Run 3: a core gas for each. }
-In fit 3, we ran an optimizer on each galaxy, determining the best fit for $n_0$ for each of the 175 galaxies individually. The physical argument for adding 175 parameters to the fit, is that the unknown gas in a galaxy will naturally vary between individual galaxies. Of course more parameters could be varied as well. The same gas function was used as in run 2. 
-
-\begin{itemize}
-	\item chosen power: $16$ Watts,
-	\item chosen core gas beta: 2.25,
-	\item chosen core gas factor $f$: 2.5,
-	\item best fit $n_0$: $\in [0, 6]cm^{-3}$,
-	\item $\chi^2_{each\ gas} = 14 $ per point.
-\end{itemize}
 
 
 \begin{figure}
