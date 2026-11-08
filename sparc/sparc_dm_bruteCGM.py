@@ -1,6 +1,7 @@
 from PIL.ImagePalette import negative
 from cgm_integral import DM_CUTOFF_DENSITY, dm_density_term
 from mond import g_mond
+from sparc_data import load_properties, load_rotation_curves
 import numpy as np
 import os
 import time
@@ -55,7 +56,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     # supplied_gas_density: optional dict {galaxy_name: fn(R_m, Z_m, Theta_m) -> gas particle density [m^-3]}
     #   For those galaxies the 3D gas grid comes from fn instead of the axisymmetric Sigma_gas column (core gas / CGM are still added on top).
     #   fn gets the 3D meshgrid arrays (indexing='ij', shape R x Z x Theta) in metres / radians.
-    # only_galaxies: optional list of galaxy names to run (default: all SPARC galaxies)
+    # only_galaxies: optional list of galaxy names to run (default: all SPARC galaxies). Use sparc_data.select_galaxies to cut on quality or inclination.
     # output_dir_override: write logs/plots here instead of ./sparc/dm_mass
     # return_galaxies: if True also return the per-galaxy dict (curves etc) as a fourth value
     # z_stretch_kpc: if set, z layers are spaced as z = A*sinh(u) with A = z_stretch_kpc (u uniform), so layers are
@@ -105,8 +106,6 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         return z_d
 
     # 1. Setup and Parse the Data
-    properties_file = "./sparc/SPARC_Lelli2016c.mrt.txt"
-    kinematics_file = "./sparc/MassModels_Lelli2016_SigmaGas.mrt" # i needed to use gas density at each radius, so a seperate python file did that.
     output_dir = "./sparc/dm_mass"
     if output_dir_override is not None:
         output_dir = output_dir_override
@@ -121,73 +120,15 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     os.makedirs(output_gas_heatmaps, exist_ok=True)
     os.makedirs(output_dm_heatmaps, exist_ok=True)
 
-    rd_dict = {}
-    HIMass_dict = {}
-    TL_dict = {}
-    Inclination_dict = {}
-    Quality_dict = {}
-    with open(properties_file, 'r') as f:
-        for line in f:
-            parts = line.split()
-            if len(parts) >= 12 and parts[1].lstrip('-').isdigit():
-                gal_name = parts[0]
-                try:
-                    inclination = float(parts[5])
-                    Inclination_dict[gal_name] = inclination
-                    r_d = float(parts[11])
-                    rd_dict[gal_name] = r_d
-                    t_luminosity = float(parts[7])
-                    TL_dict[gal_name] = t_luminosity
-                    hi_mass = float(parts[13])
-                    HIMass_dict[gal_name] = hi_mass
-                    quality = int(parts[17])
-                    Quality_dict[gal_name] = quality
-                except ValueError:
-                    continue
+    properties = load_properties()
+    galaxies = load_rotation_curves(only_galaxies)
+    galaxies = {gal: g for gal, g in galaxies.items() if min_mass <= (properties[gal]['L36'] + properties[gal]['MHI'])*1e9 <= max_mass}
+    if not galaxies:
+        raise ValueError(f"No galaxies to run: only_galaxies={only_galaxies}, min_mass={min_mass}, max_mass={max_mass}")
 
-    galaxies = {}
-
-    with open(kinematics_file, 'r') as f:
-        for line in f:
-            parts = line.split()
-            if len(parts) == 11 and not line.startswith('---') and not line.startswith('Byte'):
-                try:
-                    gal_name = parts[0]
-                    R = float(parts[2])
-                    Vobs = float(parts[3])
-                    eVobs = float(parts[4])
-                    Vgas = float(parts[5])
-                    Vdisk = float(parts[6])
-                    Vbul = float(parts[7])
-                    Sigma_gas = float(parts[10]) 
-                    
-                    Vdisk = Vdisk * sqrt_Upsilon_disk
-                    Vbul = Vbul * sqrt_Upsilon_bulge
-
-                    if eVobs <= 0:
-                        eVobs = 1.0 
-                        
-                    if gal_name in rd_dict:
-                        if gal_name not in galaxies:
-                            galaxies[gal_name] = {'R': [], 'Vobs': [], 'eVobs': [], 'Vgas': [], 'Vdisk': [], 'Vbul': [], 'Sigma_gas': []}
-                        
-                        galaxies[gal_name]['R'].append(R)
-                        galaxies[gal_name]['Vobs'].append(Vobs)
-                        galaxies[gal_name]['eVobs'].append(eVobs)
-                        galaxies[gal_name]['Vgas'].append(Vgas)
-                        galaxies[gal_name]['Vdisk'].append(Vdisk)
-                        galaxies[gal_name]['Vbul'].append(Vbul)
-                        galaxies[gal_name]['Sigma_gas'].append(Sigma_gas)
-                        
-                except ValueError:
-                    continue
-
-    if only_galaxies is not None:
-        galaxies = {gal: galaxies[gal] for gal in only_galaxies if gal in galaxies}
-
-    for gal in galaxies:
-        for key in galaxies[gal]:
-            galaxies[gal][key] = np.array(galaxies[gal][key])
+    for g in galaxies.values():
+        g['Vdisk'] = g['Vdisk'] * sqrt_Upsilon_disk
+        g['Vbul'] = g['Vbul'] * sqrt_Upsilon_bulge
 
     # 2. Physics Constants
     G_SI = 6.67430e-11        
@@ -204,23 +145,10 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
     print(f"Pre-calculating base arrays for {len(galaxies)} galaxies via continuous 3D brute force...")
 
-    # we may delete galaxies in this loop, filtering them out..
-    for i, (gal, value) in enumerate(list(galaxies.items())):
+    for i, (gal, value) in enumerate(galaxies.items()):
         print(f"Processing {gal} ({i+1}/{len(galaxies)})...", end='\r')
-        
-        # try heavy
-        total_mass = (TL_dict[gal] + HIMass_dict[gal])*1e9
-        if (total_mass < min_mass or total_mass > max_mass):
-            del galaxies[gal]
-            continue
-        # if Quality_dict[gal] > 2:
-        #     del galaxies[gal]
-        #     continue
-        # if Inclination_dict[gal] < 30:
-        #     del galaxies[gal] 
-        #     continue 
 
-
+        total_mass = (properties[gal]['L36'] + properties[gal]['MHI'])*1e9
         g_data = galaxies[gal]
         gal_core_gas_density = file_core_densities[gal] if (use_core_gas_file and gal in file_core_densities) else add_core_gas_central_density
         g_data['core_gas_central_density'] = gal_core_gas_density
@@ -271,7 +199,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         g_data['Vobs_grid'] = np.interp(R_grid_kpc, g_data_r_obs_kpc, g_data_Vobs) 
         g_data['eVobs_grid'] = np.interp(R_grid_kpc, g_data_r_obs_kpc, g_data_eVobs) 
         
-        R_d = rd_dict[gal]
+        R_d = properties[gal]['Rd']
         hz_kpc = get_sparc_galaxy_scale_height(None, R_d)
         hz_m = hz_kpc * kpc_to_m
         
@@ -518,8 +446,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         unobserved_gas_fraction = 0.0   
 
         for name, g in galaxy_dict.items():
-            tl = TL_dict.get(name, 0.0) * 1e9          
-            hi = HIMass_dict.get(name, 0.0) * 1e9      
+            tl = properties[name]['L36'] * 1e9          
+            hi = properties[name]['MHI'] * 1e9      
             m_b = tl + hi                             
             g['gas_plus_tl'] = m_b
 

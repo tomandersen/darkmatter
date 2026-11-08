@@ -20,9 +20,10 @@ from pathlib import Path
 import numpy as np
 
 from mond import g_mond
+from paper_params import paper_galaxies
+from sparc_data import load_rotation_curves
 
 HERE =Path(__file__).resolve().parent
-KINEMATICS_FILE = HERE / "MassModels_Lelli2016_SigmaGas.mrt"
 OUTPUT_FILE = HERE / "mond_upsilon.txt"
 
 UPSILON_DISK = 0.5
@@ -33,26 +34,6 @@ KPC_TO_M = 3.086e19
 
 F_MIN, F_MAX, F_STEP = 0.1, 5.0, 0.002
 PRIOR_DEX = 0.1  # width of the lognormal prior on f, in dex
-
-
-def load_galaxies(path=KINEMATICS_FILE):
-    """Rotation curves from the Lelli 2016 mass models, parsed as in sparc_dm_bruteCGM.py. Vdisk and Vbul are at Upsilon = 1."""
-    galaxies = {}
-    with open(path) as f:
-        for line in f:
-            parts = line.split()
-            if len(parts) != 11 or line.startswith('---') or line.startswith('Byte'):
-                continue
-            try:
-                R, Vobs, eVobs, Vgas, Vdisk, Vbul = (float(p) for p in parts[2:8])
-            except ValueError:
-                continue
-            if eVobs <= 0:
-                eVobs = 1.0
-            g = galaxies.setdefault(parts[0], {k: [] for k in ('R', 'Vobs', 'eVobs', 'Vgas', 'Vdisk', 'Vbul')})
-            for k, v in zip(('R', 'Vobs', 'eVobs', 'Vgas', 'Vdisk', 'Vbul'), (R, Vobs, eVobs, Vgas, Vdisk, Vbul)):
-                g[k].append(v)
-    return {name: {k: np.array(v) for k, v in g.items()} for name, g in galaxies.items()}
 
 
 def mond_velocity(g, f):
@@ -84,7 +65,7 @@ def main():
     prior_dex = float(sys.argv[1]) if len(sys.argv) >= 2 else PRIOR_DEX
     f_min, f_max = (float(sys.argv[2]), float(sys.argv[3])) if len(sys.argv) >= 4 else (F_MIN, F_MAX)
     f_grid = np.arange(f_min, f_max + F_STEP / 2, F_STEP)
-    galaxies = load_galaxies()
+    galaxies = load_rotation_curves(paper_galaxies())
 
     rows = []
     for name, g in galaxies.items():

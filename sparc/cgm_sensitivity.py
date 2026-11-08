@@ -6,18 +6,17 @@ Low resolution: for comparing the rows with each other. Finished rows are kept, 
 import contextlib
 import json
 import os
-from pathlib import Path
 
 import joblib
 import numpy as np
 from scipy.optimize import minimize_scalar
 
-from paper_params import PAPER_PARAMS, model_args, run_dir, working_dir
+from paper_params import PAPER_PARAMS, model_args, paper_galaxies, run_dir, working_dir
+from sparc_data import load_rotation_curves
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 n_workers = 4
 CORE_DENSITY_GRID = [0.0, 0.05, 0.2, 0.5, 1.0, 2.0, 4.0]
-MASS_MODELS_FILE = Path(__file__).resolve().parent / "MassModels_Lelli2016c.mrt"
 
 # name: central density per cc, core radius factor, beta
 CGM_VARIANTS = {
@@ -29,19 +28,6 @@ CGM_VARIANTS = {
     "steeper": (7.67e-4, 6.0, 0.68),        # same density at 50 r_core as publication
     "previous": (0.025, 0.20, 0.68),        # the CGM used up to November 2026
 }
-
-
-def points_per_galaxy():
-    counts = {}
-    for line in open(MASS_MODELS_FILE):
-        parts = line.split()
-        if len(parts) == 10:
-            try:
-                float(parts[2])
-            except ValueError:
-                continue
-            counts[parts[0]] = counts.get(parts[0], 0) + 1
-    return counts
 
 
 def fit_galaxy(galaxy, args):
@@ -63,8 +49,8 @@ def run_cgm_sensitivity():
     if results_file.exists():
         results = {row["name"]: row for row in map(json.loads, results_file.read_text().splitlines())}
 
-    points = points_per_galaxy()
-    galaxies = PAPER_PARAMS["only_galaxies"] or sorted(points)
+    galaxies = paper_galaxies()
+    points = {name: len(curve["R"]) for name, curve in load_rotation_curves(galaxies).items()}
     base_args = model_args("cgm")
     base_args.pop("only_galaxies")
     base_args.update(num_minutes=PAPER_PARAMS["effort"]["sensitivity_num_minutes"], power_override=PAPER_PARAMS["power_w"],

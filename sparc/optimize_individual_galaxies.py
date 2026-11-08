@@ -23,24 +23,8 @@ repo_root = Path(__file__).resolve().parent.parent
 if (repo_root / "sparc").exists():
     os.chdir(repo_root)
 
-from paper_params import PAPER_PARAMS, core_densities_file, fits_db_url, model_args, working_dir
+from paper_params import PAPER_PARAMS, core_densities_file, fits_db_url, model_args, paper_galaxies, working_dir
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
-
-
-def load_galaxy_names(mrt_path):
-    """Load ordered unique galaxy names from MassModels_Lelli2016c.mrt."""
-    names = []
-    with open(mrt_path, "r") as f:
-        for line in f:
-            parts = line.split()
-            if len(parts) == 10:
-                try:
-                    float(parts[1])
-                    if parts[0] not in names:
-                        names.append(parts[0])
-                except ValueError:
-                    pass
-    return names
 
 
 def write_core_densities_file(core_densities, upsilon_factors, filepath=None):
@@ -86,8 +70,7 @@ def run_worker(gal_name, storage_url, n_trials_target, fit_args):
 
 
 def optimize_individual_galaxies(case):
-    mrt_file = Path(__file__).parent / "MassModels_Lelli2016c.mrt"
-    galaxy_names = PAPER_PARAMS["only_galaxies"] or load_galaxy_names(mrt_file)
+    galaxy_names = paper_galaxies()
     print(f"Fitting {len(galaxy_names)} galaxies for the {case} case")
 
     storage_url = fits_db_url(f"individual_{case}")

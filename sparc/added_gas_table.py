@@ -26,10 +26,9 @@ from scipy.optimize import brentq
 
 from cgm_integral import evaluate_dm_mass_integral
 from paper_params import PAPER_PARAMS, core_densities_file, model_args, output_dir, working_dir
+from sparc_data import load_properties, load_rotation_curves
 
 SPARC_DIR = Path(__file__).resolve().parent
-PROPERTIES_FILE = SPARC_DIR / "SPARC_Lelli2016c.mrt.txt"
-MASS_MODELS_FILE = SPARC_DIR / "MassModels_Lelli2016c.mrt"
 
 UPSILON_DISK = 0.5
 UPSILON_BULGE = 0.7
@@ -78,29 +77,6 @@ def load_core_densities(path):
         if len(parts) >= 2:
             densities[parts[0]] = float(parts[1])
     return densities
-
-
-def load_properties(path):
-    """Returns {galaxy: (L[3.6] in 10^9 Lsun, MHI in 10^9 Msun, Vflat km/s)}."""
-    properties = {}
-    for line in open(path):
-        parts = line.split()
-        if len(parts) >= 18 and parts[1].lstrip('-').isdigit():
-            properties[parts[0]] = (float(parts[7]), float(parts[13]), float(parts[15]))
-    return properties
-
-
-def load_last_points(path):
-    """Returns {galaxy: (R kpc, Vobs km/s, Vbul km/s)} at the last observed radius."""
-    last_points = {}
-    for line in open(path):
-        parts = line.split()
-        if len(parts) == 10:
-            try:
-                last_points[parts[0]] = (float(parts[2]), float(parts[3]), float(parts[7]))
-            except ValueError:
-                pass
-    return last_points
 
 
 def load_grid_dark_mass(galaxy_names):
@@ -178,9 +154,9 @@ def solve_r200(lelli_mass, disk_dark_mass, n0_core, rc_core_kpc, n0_cgm, rc_cgm_
     return brentq(excess, 0.01, 1e4, xtol=1e-3)
 
 
-def build_row(name, n0_core, properties, last_points, grid_dark_mass):
-    luminosity, hi, v_flat = properties[name]
-    r_max, v_last, v_bul = last_points[name]
+def build_row(name, n0_core, properties, curves, grid_dark_mass):
+    luminosity, hi, v_flat = (properties[name][key] for key in ("L36", "MHI", "Vflat"))
+    r_max, v_last, v_bul = (float(curves[name][key][-1]) for key in ("R", "Vobs", "Vbul"))  # at the last observed radius
 
     # The bulge is spherical in Lelli and Vbul is for M/L = 1, so V^2 R / G at the last radius is its luminosity
     bulge_luminosity = min(v_bul ** 2 * r_max / G_KPC / 1e9, luminosity)
@@ -356,11 +332,11 @@ def make_graphs(rows):
 def main(case="cgm"):
     use_case(case)
     core_densities = load_core_densities(CORE_DENSITIES_FILE)
-    properties = load_properties(PROPERTIES_FILE)
-    last_points = load_last_points(MASS_MODELS_FILE)
+    properties = load_properties()
+    curves = load_rotation_curves()
     OUTPUT_DIR.mkdir(exist_ok=True)
     grid_dark_mass = load_grid_dark_mass(list(core_densities))
-    rows = [build_row(name, n0, properties, last_points, grid_dark_mass) for name, n0 in core_densities.items()]
+    rows = [build_row(name, n0, properties, curves, grid_dark_mass) for name, n0 in core_densities.items()]
 
     table_file = OUTPUT_DIR / "added_gas_table.txt"
     write_table(rows, table_file)

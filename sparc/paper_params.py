@@ -15,6 +15,7 @@ import shutil
 from pathlib import Path
 
 from cgm_integral import DM_CUTOFF_DENSITY
+from sparc_data import select_galaxies
 
 SPARC_DIR = Path(__file__).resolve().parent
 
@@ -29,7 +30,8 @@ PAPER_PARAMS = {
         "cgm": {"cgm_central_density": 2.43e-4, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": None, "core_gas_central_density": None},
         "no_cgm": {"cgm_central_density": 0.0, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": None, "core_gas_central_density": None},
     },
-    "only_galaxies": None,  # None = all SPARC galaxies
+    "galaxy_cuts": {"max_q": None, "min_inclination": None},  # None = no cut. max_q 2 and min_inclination 30 keep 153 of the 175 galaxies
+    "only_galaxies": None,  # a list of names here overrides galaxy_cuts
     "effort": {
         "free_power_trials": 300,
         "fixed_power_trials": 130,
@@ -174,6 +176,11 @@ def case_params(case):
     return dict(PAPER_PARAMS["cases"][case])
 
 
+def paper_galaxies():
+    """The galaxy names for this run: only_galaxies if set, otherwise everything that passes galaxy_cuts."""
+    return PAPER_PARAMS["only_galaxies"] or select_galaxies(**PAPER_PARAMS["galaxy_cuts"])
+
+
 def cgm_args(case):
     """Arguments of run_sparc_dm_brute_cgm that don't depend on the core gas."""
     params = PAPER_PARAMS["cases"][case]
@@ -183,7 +190,7 @@ def cgm_args(case):
         r_core_factor_cgm=params["r_core_factor_cgm"],
         cgm_beta=params["cgm_beta"],
         dm_cutoff_density=PAPER_PARAMS["dm_cutoff_density"],
-        only_galaxies=PAPER_PARAMS["only_galaxies"],
+        only_galaxies=paper_galaxies(),
     )
 
 
