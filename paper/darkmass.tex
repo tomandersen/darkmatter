@@ -28,7 +28,7 @@ $^{1}$nSCIr, Ontario, Canada}
 \maketitle
 
 \begin{abstract}
-We present a novel empirical equation for the dark matter derived only from galactic (gas) kinematics. It is defined simply and entirely by the equation $\rho_{\text{dm}} = m_e \alpha^2 / a_0 d^2$, where $d$ is the mean particle spacing in normal matter, $a_0$ is the Bohr radius, $\alpha$ and $m_e$ are the usual. The meaning of the relationship is left open, rather we evaluate its applicability, by optimizing and testing this relation against the complete Spitzer Photometry and Accurate Rotation Curves (SPARC) database, with over 3000 data points across 175 morphologically diverse galaxies. The scaling law varies the dark mass density with the $2/3$ power of the matter density. This results in dark matter starting to be substantial when baryons are about a millimetre apart. The model generates rotation curves that are very similar to MOND, but has the advantage that it generates massive dark matter. With a simple density function for the circumgalactic medium (CGM) gas, it simultaneously produces appropriate dark matter halo masses as well.
+We present a novel empirical equation for the dark matter derived only from galactic (gas) kinematics. It is defined simply and entirely by the equation $\rho_{\text{dm}} =k\  m_e \alpha^2 / a_B d^2$, where $d$ is the mean particle spacing in normal matter, $a_B$ is the Bohr radius, $\alpha$ and $m_e$ are the usual. k is a dimensionless constant near 1. The meaning of the relationship is left open, rather we evaluate its applicability, by optimizing and testing this relation against the complete Spitzer Photometry and Accurate Rotation Curves (SPARC) database, with over 3000 data points across 175 morphologically diverse galaxies. The scaling law varies the dark mass density with the $2/3$ power of the matter density. This results in dark matter starting to be substantial when baryons are about a millimetre apart. The model generates rotation curves that are very similar to MOND, but has the advantage that it generates massive dark matter. With a simple density function for the circumgalactic medium (CGM) gas, it simultaneously produces appropriate dark matter halo masses as well.
 \end{abstract}
 
 \begin{keywords}
@@ -92,7 +92,7 @@ With the SPARC gas recreated as a density, we ran our model over all 175 galaxie
 \begin{figure}
 \centering
 \includegraphics[width=\columnwidth]{NGC6946_dm_mass_Newton.png}
-\caption{NGC 6946 - Newton. No gas added, our model turned off. This is an example of a check on our gas density recreation. The "baryons + dm" line is directly on top of the blue 'baryons (Lelli)' line which is our test.}
+\caption{NGC 6946 - Newton. No gas added, our model turned off. This is an example of a check on our gas density recreation. The "baryons + dm" line is directly on top of the blue 'baryons (Lelli)' line which is our test. in addition, our 'as used' gas line is on top of the Lelli gas line, which shows the accuracy of our gas density recreation.}
 \label{fig:newton}
 \end{figure}
 
@@ -235,7 +235,7 @@ Power is about 10W. If a single baryon were literally emitting or processing 10 
 Therefore, $P$ cannot be a literal power output of an individual particle. It could be a steady state relationship (as it relies on neighboring particles.  Or, Power might represent a coupling constant of baryons to the vacuum or spacetime itself. It defines a linear mass density scale ($P/c^3 \approx 10^{-24} \text{ kg/m}$) that dictates how baryonic mass curves space beyond its Newtonian boundary.
 
 \subsection{Model Results}
-The global optimization of our one-parameter model across all SPARC observations, results in a MAE of 26~km/s. The MOND framework as implemented here scores ($\text{MAE} = 19\text{ km/s}$). Our model achieves a remarkably similar accuracy profile using only a single universal parameter, like MOND. But unlike MOND, our model does not require the local particles to 'know' the global acceleration parameter, rather, they just have to 'know' the density of the material they are in. 
+The global optimization of our one-parameter model across all SPARC observations, results in a MAE of 26~km/s. The MOND framework as implemented here scores ($\text{MAE} = 16\text{ km/s}$). Our model achieves a remarkably similar accuracy profile using only a single universal parameter, like MOND. But unlike MOND, our model does not require the local particles to 'know' the global acceleration parameter, rather, they just have to 'know' the density of the material they are in. 
 
 \subsection{Model Variations}
 We also ran the model by adding 175 more fitting parameters, allowing each galaxy fit to adjust the entire gas density up or down by up to a factor of 5. This resulted in an ($\text{MAE} = 17\text{ km/s}$). 
@@ -263,7 +263,7 @@ An analysis of the absolute residual distributions reveals that MOND's localized
 
 \section{Conclusion} \label{sec:conclusion}
 
-In this paper, we have evaluated a universal, one-parameter empirical dark matter density profile defined by the geometric relation $\rho_{\text{dm}} = P/c^3 \cdot n_b^{2/3}$ against the complete SPARC database. By optimizing the global constant via robust Least Absolute Deviations (LAD) regression across 3,391 data points from 175 morphologically diverse galaxies, our model achieves a global Mean Absolute Error (MAE) of 26~km/s. This performance is comparable to the MOND framework ($\text{MAE} = 18.7\text{ km/s}$). Both frameworks use a single parameter to model DM across all galaxies.
+In this paper, we have evaluated a universal, one-parameter empirical dark matter density profile defined by the geometric relation $\rho_{\text{dm}} = P/c^3 \cdot n_b^{2/3}$ against the complete SPARC database. By optimizing the global constant via robust Least Absolute Deviations (LAD) regression across 3,391 data points from 175 morphologically diverse galaxies, our model achieves a global Mean Absolute Error (MAE) of 26~km/s. This performance is comparable to the MOND framework ($\text{MAE} = 16\text{ km/s}$). Both frameworks use a single parameter to model DM across all galaxies.
 
 The statistical parsimony of this model provides compelling evidence for a universal coupling between baryonic density and dark mass distribution. We demonstrate that the $2/3$ scaling law captures the observations of the dataset.  
 

@@ -32,8 +32,8 @@ MOND_UPSILON_FILE = Path(__file__).resolve().parent / "mond_upsilon.txt"  # per-
 QUICK_GALAXIES = ["DDO154", "NGC2403", "UGC02953", "NGC0289", "NGC7814"]
 QUICK_EFFORT = dict(free_power_trials=4, fixed_power_trials=4, global_fit_num_minutes=0.3, individual_trials=4, individual_num_minutes=0.3,
                     sensitivity_num_minutes=0.1, test_num_minutes=0.3, newton_num_minutes=0.3, table_num_minutes=0.3)
-FAST_EFFORT = dict(free_power_trials=200, fixed_power_trials=120, global_fit_num_minutes=1, individual_trials=60, individual_num_minutes=1,
-                   sensitivity_num_minutes=1, test_num_minutes=3, newton_num_minutes=3, table_num_minutes=3)
+FAST_EFFORT = dict(free_power_trials=150, fixed_power_trials=80, global_fit_num_minutes=0.7, individual_trials=60, individual_num_minutes=0.7,
+                   sensitivity_num_minutes=0.5, test_num_minutes=3, newton_num_minutes=3, table_num_minutes=3)
 DASHBOARD_FIRST_PORT = 8086
 auto_choices = {}  # answers from the command line
 FIXED_POWER_ROWS = 25  # best step 1b fits copied into pareto_front.txt
