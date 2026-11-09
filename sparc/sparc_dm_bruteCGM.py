@@ -1,5 +1,5 @@
 from PIL.ImagePalette import negative
-from cgm_integral import DM_CUTOFF_DENSITY, dm_density_term, evaluate_dm_mass_integral
+from cgm_integral import ADDED_GAS_MASS_PER_PARTICLE, DM_CUTOFF_DENSITY, dm_density_term, evaluate_dm_mass_integral
 from mond import g_mond
 from sparc_data import GRAPH_DPI, lelli_baryonic_mass, load_properties, load_rotation_curves
 import numpy as np
@@ -47,6 +47,9 @@ def load_mond_upsilon_factors(path):
             factors[parts[0]] = float(parts[1])
     print(f"Loaded MOND Upsilon factors for {len(factors)} galaxies from {path}")
     return factors
+
+
+OBSERVED_GAS_MASS_PER_PARTICLE = 1.33  # m_p per H atom, the helium factor. Added gas uses ADDED_GAS_MASS_PER_PARTICLE
 
 
 def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True, power_override = 9.0, min_mass=0, max_mass=1e99,
@@ -256,34 +259,41 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         r_max_mask = r_squared < r_max_m**2
         g_data['sum_observed_gas_particles'] = np.sum(gas_particle_density_grid[r_max_mask] * dV[r_max_mask])
 
+        # gas mass density in units of m_p per m^3. Observed gas is 1.33 per H atom, added gas is lighter per particle as it is ionized
+        gas_mass_density_grid = gas_particle_density_grid * OBSERVED_GAS_MASS_PER_PARTICLE
+
         if gal_core_gas_density != 0.0:
             n_0_cgs = gal_core_gas_density
             n_0_m3 =  n_0_cgs * (100)**3
             exponent = -add_core_gas_beta
-            gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_gas_m**2)**exponent
+            added_density = n_0_m3 * (1 + r_squared / r_core_gas_m**2)**exponent
+            gas_particle_density_grid += added_density
+            gas_mass_density_grid += added_density * ADDED_GAS_MASS_PER_PARTICLE
         if add_real_cgm_central_density > 0.0:
-            n_0_cgs = add_real_cgm_central_density  
+            n_0_cgs = add_real_cgm_central_density
             n_0_m3 =  n_0_cgs * (100)**3
             exponent = -3.0*cgm_beta/2.0
-            gas_particle_density_grid += n_0_m3 * (1 + r_squared / r_core_cgm_m**2)**exponent
+            added_density = n_0_m3 * (1 + r_squared / r_core_cgm_m**2)**exponent
+            gas_particle_density_grid += added_density
+            gas_mass_density_grid += added_density * ADDED_GAS_MASS_PER_PARTICLE
 
         # Zero out gas outside the bounding sphere of radius grid_max_m (keeps 3D shape intact)
         # this makes it so our output stats make more sense, we can just sum all the dark mass we made, etc.
         gas_particle_density_grid[r_squared >= grid_max_m**2] = 0.0
+        gas_mass_density_grid[r_squared >= grid_max_m**2] = 0.0
 
         # Added gas inside r_max over the Lelli baryonic mass, the Add/Mass of added_gas_table.py
         added_gas_particles, _ = evaluate_dm_mass_integral(0, r_max_m, True, 0.0, c_SI,
             r_core_gas_m, gal_core_gas_density*(100)**3, -add_core_gas_beta,
             r_core_cgm_m, add_real_cgm_central_density*(100)**3, -3.0*cgm_beta/2.0, 0.0)
-        g_data['added_gas_fraction'] = added_gas_particles * m_p * 1.33 / (M_sun * 1e9) / g_data['lelli_baryonic_mass']
+        g_data['added_gas_fraction'] = added_gas_particles * m_p * ADDED_GAS_MASS_PER_PARTICLE / (M_sun * 1e9) / g_data['lelli_baryonic_mass']
 
 
         g_data['R_grid_kpc'] = R_grid_kpc
         g_data['Z_grid_kpc'] = Z_m / kpc_to_m
         g_data['r_core_kpc'] = r_core_kpc
         
-        gas_particle_mass_He_factor = 1.33  
-        dm_gas = gas_particle_density_grid * m_p * gas_particle_mass_He_factor * dV
+        dm_gas = gas_mass_density_grid * m_p * dV
 
         g_data['sum_all_gas_particles'] = np.sum(gas_particle_density_grid[r_max_mask] * dV[r_max_mask])
        
@@ -341,7 +351,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
         del R_grid_3d, Z_grid_3d, Theta_grid_3d
         del X_blob, Y_blob, Z_blob
-        del gas_particle_density_grid, dV, dm_gas, dm_base_dm, dm_term_dV
+        del gas_particle_density_grid, gas_mass_density_grid, dV, dm_gas, dm_base_dm, dm_term_dV
         gc.collect()
 
     print(f"\nIntegrations complete. Now at {len(galaxies)} galaxies. Optimizing global parameter for Linear Absolute Error...")
@@ -459,7 +469,9 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             m_b = tl + hi                             
             g['gas_plus_tl'] = m_b
 
-            tot_gas_mass_kg = g['sum_all_gas_particles'] * m_p * 1.33
+            added_gas_particles = g['sum_all_gas_particles'] - g['sum_observed_gas_particles']
+            added_gas_mass_kg = added_gas_particles * m_p * ADDED_GAS_MASS_PER_PARTICLE
+            tot_gas_mass_kg = g['sum_observed_gas_particles'] * m_p * OBSERVED_GAS_MASS_PER_PARTICLE + added_gas_mass_kg
             tot_gas_mass_msun = tot_gas_mass_kg / M_sun
             
             hi_gas_ratio = hi / tot_gas_mass_msun if tot_gas_mass_msun > 0 else 0.0
@@ -477,8 +489,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             dm_ratio_by_galaxy += dm_allbaryons_ratio
             tot_dm_gas_ratio_to_rmax += tot_dm_mass_msun/hi
             # added core gas and CGM inside r_max over observed gas (1.33 HI), the Add/Gas of added_gas_table.py
-            added_gas_mass_msun = (g['sum_all_gas_particles'] - g['sum_observed_gas_particles']) * m_p * 1.33 / M_sun
-            unobserved_gas_fraction += added_gas_mass_msun / (1.33 * hi)
+            added_gas_mass_msun = added_gas_mass_kg / M_sun
+            unobserved_gas_fraction += added_gas_mass_msun / (OBSERVED_GAS_MASS_PER_PARTICLE * hi)
 
             stats.append({
                 'name': name,
@@ -574,7 +586,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             log_file.write("  M_b: Total baryon mass [M_sun] (TL + HIMass, assuming Upsilon = 1 - Lelli 2016 data)\n")
             log_file.write("  TL: Stellar luminosity-derived mass [fraction of M_b]\n")
             log_file.write("  HIMass: Ne utral Hydrogen mass from literature [fraction of M_b]\n")
-            log_file.write("  R_max Gas Mass: Integrated gas disk mass from 3D density grid * 1.33 [fraction of M_b]\n")
+            log_file.write(f"  R_max Gas Mass: Integrated gas mass from 3D density grid, observed gas * {OBSERVED_GAS_MASS_PER_PARTICLE}, added gas * {ADDED_GAS_MASS_PER_PARTICLE} [fraction of M_b]\n")
             log_file.write("  R_max:Total Gas Mass + TL mass: Combined integrated gas and stellar mass [fraction of M_b]\n")
             log_file.write("  R_max: DM Mass: Integrated Dark Mass via theory formula [fraction of M_b]\n")
             log_file.write("  R_max: DM Mass/M_b: Ratio of Dark Mass to Total Baryons\n")
@@ -826,7 +838,7 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
 
         # same axes on every run, so the graphs can be compared
         ACCEL_PLOT_MIN = 1e-13
-        ACCEL_PLOT_MAX = 5e-7
+        ACCEL_PLOT_MAX = 5e-8
 
         g_pred_arr = np.asarray(all_g_pred)
         g_obs_arr = np.asarray(all_g_obs)

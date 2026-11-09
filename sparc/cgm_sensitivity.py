@@ -20,12 +20,12 @@ CORE_DENSITY_GRID = [0.0, 0.05, 0.2, 0.5, 1.0, 2.0, 4.0]
 
 # name: central density per cc, core radius factor, beta
 CGM_VARIANTS = {
-    "publication": (2.43e-4, 6.0, 0.5),
+    "publication": (5.4e-4, 6.0, 0.5),
     "none": (0.0, 6.0, 0.5),
-    "0.3x_density": (7.29e-5, 6.0, 0.5),
-    "3x_density": (7.29e-4, 6.0, 0.5),
-    "smaller_core": (1.25e-3, 2.0, 0.5),    # same density at 50 r_core as publication
-    "steeper": (7.67e-4, 6.0, 0.68),        # same density at 50 r_core as publication
+    "0.3x_density": (1.62e-4, 6.0, 0.5),
+    "3x_density": (1.62e-3, 6.0, 0.5),
+    "smaller_core": (2.78e-3, 2.0, 0.5),    # same density at 50 r_core as publication
+    "steeper": (1.70e-3, 6.0, 0.68),        # same density at 50 r_core as publication
     "previous": (0.025, 0.20, 0.68),        # the CGM used up to November 2026
 }
 

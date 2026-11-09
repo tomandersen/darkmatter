@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import brentq
 
-from cgm_integral import evaluate_dm_mass_integral
+from cgm_integral import ADDED_GAS_MASS_PER_PARTICLE, evaluate_dm_mass_integral
 from paper_params import PAPER_PARAMS, core_densities_file, model_args, output_dir, working_dir
 from sparc_data import GRAPH_DPI, lelli_baryonic_mass, load_properties, load_rotation_curves
 
@@ -127,12 +127,12 @@ def integrate(r_kpc, gas_only, n0_core, rc_core_kpc, n0_cgm, rc_cgm_kpc):
 
 
 def gas_mass(r_kpc, n0, rc_kpc, exponent_is_core):
-    """Gas mass inside r_kpc in 10^9 Msun, helium included, for one profile on its own."""
+    """Added gas mass inside r_kpc in 10^9 Msun, ionized, for one profile on its own."""
     if exponent_is_core:
         particles = integrate(r_kpc, True, n0, rc_kpc, 0.0, 1.0)
     else:
         particles = integrate(r_kpc, True, 0.0, 1.0, n0, rc_kpc)
-    return particles * M_P * HE_FACTOR * TO_1E9_MSUN
+    return particles * M_P * ADDED_GAS_MASS_PER_PARTICLE * TO_1E9_MSUN
 
 
 def dark_mass(r_kpc, n0_core, rc_core_kpc, n0_cgm, rc_cgm_kpc):
@@ -153,7 +153,7 @@ def solve_r200(lelli_mass, disk_dark_mass, n0_core, rc_core_kpc, n0_cgm, rc_cgm_
 
 def build_row(name, n0_core, properties, curves, grid_dark_mass):
     luminosity, hi, v_flat = (properties[name][key] for key in ("L36", "MHI", "Vflat"))
-    r_max, v_last = (float(curves[name][key][-1]) for key in ("R", "Vobs"))  # at the last observed radius
+    r_max = float(curves[name]["R"][-1])  # the last observed radius
 
     lelli_gas = HE_FACTOR * hi
     lelli_mass = lelli_baryonic_mass(properties[name], curves[name])
@@ -185,7 +185,6 @@ def build_row(name, n0_core, properties, curves, grid_dark_mass):
         "Mass": lelli_mass,
         "R_max": r_max,
         "R200": r_200,
-        "R200_V": 100.0 * v_last / HUBBLE,
         "Core_Rmax": core_r_max,
         "Core_R200": core_r_200,
         "CGM_Rmax": cgm_r_max,
@@ -206,8 +205,9 @@ def write_table(rows, path):
     columns = list(rows[0].keys())
     with open(path, "w") as f:
         f.write(f"# Masses in 10^9 Msun, radii in kpc, n0_core in particles/cc. P = {POWER_W} W, H0 = {HUBBLE}, dark mass cutoff n_c = {DM_CUTOFF_DENSITY}/cc.\n")
-        f.write("# Gas = 1.33 HI. Mass = 0.5 L_disk + 0.7 L_bulge + Gas. Added gas includes the 1.33 helium factor.\n")
-        f.write("# R200: mean enclosed density of Tot_R200 = 200 rho_crit. R200_V: the old 100 V_last / H0 estimate.\n")
+        f.write("# Gas = 1.33 HI. Mass = 0.5 L_disk + 0.7 L_bulge + Gas.\n")
+        f.write(f"# Added gas: ADDED_GAS_MASS_PER_PARTICLE = {ADDED_GAS_MASS_PER_PARTICLE} m_p. Taken as fully ionized, with electrons counted as particles: (m_e + m_p)/2 is about 0.5 m_p for hydrogen alone, and helium and metals raise the average to about 0.6 m_p.\n")
+        f.write("# R200: mean enclosed density of Tot_R200 = 200 rho_crit.\n")
         f.write("# Add/Gas and Add/Mass use Add_Rmax. Vflat 0 = not measured.\n")
         f.write("# DM_Rmax: model grid dark mass inside R_max. DM_Disk: DM_Rmax minus the analytic added gas part.\n")
         f.write("# DM_R200: analytic added gas dark mass inside R200 + DM_Disk.\n")
@@ -271,7 +271,6 @@ def make_graphs(rows):
     added_r_max = column(rows, "Add_Rmax")
     added_r_200 = column(rows, "Add_R200")
     total = column(rows, "Tot_R200")
-    r_200, r_200_v = column(rows, "R200"), column(rows, "R200_V")
     v_flat = column(rows, "Vflat")
     unit = r"$10^9\ M_\odot$"
 
@@ -315,12 +314,6 @@ def make_graphs(rows):
         points(ax, v_flat[has_v_flat], y[has_v_flat], color=color, label=f"{name}: slope {slope:.2f}, scatter {scatter:.2f} dex")
     ax.legend(frameon=False, labelcolor=INK, fontsize=9)
     save(fig, "5_baryonic_tully_fisher.png")
-
-    fig, ax = new_axes(r"Old estimate, $100\ V_{last} / H_0$ (kpc)", r"$R_{200}$ at 200 $\rho_{crit}$ (kpc)",
-                       r"$R_{200}$: solved vs old estimate")
-    points(ax, r_200_v, r_200)
-    ratio_lines(ax, r_200_v, r_200, [1])
-    save(fig, "6_r200_vs_old_estimate.png")
 
 
 def main(case="cgm"):

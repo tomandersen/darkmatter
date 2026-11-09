@@ -5,6 +5,7 @@ from scipy.integrate import quad
 m_p = 1.67262e-27
 
 DM_CUTOFF_DENSITY = 1e-5  # particles per cc, below about this the gas density concept starts to wither
+ADDED_GAS_MASS_PER_PARTICLE = 0.6  # m_p per particle for the added core gas and CGM, taken as fully ionized H + He, electrons counted as particles. Observed gas stays at 1.33 m_p per H atom
 
 
 def dm_density_term(n, n_cut):

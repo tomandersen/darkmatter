@@ -14,20 +14,21 @@ import json
 import shutil
 from pathlib import Path
 
-from cgm_integral import DM_CUTOFF_DENSITY
+from cgm_integral import ADDED_GAS_MASS_PER_PARTICLE, DM_CUTOFF_DENSITY
 from sparc_data import select_galaxies
 
 SPARC_DIR = Path(__file__).resolve().parent
 
 PAPER_PARAMS = {
-    "run_tag": "2026_11_09",
+    "run_tag": "2026_11_09-electrons",
     "power_w": None,                         # atomic unit of force * c. From pareto_front.txt
     "dm_cutoff_density": DM_CUTOFF_DENSITY,  # particles per cc
+    "added_gas_mass_per_particle": ADDED_GAS_MASS_PER_PARTICLE,  # m_p, core gas and CGM. Set in cgm_integral.py
     "r_core_factor_gas": 2.5,
     "cases": {
         # Set from observed CGM gas, not fitted: inside R_max the fit always prefers less CGM. See cgm_sensitivity.py
         # core_gas_beta and core_gas_central_density are filled in from pareto_front.txt
-        "cgm": {"cgm_central_density": 2.43e-4, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": None, "core_gas_central_density": None},
+        "cgm": {"cgm_central_density": 5.4e-4, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": None, "core_gas_central_density": None},
         "no_cgm": {"cgm_central_density": 0.0, "r_core_factor_cgm": 6.0, "cgm_beta": 0.5, "core_gas_beta": None, "core_gas_central_density": None},
     },
     "galaxy_cuts": {"max_q": None, "min_inclination": None},  # None = no cut. max_q 2 and min_inclination 30 keep 153 of the 175 galaxies
