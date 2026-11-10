@@ -36,7 +36,7 @@ os.chdir(Path(__file__).resolve().parent.parent)  # the model opens its data fil
 
 from paper import MOND_UPSILON_FILE
 from paper_params import PAPER_PARAMS, core_densities_file, model_args, run_dir, working_dir
-from sparc_data import GRAPH_DPI, load_rotation_curves
+from sparc_data import GRAPH_DPI, load_properties, load_rotation_curves
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 CASE = "cgm"
@@ -47,6 +47,7 @@ MIN_REGION_POINTS = 14  # leaves 8 after the filter's half window is dropped at 
 SG_WINDOW = 7          # Savitzky-Golay window in grid steps (odd) and polynomial order
 SG_ORDER = 3
 MAX_LAG = 6
+BUMPY = 1.0            # bump/err at or above this: the data's bumps are at least as big as its error bars
 CURVES = ("model", "mond", "bar", "gas")
 COLORS = {"obs": "k", "model": "r", "mond": "c", "bar": "b", "gas": "g"}  # as in the galaxy plots
 
@@ -87,7 +88,7 @@ def derivatives(R_grid, R, v):
     y = y - np.polyval(np.polyfit(R_grid, y, 2), R_grid)
     dr = R_grid[1] - R_grid[0]
     inner = slice(SG_WINDOW // 2, len(y) - SG_WINDOW // 2)
-    return dict(R=R_grid[inner], resid=y[inner], d1=savgol_filter(y, SG_WINDOW, SG_ORDER, deriv=1, delta=dr)[inner],
+    return dict(R=R_grid[inner], resid=y[inner], smooth=savgol_filter(y, SG_WINDOW, SG_ORDER)[inner], d1=savgol_filter(y, SG_WINDOW, SG_ORDER, deriv=1, delta=dr)[inner],
                 d2=savgol_filter(y, SG_WINDOW, SG_ORDER, deriv=2, delta=dr)[inner])
 
 
@@ -101,13 +102,21 @@ def lag_correlation(a, b, max_lag=MAX_LAG):
     return lags, np.array(r)
 
 
-def analyse(name, c, out_dir):
+def analyse(name, c, props, out_dir):
     R_grid = outer_grid(c)
     if R_grid is None:
         return None
     d = {key: derivatives(R_grid, c["R"], c[key]) for key in ("obs",) + CURVES}
     R_used = d["obs"]["R"]
-    row = dict(name=name, n=len(R_used), r_from=R_used[0], r_to=R_used[-1])
+    row = dict(name=name, n=len(R_used), r_from=R_used[0], r_to=R_used[-1], Q=int(props["Q"]), inc=props["Inc"])
+    # Bumpiness of the data: spread of the smoothed, detrended V_obs against the typical error bar in the same region
+    row["bump_kms"] = np.std(d["obs"]["smooth"])
+    row["err_kms"] = np.median(np.interp(R_used, c["R"], c["eobs"]))
+    row["bump_over_err"] = row["bump_kms"] / row["err_kms"]
+    # Bumpiness of each fit against the data: 1 = bumps of the right size, > 1 overreacts, < 1 too smooth
+    for key in ("model", "mond"):
+        for order in ("d1", "d2"):
+            row[f"amp_{key}_{order}"] = np.std(d[key][order]) / np.std(d["obs"][order])
     lag_curves = {}
     for key in CURVES:
         for order in ("d1", "d2"):
@@ -168,14 +177,31 @@ def write_table(rows, power, out_dir):
         lines.append(f"{row['name']:<12}{row['n']:>4}{row['r_from']:>8.1f}{row['r_to']:>7.1f}" + "".join(f"{row[c]:>10.2f}" for c in cols)
                      + f"{row['model_d1_peak_lag']:>8d}{row['model_d2_peak_lag']:>8d}")
 
-    lines.append("\n# Summary over galaxies")
-    for order in ("d1", "d2"):
-        model, mond, bar = (np.array([r[f"{k}_{order}"] for r in rows]) for k in ("model", "mond", "bar"))
-        lag0 = sum(r[f"model_{order}_peak_lag"] == 0 for r in rows)
-        near = sum(abs(r[f"model_{order}_peak_lag"]) <= 1 for r in rows)
-        lines.append(f"{order}: median r  model {np.nanmedian(model):+.2f}  mond {np.nanmedian(mond):+.2f}  bar {np.nanmedian(bar):+.2f} | "
-                     f"model > mond in {np.sum(model > mond)}/{len(rows)} | model r > 0.5 in {np.sum(model > 0.5)} | "
-                     f"model peak at lag 0 in {lag0}, |lag| <= 1 in {near}")
+    lines.append("\n# Bumpiness. bump = spread of smoothed detrended V_obs, err = median e_Vobs, both km/s over the region.")
+    lines.append("# amp = spread of the fit's derivative over the data's: 1 right size, > 1 overreacts, < 1 too smooth. "
+                 "Q: SPARC quality flag, 1 best, 3 known problems.")
+    amp_cols = [f"amp_{k}_{o}" for o in ("d1", "d2") for k in ("model", "mond")]
+    lines.append(f"{'galaxy':<12}{'Q':>3}{'Inc':>5}{'bump':>7}{'err':>7}{'bump/err':>9}" + "".join(f"{c:>14}" for c in amp_cols))
+    for row in rows:
+        lines.append(f"{row['name']:<12}{row['Q']:>3d}{row['inc']:>5.0f}{row['bump_kms']:>7.2f}{row['err_kms']:>7.2f}{row['bump_over_err']:>9.2f}"
+                     + "".join(f"{row[c]:>14.2f}" for c in amp_cols))
+
+    lines.append(f"\n# Summary. Bumpy = bump/err >= {BUMPY}: the data's bumps are at least as big as the error bars.")
+    subsets = [("all", rows), ("Q = 1", [r for r in rows if r["Q"] == 1]), ("Q >= 2", [r for r in rows if r["Q"] >= 2]),
+               ("bumpy", [r for r in rows if r["bump_over_err"] >= BUMPY]),
+               ("bumpy, Q = 1", [r for r in rows if r["bump_over_err"] >= BUMPY and r["Q"] == 1]),
+               ("not bumpy", [r for r in rows if r["bump_over_err"] < BUMPY])]
+    for label, subset in subsets:
+        lines.append(f"\n{label}: {len(subset)} galaxies")
+        if not subset:
+            continue
+        for order in ("d1", "d2"):
+            model, mond, bar = (np.array([r[f"{k}_{order}"] for r in subset]) for k in ("model", "mond", "bar"))
+            amp_model, amp_mond = (np.array([r[f"amp_{k}_{order}"] for r in subset]) for k in ("model", "mond"))
+            near = sum(abs(r[f"model_{order}_peak_lag"]) <= 1 for r in subset)
+            lines.append(f"  {order}: median r  model {np.nanmedian(model):+.2f}  mond {np.nanmedian(mond):+.2f}  bar {np.nanmedian(bar):+.2f}"
+                         f" | model > mond in {np.sum(model > mond)}/{len(subset)} | model |lag| <= 1 in {near}"
+                         f" | median amp  model {np.median(amp_model):.2f}  mond {np.median(amp_mond):.2f}")
     text = "\n".join(lines) + "\n"
     (out_dir / "renzo_table.txt").write_text(text)
     return text
@@ -188,6 +214,7 @@ def main():
     args = parser.parse_args()
 
     names = [name for name, g in load_rotation_curves(None).items() if len(g["R"]) >= args.min_points]
+    properties = load_properties()
     print(f"{len(names)} galaxies with {args.min_points} or more points")
     out_dir = run_dir() / "renzo"
     (out_dir / "galaxies").mkdir(parents=True, exist_ok=True)
@@ -195,7 +222,7 @@ def main():
     curves, power = model_curves(names, args.minutes)
     rows = []
     for name in names:
-        row = analyse(name, curves[name], out_dir / "galaxies")
+        row = analyse(name, curves[name], properties[name], out_dir / "galaxies")
         if row is None:
             print(f"{name}: outer region too short, skipped")
         else:
