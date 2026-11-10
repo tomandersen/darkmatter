@@ -1,7 +1,7 @@
 """Renzo's rule (Sancisi's law) test by derivatives: do the bumps in a model line up with the bumps in V_obs?
 
 The level of a curve is fitted, so comparing values mostly measures the fit. Here only the shape counts. For each galaxy with
-more than MIN_POINTS points, V_obs and each model are put on one even radius grid over the outer part of the curve
+at least MIN_POINTS points, V_obs and each model are put on one even radius grid over the outer part of the curve
 (from where V_obs first reaches OUTER_FRACTION of its peak, dropping the last EDGE_DROP points), detrended by a quadratic,
 and differentiated with a Savitzky-Golay filter. The Pearson r between data and model is reported for
   d1 = dV/dR   (where the curve rises and falls)
@@ -40,7 +40,7 @@ from sparc_data import GRAPH_DPI, load_rotation_curves
 from sparc_dm_bruteCGM import run_sparc_dm_brute_cgm
 
 CASE = "cgm"
-MIN_POINTS = 30
+MIN_POINTS = 30  # galaxies with at least this many rotation curve points
 OUTER_FRACTION = 0.8   # the region starts where V_obs first reaches this fraction of its peak
 EDGE_DROP = 2          # points dropped at the outer edge, where the filter window runs off the data
 MIN_REGION_POINTS = 14  # leaves 8 after the filter's half window is dropped at each end
@@ -183,12 +183,12 @@ def write_table(rows, power, out_dir):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--min-points", type=int, default=MIN_POINTS, help="use galaxies with more rotation curve points than this")
+    parser.add_argument("--min-points", type=int, default=MIN_POINTS, help="use galaxies with at least this many rotation curve points")
     parser.add_argument("--minutes", type=float, default=PAPER_PARAMS["effort"]["test_num_minutes"], help="model resolution")
     args = parser.parse_args()
 
-    names = [name for name, g in load_rotation_curves(None).items() if len(g["R"]) > args.min_points]
-    print(f"{len(names)} galaxies with more than {args.min_points} points")
+    names = [name for name, g in load_rotation_curves(None).items() if len(g["R"]) >= args.min_points]
+    print(f"{len(names)} galaxies with {args.min_points} or more points")
     out_dir = run_dir() / "renzo"
     (out_dir / "galaxies").mkdir(parents=True, exist_ok=True)
 
