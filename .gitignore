@@ -5,6 +5,7 @@
 .DS_Store
 sparc/dm_mass*
 optimization.db
+sparc/single/result*
 *-opt
 
 # Edit at https://www.toptal.com/developers/gitignore?templates=python

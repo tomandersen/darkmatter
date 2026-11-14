@@ -53,7 +53,9 @@ OBSERVED_GAS_MASS_PER_PARTICLE = 1.33  # m_p per H atom, the helium factor. Adde
 
 
 def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_core_factor_gas, add_real_cgm_central_density, r_core_factor_cgm, cgm_beta, num_minutes=10, output_graphs=True, power_override = 9.0, min_mass=0, max_mass=1e99,
-                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False, upsilon_factor=1.0, dm_cutoff_density=DM_CUTOFF_DENSITY, core_file=None, mond_upsilon_file=None):
+                           supplied_gas_density=None, only_galaxies=None, output_dir_override=None, return_galaxies=False, z_stretch_kpc=None, use_core_gas_file=False, upsilon_factor=1.0, dm_cutoff_density=DM_CUTOFF_DENSITY, core_file=None, mond_upsilon_file=None,
+                           upsilon_disk=None, upsilon_bulge=None):
+    # upsilon_disk, upsilon_bulge: mass to light ratios, instead of Lelli's 0.5 and 0.7. upsilon_factor multiplies them after
     # core_file: with use_core_gas_file, read the per-galaxy core densities from this file instead of core_densities.txt
     # dm_cutoff_density: n_c in particles per cc, dark mass density goes as n^(2/3) exp(-(n_c/n)^2). 0 turns the cutoff off.
     # supplied_gas_density: optional dict {galaxy_name: fn(R_m, Z_m, Theta_m) -> gas particle density [m^-3]}
@@ -73,8 +75,8 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
     # Suppress integration warnings for highly dense inner rings
     warnings.filterwarnings("ignore")
 
-    Upsilon_disk = 0.5*upsilon_factor   
-    Upsilon_bulge = 0.7*upsilon_factor  # 0.6 seems to work a little better
+    Upsilon_disk = (0.5 if upsilon_disk is None else upsilon_disk)*upsilon_factor
+    Upsilon_bulge = (0.7 if upsilon_bulge is None else upsilon_bulge)*upsilon_factor  # 0.6 seems to work a little better
 
     sqrt_Upsilon_disk = np.sqrt(Upsilon_disk)
     sqrt_Upsilon_bulge = np.sqrt(Upsilon_bulge)
@@ -340,9 +342,15 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
         g_data['Vgas_test'] = np.interp(R_obs_kpc, R_grid_kpc, g_data['Vgas_test_grid_kms'])
         
         # Vdisk and Vbul already carry upsilon_factor, so MOND's own factor goes in as a ratio to it
-        g_data['mond_upsilon_factor'] = mond_upsilon_factors[gal] if mond_upsilon_factors is not None else upsilon_factor
-        mond_upsilon_ratio = g_data['mond_upsilon_factor'] / upsilon_factor
-        V_bar_sq = np.clip(mond_upsilon_ratio * (V_disk_ms**2 + V_bul_ms**2) + V_gas_ms * np.abs(V_gas_ms), 0, None)
+        # With a MOND file, MOND has its own Upsilons, 0.5 f and 0.7 f, whatever the dark mass fit uses. Without one, the same as the dark mass fit
+        if mond_upsilon_factors is not None:
+            g_data['mond_upsilon_factor'] = mond_upsilon_factors[gal]
+            mond_disk_ratio = 0.5 * g_data['mond_upsilon_factor'] / Upsilon_disk if Upsilon_disk > 0 else 0.0
+            mond_bulge_ratio = 0.7 * g_data['mond_upsilon_factor'] / Upsilon_bulge if Upsilon_bulge > 0 else 0.0
+        else:
+            g_data['mond_upsilon_factor'] = upsilon_factor
+            mond_disk_ratio = mond_bulge_ratio = 1.0
+        V_bar_sq = np.clip(mond_disk_ratio * V_disk_ms**2 + mond_bulge_ratio * V_bul_ms**2 + V_gas_ms * np.abs(V_gas_ms), 0, None)
         g_N = np.zeros_like(R_m_obs)
         g_N[valid_obs] = V_bar_sq[valid_obs] / R_m_obs[valid_obs]
         
@@ -760,12 +768,19 @@ def run_sparc_dm_brute_cgm(add_core_gas_central_density, add_core_gas_beta, r_co
             plt.plot(g['R_grid_kpc'], g['Vgas_test_inDisk_grid_kms'], 'cyan', label="gas (inDisk)", linestyle='dotted', linewidth=0.9)
 
             plt.plot(g['R'], g['Vgas'], 'g', label='gas (Lelli)', linestyle='dotted', linewidth=0.7)
-            plt.plot(g['R'], g['Vdisk'], 'violet', label='disk (Lelli)', linestyle='dashdot', linewidth=0.7)
+            # Lelli 2016 used 0.5 and 0.7. Other Upsilons are shown in the legend, and the baryons are then not Lelli's
+            disk_is_lelli = np.isclose(Upsilon_disk, 0.5)
+            bulge_is_lelli = np.isclose(Upsilon_bulge, 0.7)
+            disk_label = 'disk (Lelli)' if disk_is_lelli else rf'disk ($\Upsilon$:{Upsilon_disk:.2f})'
+            bulge_label = 'bulge (Lelli)' if bulge_is_lelli else rf'bulge ($\Upsilon$:{Upsilon_bulge:.2f})'
+            baryons_label = 'baryons (Lelli)' if disk_is_lelli and bulge_is_lelli else 'baryons (SPARC)'
+
+            plt.plot(g['R'], g['Vdisk'], 'violet', label=disk_label, linestyle='dashdot', linewidth=0.7)
             if np.any(g['Vbul'] > 0):
-                plt.plot(g['R'], g['Vbul'], 'red', label='bulge (Lelli)', linestyle='dashed', linewidth=0.7)
+                plt.plot(g['R'], g['Vbul'], 'red', label=bulge_label, linestyle='dashed', linewidth=0.7)
 
             lelli_all_baryon_v = np.sqrt(np.clip(g['Vdisk']**2 + g['Vbul']**2 + g['Vgas'] * np.abs(g['Vgas']), 0, None))
-            plt.plot(g['R'], lelli_all_baryon_v, 'blue', label='baryons (Lelli)', linewidth=0.7)
+            plt.plot(g['R'], lelli_all_baryon_v, 'blue', label=baryons_label, linewidth=0.7)
             
             max_r = max(g['R'])
             plt.xlim(0.0, max_r + max_r*0.02) 
