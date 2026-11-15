@@ -6,6 +6,7 @@
 sparc/dm_mass*
 optimization.db
 sparc/single/result*
+*Humphrey200*
 *-opt
 
 # Edit at https://www.toptal.com/developers/gitignore?templates=python

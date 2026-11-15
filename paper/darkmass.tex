@@ -28,7 +28,7 @@ $^{1}$nSCIr, Ontario, Canada}
 \maketitle
 
 \begin{abstract}
-We present a novel empirical equation for the dark matter derived only from galactic (gas) kinematics. It is defined simply by the equation $\rho_{\text{dm}} =k\  m_e \alpha^2 / a_B d^2$, where $d$ is the mean particle spacing in normal matter, $a_B$ is the Bohr radius, $\alpha$ and $m_e$ are the usual. $k$ is a dimensionless constant near 1. The meaning of the relationship is left open (the constant is  related to the atomic unit of force). We evaluate its applicability by  testing this relation against the complete Spitzer Photometry and Accurate Rotation Curves (SPARC) database, with over 3000 data points across 175 morphologically diverse galaxies. The equation varies the dark mass density with the $2/3$ power of the matter density. It results in dark matter starting to be substantial when (gas) particles are about a millimetre apart. The model generates rotation curves that are very similar to MOND, but has the advantage that it generates massive dark matter. With a simple density function for the circumgalactic medium (CGM) gas, it simultaneously produces appropriate dark matter halo masses as well.
+We present a novel empirical equation for the dark matter derived only from galactic (gas) kinematics. The dark matter density is assumed equal to a constant times the gas particle density to the two-	thirds power. The meaning of the relationship is left open (the constant is  related to the atomic unit of force). We evaluate its applicability by  testing this relation against the complete Spitzer Photometry and Accurate Rotation Curves (SPARC) database, which contains 175 morphologically diverse galaxies. The empirical equation results in dark matter starting to be substantial when (gas) particles are about a millimetre apart. The model generates rotation curves that are very similar in quality to MOND, but has the advantage that it generates massive dark matter. Adding a canonical density function for the circumgalactic medium (CGM) gas, it simultaneously produces appropriate dark matter halo masses as well.
 \end{abstract}
 
 \begin{keywords}
@@ -42,7 +42,7 @@ dark matter -- galaxies: kinematics and dynamics -- galaxies: haloes
 For over four decades, the standard cosmological paradigm ($\Lambda$CDM) has successfully explained large-scale structure formation, cosmic microwave background anisotropies, and cosmic shear observations by invoking a dominant component of cold dark matter. However, at galactic and sub-galactic scales, the nature of this missing mass field remains one of the most persistent crises in modern physics. Despite intensive efforts spanning astronomical observations, deep underground direct-detection experiments, and high-energy collider searches, particle dark matter candidates---ranging from Weakly Interacting Massive Particles (WIMPs) to ultra-light axions---have eluded detection across nearly thirty orders of magnitude in predicted mass scales. Even assuming any (perhaps undetectable) particle like dark matter, problems persist. For example, modelling the dark matter distribution in galaxies, where Sancisi's Law\citep{sancisiVisibleMatterDark2004} and MOND  \citep{lelliSPARCMassModels2016, Lelli2017} work well. In addition there are several works which discount the viability of any Cold Dark Matter particle model\citep{kroupaManyTensionsDarkmatter2023, famaeyChallengesLCDMMOND2013}.  
 
 \subsection{Current Approaches} \label{subsec:current}
-There are currently two primary paths of investigation in galactic dynamics. The first relies on multi-parameter empirical dark matter density profiles, such as the Navarro-Frenk-White (NFW)\citep{navarroUniversalDensityProfile1997} or Burkert profiles\citep{burkertStructureDarkMatter1995}, which are fitted to individual galactic rotation curves. While these profiles effectively capture overall kinematic features, they generally treat parameters like scale radius ($r_s$) and central density ($\rho_0$) as free, independent variables unique to each galaxy. This introduces a large parameter space that requires individual, galaxy-by-galaxy 'tuning.' The second path, Modified Newtonian Dynamics (MOND), abandons the dark matter hypothesis entirely, accounting for anomalous galactic rotation curves by introducing a universal acceleration constant ($a_0 \approx 1.2 \times 10^{-10} \text{ m s}^{-2}$) below which Newtonian gravity breaks down. MOND's striking empirical success, particularly in explaining the Radial Acceleration Relation (RAR) and the Baryonic Tully-Fisher Relation (BTFR)\citep{Lelli2017}, demonstrates that galactic kinematics are deeply coupled to the distribution of baryonic matter. 
+There are currently two primary paths of investigation in galactic dynamics. The first relies on multi-parameter empirical dark matter density profiles, such as the Navarro-Frenk-White (NFW)\citep{navarroUniversalDensityProfile1997} or Burkert profiles\citep{burkertStructureDarkMatter1995}, which are fitted to individual galactic rotation curves. While these profiles effectively capture overall kinematic features, they generally treat parameters like scale radius ($r_s$) and central density ($\rho_0$) as free, independent variables unique to each galaxy. This introduces a large parameter space that requires individual, galaxy-by-galaxy tuning. The second path, Modified Newtonian Dynamics (MOND), abandons the dark matter hypothesis entirely, accounting for anomalous galactic rotation curves by introducing a universal acceleration constant ($a_0 \approx 1.2 \times 10^{-10} \text{ m s}^{-2}$) below which Newtonian gravity breaks down. MOND's striking empirical success, particularly in explaining the Radial Acceleration Relation (RAR) and the Baryonic Tully-Fisher Relation (BTFR)\citep{Lelli2017}, demonstrates that galactic kinematics are deeply coupled to the distribution of baryonic matter. 
 
 \subsection{An alternative: Gas Based Models}
 Sancisi and others have pointed out the puzzling connection of gas density to the rotation curves. In these gas models, gas is scaled by a factor of about  7\citep{hoekstraApparentCouplingNeutral2001}. The Hoekstra method of simply multiplying the gas mass by a number  doesn't work in general, and as more and better data came along, such as the SPARC dataset, it was put aside.
@@ -54,7 +54,13 @@ The density of dark matter is obtained by this relation, where $k$ is scaling co
     \rho_{\text{dm}} =k\  m_e \alpha^2 / a_B d^2.
     \qquad
 \end{equation}
-$d$ is the mean particle spacing in normal matter, $a_B$ is the Bohr radius, $\alpha$ is the fine structure constant, and $m_e$ the electron mass.
+$d$ is the mean particle spacing in normal matter, $a_B$ is the Bohr radius, $\alpha$ is the fine structure constant, and $m_e$ the electron mass. 
+
+Note that the Atomic Unit of Force is defined as $F_{\text{a.u.}} = m_e \alpha^2 c^2/{a_B} $, so equation (\ref{mainEquation}) can be written as 
+\begin{equation} \label{mainEquation}
+    \rho_{\text{dm}} =k\ c^2 F_{\text{a.u.}}/d^2.
+    \qquad
+\end{equation}
 
 The $1/d^2$ can also be written as  $n^{2/3}$, where $n$ is the number density of matter particles. Thus, as a gas becomes more rarefied, the amount of dark matter 'generated' by our model as compared to the density of the particles increases. It in fact increases without limit in equation (\ref{mainEquation}). This is an issue for intergalactic levels of particle densities, so for densities less than $n_{cut} = 10^{-5}/cc$ we turn off the effect with an exponential switch. This effect cutoff has no effect on galactic rotation curve fitting, but is used to turn off our model at the halo - intergalactic boundary near $R_{200}$. The physical justification for this (if there is one), is that $n_{cut}$ is about where gas particles stop behaving like a gas and are instead ballistic.  
 
@@ -294,11 +300,15 @@ By focusing strictly on a data-driven, observational approach, this work side-st
 \section*{Data Availability}
 
 % TODO: MNRAS requires this section. State where the model code, fits and the full set of 175 galaxy plots are hosted.
-The SPARC data underlying this article are publicly available from the SPARC database \citep{lelliSPARCMassModels2016}.
+The data and code used in the study is available at https://github.com/tomandersen/darkmatter . 
+The SPARC data underlying this article are publicly available from the SPARC database \citep{lelliSPARCMassModels2016}. 
 
 \bibliographystyle{mnras}
 \bibliography{bibtex_tom} % where bibtex_tom.bib file lives
 
 \bsp
+
+\section{about our paper}
+a guy walks into a psychiatrist's office and says, "Hey doc, my brother's crazy! He thinks he's a chicken". Then the doc says, why don't you get him some help? Then the guy says, "I would but I need the eggs." 
 \label{lastpage}
 \end{document}
