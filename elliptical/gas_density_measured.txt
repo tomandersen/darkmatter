@@ -1,0 +1,20 @@
+# Measured hot gas density, from published deprojected profiles. rho_gas in 1e-25 g/cc, R in kpc.
+# dark_mass_ellipticals.py uses these instead of the Fig. 6 gas line where they have data.
+# NGC4649: Humphrey et al. 2008, ApJ 683, 161, Fig. 5 data points (triangles), by digitize_ngc4649_2008.py.
+#   Distance 15.6 Mpc, the same as Humphrey et al. 2006.
+# galaxy      R_kpc   rho_gas
+NGC4649      0.1506    6.0223
+NGC4649      0.3383    3.5774
+NGC4649      0.5210    2.7953
+NGC4649      0.7267    2.1544
+NGC4649      0.9432    1.5936
+NGC4649      1.2133    1.0709
+NGC4649      1.6035    0.6449
+NGC4649      2.1772    0.4160
+NGC4649      2.9560    0.2720
+NGC4649      3.9066    0.2012
+NGC4649      5.0254    0.1315
+NGC4649      6.4068    0.1071
+NGC4649      8.2417    0.0628
+NGC4649     11.2911    0.0594
+NGC4649     17.0774    0.0224
